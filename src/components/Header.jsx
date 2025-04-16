@@ -1,9 +1,8 @@
-// src/components/Header.jsx
 import React from "react";
 
 const Header = () => (
-  <header className="w-full bg-[#020f1e] text-white py-5 px-6 border-b border-slate-800 shadow-sm">
-    <div className="max-w-7xl mx-auto flex justify-between items-center">
+  <header className="w-full bg-[#020f1e] text-white py-5 px-4 border-b border-slate-800 shadow-sm">
+    <div className="max-w-[1400px] mx-auto flex justify-between items-center">
       <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
         🌿 <span className="text-green-400">Carbon Web Checker</span>
       </h1>
@@ -17,6 +16,7 @@ const Header = () => (
 );
 
 export default Header;
+
 
 
 

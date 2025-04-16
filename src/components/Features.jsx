@@ -1,5 +1,5 @@
 import React from "react";
-import { Leaf, ShieldCheck, Globe } from "lucide-react"; // you can swap for any icons
+import { Leaf, ShieldCheck, Globe } from "lucide-react";
 
 const features = [
   {
@@ -20,9 +20,11 @@ const features = [
 ];
 
 const Features = () => (
-  <section className="bg-slate-950 py-20 px-6">
-    <div className="max-w-6xl mx-auto text-center">
-      <h2 className="text-3xl md:text-4xl font-bold mb-12">Why Use Carbon Web Checker?</h2>
+  <section className="w-full bg-slate-950 py-16 px-4">
+    <div className="max-w-[1400px] mx-auto text-center">
+      <h2 className="text-3xl md:text-4xl font-bold mb-12">
+        Why Use Carbon Web Checker?
+      </h2>
       <div className="grid gap-8 md:grid-cols-3">
         {features.map((feature, idx) => (
           <div
@@ -40,5 +42,6 @@ const Features = () => (
 );
 
 export default Features;
+
 
 

@@ -1,22 +1,27 @@
 /** @type {import('tailwindcss').Config} */
+// tailwind.config.js
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,jsx,ts,tsx}",
-  ],
+  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
-      colors: {
-        deepblue: "#020f1e",
-        buzzgreen: "#00c471", // Your green
-      },
-      fontFamily: {
-        outfit: ["'Outfit'", "sans-serif"],
+      container: {
+        center: true,
+        padding: {
+          DEFAULT: "1rem",
+          sm: "2rem",
+          lg: "3rem",
+          xl: "4rem",
+          "2xl": "5rem",
+        },
+        screens: {
+          "2xl": "1440px", // 💡 set your global max width here
+        },
       },
     },
   },
   plugins: [],
-};
+}
+
 
 
   
