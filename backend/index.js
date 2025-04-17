@@ -1,27 +1,33 @@
 const express = require("express");
 const cors = require("cors");
+
 const app = express();
-const PORT = 5050;
+const PORT = process.env.PORT || 5050; // 💡 default to 5050 but allow override
 
-
-// ✅ CORS MUST be set here + OPTIONS handled
+// ✅ Proper CORS setup — handles preflight requests correctly
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: "http://localhost:5173", // Vite dev server
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"],
 }));
-app.options("*", cors()); // <— handle preflight requests
 
 app.use(express.json());
 
+// ✅ Base route
 app.get("/", (req, res) => {
   res.send("API is working!");
 });
 
-app.post("/api/check-carbon", (req, res) => {
+// ✅ Carbon check route
+app.post("/api/check-carbon", async (req, res) => {
   const { url } = req.body;
 
   if (!url) {
     return res.status(400).json({ error: "No URL provided" });
   }
+
+  // ⏳ Simulate processing delay like WebsiteCarbon.com
+  await new Promise((resolve) => setTimeout(resolve, 1500));
 
   const pageSizeInMB = 2;
   const energyPerGB = 0.81;
@@ -34,10 +40,12 @@ app.post("/api/check-carbon", (req, res) => {
   res.json({
     url,
     carbonEstimate: `${carbonEstimate.toFixed(2)}g CO₂ per view`,
-    greenHost: true,
+    greenHost: true, // mocked for now
   });
 });
 
+
+// ✅ Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });

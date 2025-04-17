@@ -3,7 +3,7 @@ import React from "react";
 const showcaseSites = [
   {
     name: "Do Nation",
-    image: "https://carbonwebchecker.netlify.app/images/donation.jpg", // Placeholder or local file
+    image: "https://carbonwebchecker.netlify.app/images/donation.jpg",
     co2: "0.29g CO₂/page",
     url: "https://www.wearedonation.com",
   },
@@ -29,33 +29,34 @@ const showcaseSites = [
 
 function Showcase() {
   return (
-    <section className="bg-slate-950 py-16 px-4 text-white">
-      <div className="max-w-6xl mx-auto text-center mb-12">
-        <h2 className="text-3xl md:text-4xl font-bold mb-4">
+    <section className="bg-[#020f1e] py-20 px-4 md:px-8 text-white">
+      <div className="max-w-[1400px] mx-auto text-center mb-16">
+        <h2 className="text-3xl md:text-5xl font-bold mb-6">
           Beautiful, Low Carbon Websites
         </h2>
-        <p className="text-slate-400 max-w-2xl mx-auto">
-          These efficient sites use compressed images, clean code, and green hosting.
-          They’re great examples of sustainable web practices.
+        <p className="text-slate-400 max-w-2xl mx-auto text-lg">
+          These sites excel at efficiency – compressed images, clean code, and green hosting.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-[1400px] mx-auto">
         {showcaseSites.map((site, index) => (
           <a
             key={index}
             href={site.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-slate-900 border border-slate-700 rounded-lg overflow-hidden shadow hover:shadow-lg transition"
+            className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition transform hover:-translate-y-1"
           >
-            <img
-              src={site.image}
-              alt={site.name}
-              className="w-full h-40 object-cover"
-            />
-            <div className="p-4">
-              <h3 className="text-xl font-semibold">{site.name}</h3>
+            <div className="aspect-[4/3] overflow-hidden">
+              <img
+                src={site.image}
+                alt={site.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="p-5 text-center">
+              <h3 className="text-lg font-semibold">{site.name}</h3>
               <p className="text-slate-400 text-sm">{site.co2}</p>
             </div>
           </a>
@@ -66,3 +67,4 @@ function Showcase() {
 }
 
 export default Showcase;
+

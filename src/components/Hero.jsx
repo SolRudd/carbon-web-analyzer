@@ -5,9 +5,12 @@ import { CheckCircle } from "lucide-react";
 const Hero = () => (
   <section className="bg-[#020f1e] text-white py-32 px-4 relative overflow-hidden">
     <div className="max-w-[1400px] mx-auto text-center px-6">
-      <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight mb-6">
-        Check Your Website’s Carbon Footprint.
-      </h1>
+    <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight mb-6">
+  Check Your Website’s
+  <br />
+  Carbon Footprint.
+</h1>
+
       <p className="text-slate-300 text-lg max-w-2xl mx-auto mb-10">
         Use Carbon Web Checker to measure and reduce your site's environmental impact.
         A cleaner internet starts with awareness.

@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const Header = () => (
   <header className="w-full bg-[#020f1e] text-white py-5 px-4 border-b border-slate-800 shadow-sm">
@@ -7,15 +8,27 @@ const Header = () => (
         🌿 <span className="text-green-400">Carbon Web Checker</span>
       </h1>
       <nav className="space-x-6 text-sm font-medium">
-        <a href="#" className="text-slate-300 hover:text-white transition">Home</a>
-        <a href="#" className="text-slate-300 hover:text-white transition">How it Works</a>
-        <a href="#" className="text-slate-300 hover:text-white transition">About</a>
+        <Link to="/" className="text-slate-300 hover:text-white transition">
+          Home
+        </Link>
+        <Link to="/how-it-works" className="text-slate-300 hover:text-white transition">
+          How it Works
+        </Link>
+        <Link to="/faq" className="text-slate-300 hover:text-white transition">
+  FAQ
+</Link> 
+<Link to="/badge" className="text-slate-300 hover:text-white transition">Badge</Link>
+<Link to="/api-access" className="text-slate-300 hover:text-white transition">
+  API Access
+</Link>
+
       </nav>
     </div>
   </header>
 );
 
 export default Header;
+
 
 
 
