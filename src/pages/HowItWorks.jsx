@@ -1,66 +1,91 @@
+// src/pages/HowItWorks.jsx
 import React from "react";
 import { Link } from "react-router-dom";
 
+const steps = [
+  {
+    title: "Data Transfer Over the Wire",
+    description: "When a page loads, we measure how much data travels from the server to the user to estimate energy use.",
+  },
+  {
+    title: "Energy Intensity of Web Data",
+    description: "We apply an average energy‑per‑GB factor that accounts for data centers, network infrastructure, and devices.",
+  },
+  {
+    title: "Green Hosting Verification",
+    description: "We use the Green Web Foundation to check if your host runs on renewable energy; green hosts earn an emissions credit.",
+  },
+  {
+    title: "Carbon Intensity of Electricity",
+    description: "Our model uses global grid averages, adjusting for detected renewable‑powered infrastructure.",
+  },
+  {
+    title: "Traffic Volume",
+    description: "Multiply page‑load emissions by your monthly or annual traffic to see the full impact.",
+  },
+  {
+    title: "Bonus: Repeat Visitors",
+    description: "Cached assets on repeat visits lower data transfer, and we factor that reduction into your score.",
+  },
+];
+
 export default function HowItWorks() {
   return (
-    <section className="bg-[#020f1e] text-white py-16 px-6">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl md:text-5xl font-extrabold mb-8 text-green-400">
-          How It Works
+    <section
+      className="
+        bg-white dark:bg-slate-900
+        text-slate-900 dark:text-white
+        py-20 px-4
+        transition-colors duration-300
+      "
+    >
+      <div className="max-w-4xl mx-auto space-y-12">
+        <h1 className="
+          text-4xl md:text-5xl font-extrabold text-center
+          text-green-600 dark:text-green-400
+        ">
+          How GreenTrace Works
         </h1>
-
-        <p className="text-slate-300 mb-6">
-          Calculating the carbon emissions of a website is a challenge — but we’ve built a method to make it easier, more transparent, and impactful.
+        <p className="
+          text-lg text-center
+          text-slate-700 dark:text-slate-300
+        ">
+          Crunch the numbers, measure your site’s carbon footprint, and get actionable insights to reduce your digital impact.
         </p>
 
         <div className="space-y-8">
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-2">1. Data Transfer Over the Wire</h2>
-            <p className="text-slate-400">
-              When a website loads, data is transferred from the server to the user. We measure how much data is transferred over the wire to estimate how much energy is consumed.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-2">2. Energy Intensity of Web Data</h2>
-            <p className="text-slate-400">
-              We apply an average energy-per-GB value that accounts for data centers, network infrastructure, and end-user devices.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-2">3. Green Hosting Verification</h2>
-            <p className="text-slate-400">
-              We use the <a href="https://www.thegreenwebfoundation.org" target="_blank" rel="noopener noreferrer" className="underline text-green-400">Green Web Foundation</a> to verify if a host uses renewable energy. If so, we reduce the associated emissions.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-2">4. Carbon Intensity of Electricity</h2>
-            <p className="text-slate-400">
-              We base our calculation on global grid averages, and adjust when we detect renewable-powered infrastructure.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-2">5. Traffic Volume</h2>
-            <p className="text-slate-400">
-              Multiply the carbon impact per page load by your estimated monthly or annual traffic — and you’ll see the bigger picture.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-2">Bonus: Repeat Visitors</h2>
-            <p className="text-slate-400">
-              We assume a percentage of repeat visits have cached assets, which slightly reduces data transfer on reloads.
-            </p>
-          </div>
+          {steps.map((step, i) => (
+            <div
+              key={i}
+              className="
+                bg-slate-100 dark:bg-slate-800
+                border border-slate-200 dark:border-slate-700
+                rounded-lg p-6
+                transition-colors duration-200
+              "
+            >
+              <h2 className="
+                text-2xl font-semibold mb-2
+                text-slate-900 dark:text-white
+              ">
+                {i + 1}. {step.title}
+              </h2>
+              <p className="text-slate-700 dark:text-slate-300">
+                {step.description}
+              </p>
+            </div>
+          ))}
         </div>
 
-        <div className="mt-12">
+        <div className="text-center">
           <Link
             to="/"
-            className="inline-block bg-green-600 hover:bg-green-500 text-white py-3 px-6 rounded-md transition font-semibold"
+            className="
+              inline-block bg-green-600 hover:bg-green-500
+              text-white font-semibold
+              py-3 px-6 rounded-md
+              transition-colors duration-200
+            "
           >
             ← Back to Homepage
           </Link>
