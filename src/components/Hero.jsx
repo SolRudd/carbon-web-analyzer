@@ -2,9 +2,9 @@ import React from "react";
 import { Globe, Leaf, ShieldCheck } from "lucide-react";
 
 const heroFeatures = [
-  { icon: <Globe className="w-6 h-6 text-green-400" />, title: "Low CO₂", description: "Under 0.5g per visit." },
-  { icon: <Leaf className="w-6 h-6 text-green-400" />, title: "Green Hosting", description: "Real-time renewable check." },
-  { icon: <ShieldCheck className="w-6 h-6 text-green-400" />, title: "Insights", description: "Tips to optimize your site." },
+  { icon: <Globe className="w-6 h-6 text-greenbuzz" />, title: "Low CO₂", description: "Under 0.5g per visit." },
+  { icon: <Leaf className="w-6 h-6 text-greenbuzz" />, title: "Green Hosting", description: "Real-time renewable check." },
+  { icon: <ShieldCheck className="w-6 h-6 text-greenbuzz" />, title: "Insights", description: "Tips to optimize your site." },
 ];
 
 export default function Hero() {
@@ -17,7 +17,7 @@ export default function Hero() {
     >
       {/* Pill Tag */}
       <div className="mb-4 relative z-10">
-        <span className="bg-green-400/20 text-green-900 dark:text-green-300 px-4 py-1 rounded-full uppercase text-s tracking-wide">
+        <span className="bg-greenbuzz/20 text-greenbuzz-dark dark:text-greenbuzz-light px-4 py-1 rounded-full uppercase tracking-wide text-xs">
           Carbon Web Checker
         </span>
       </div>
@@ -35,20 +35,20 @@ export default function Hero() {
         <div className="pt-2 pb-7 flex flex-col sm:flex-row justify-center gap-4">
           <a
             href="#input-form"
-            className="px-6 py-3 bg-green-500 hover:bg-green-400 text-white font-semibold rounded-full transition-transform transform hover:scale-105"
+            className="px-6 py-3 bg-greenbuzz hover:bg-greenbuzz-light text-white font-semibold rounded-full transition-transform transform hover:scale-105"
           >
             🌍 Run Your CO₂ Check
           </a>
           <a
             href="#impact"
-            className="px-6 py-3 border-2 border-green-500 text-green-500 hover:bg-green-500 hover:text-white rounded-full transition-colors"
+            className="px-6 py-3 border-2 border-greenbuzz text-greenbuzz hover:bg-greenbuzz hover:text-white rounded-full transition-colors"
           >
             Why It Matters
           </a>
         </div>
 
-        {/* Features */}
-        <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-10">
+        {/* Features: hidden on mobile */}
+        <div className="hidden sm:grid mt-12 grid-cols-3 gap-10">
           {heroFeatures.map((f, idx) => (
             <div key={idx} className="flex flex-col items-center space-y-2">
               {f.icon}

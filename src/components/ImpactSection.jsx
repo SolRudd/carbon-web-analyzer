@@ -1,71 +1,89 @@
+// src/components/ImpactSection.jsx
 import React from "react";
+import GreenWebLogo   from "../assets/greenweb.svg";
+import KrystalLogo    from "../assets/krystal.svg";
+import GitHubLogo     from "../assets/github.png";
+import WordPressLogo  from "../assets/wordpress.png";
 
-const ImpactSection = () => (
-  <section
-    id="impact"
-    className="
-      w-full 
-      bg-white dark:bg-slate-900 
-      text-slate-900 dark:text-white 
-      py-20 px-4 md:px-8 
-      transition-colors duration-300
-    "
-  >
-    <div className="max-w-[1400px] mx-auto text-center space-y-16">
-      {/* Heading + Intro */}
-      <div>
-        <h2 className="text-3xl md:text-5xl font-bold mb-4">
-          Built for Impact <span role="img" aria-label="seedling">🌱</span>
+const partners = [
+  { src: GreenWebLogo,   alt: "The Green Web Foundation" },
+  { src: KrystalLogo,     alt: "Krystal Hosting" },
+  { src: GitHubLogo,      alt: "GitHub" },
+  { src: WordPressLogo,   alt: "WordPress" },
+];
+
+export default function ImpactSection() {
+  return (
+    <section
+      id="impact"
+      className="
+        w-full
+        bg-white dark:bg-slate-950
+        text-slate-900 dark:text-white
+        py-20 px-4 md:px-8
+        transition-colors duration-300
+      "
+    >
+      <div className="max-w-5xl mx-auto text-center space-y-12">
+        {/* Heading */}
+        <h2 className="text-3xl md:text-5xl font-extrabold">
+          Digital Sustainability Consulting
         </h2>
-        <p className="text-lg max-w-2xl mx-auto text-slate-700 dark:text-slate-300">
-          This tool was created by <strong>BuzzBoost Digital</strong> to inspire sustainable web practices.
-          We believe the internet should be fast, accessible, and low-carbon. We're working towards becoming a certified B Corp.
-        </p>
-      </div>
 
-      {/* Brand Logo Grid */}
-      <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
-        {["Lavazza", "Volkswagen", "Unilever", "BBC"].map((brand, i) => (
-          <div
-            key={i}
+        {/* Intro copy */}
+        <p className="text-lg md:text-xl max-w-3xl mx-auto leading-relaxed">
+          Work with <strong>BuzzBoost Digital</strong>, on-demand web development experts in
+          sustainable design and performance optimization. Let’s achieve
+          your low-carbon goals and help contribute to a greener web.
+        </p>
+
+        {/* Logo Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mt-8">
+          {partners.map(({ src, alt }, i) => (
+            <div
+              key={i}
+              className="
+                bg-white
+                dark:bg-slate-800
+                border border-gray-200 dark:border-slate-700
+                p-4 rounded-xl
+                flex items-center justify-center
+                shadow-md hover:shadow-xl
+                transition-all duration-200
+              "
+            >
+              <img
+                src={src}
+                alt={alt}
+                className={`
+                  ${i === 0 ? "max-h-10" : "max-h-12"} w-auto
+                  transition-filter duration-300
+                  dark:brightness-0 dark:invert
+                `}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Work-with-us CTA */}
+        <div className="mt-12 space-y-4">
+          <h3 className="text-2xl font-semibold">
+            Want to work with us? Let’s make it happen!
+          </h3>
+          <a
+            href="/services"
             className="
-              w-36 h-20 
-              flex items-center justify-center 
-              rounded-md shadow-md 
-              bg-slate-100 dark:bg-slate-800 
-              text-slate-700 dark:text-slate-300 
-              font-medium text-sm 
-              transition-colors duration-300
+              inline-block
+              bg-[#00c471] hover:bg-green-400
+              text-white font-semibold
+              px-8 py-4 rounded-full
+              transition-shadow shadow-md
             "
           >
-            {brand}
-          </div>
-        ))}
+            Our services
+          </a>
+        </div>
       </div>
-
-      {/* CTA Back to Form */}
-      <div>
-        <a
-          href="#input-form"
-          className="
-            inline-block 
-            bg-green-600 hover:bg-green-500 
-            text-white font-semibold 
-            px-6 py-3 rounded-md 
-            transition
-          "
-        >
-          Run Your Own Check
-        </a>
-      </div>
-
-      {/* Quote / Signature */}
-      <blockquote className="italic text-base max-w-xl mx-auto text-slate-600 dark:text-slate-400">
-        "The web should serve people and the planet. Let’s code a cleaner future."
-      </blockquote>
-    </div>
-  </section>
-);
-
-export default ImpactSection;
-
+    </section>
+  );
+}

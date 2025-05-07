@@ -1,144 +1,126 @@
+// src/pages/ApiAccess.jsx
 import React from "react";
 
 export default function ApiAccess() {
   return (
     <section
+      id="api-access"
       className="
-        bg-white dark:bg-[#020f1e]
+        bg-white dark:bg-slate-950
         text-slate-900 dark:text-white
-        py-16 px-4 min-h-screen
-        transition-colors duration-300
+        min-h-screen py-16 px-4 md:px-8
       "
     >
-      <div className="max-w-3xl mx-auto space-y-6">
-        <h1 className="text-3xl md:text-4xl font-bold mb-6 text-green-600 dark:text-green-400">
-          Website Carbon API
+      <div className="max-w-3xl mx-auto space-y-8">
+        <h1 className="text-3xl md:text-4xl font-bold text-greenbuzz dark:text-greenbuzz-light">
+          GreenTrace Carbon API
         </h1>
-        <p className="text-slate-700 dark:text-slate-300">
-          Our open API allows you to integrate website carbon calculations into your own tools and workflows.
+        <p className="text-lg text-slate-700 dark:text-slate-300">
+          Integrate our open API to measure and track the carbon footprint of any website or web app.
         </p>
 
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-8">
-          Non-commercial use
-        </h2>
-        <p className="text-slate-600 dark:text-slate-400">
-          Free access is granted to registered non-profits, charities, and verified academics. You may be asked to verify your status via an institutional or official email address.
-        </p>
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+              Free Non-Commercial Access
+            </h2>
+            <p className="mt-2 text-slate-700 dark:text-slate-300">
+              Available at no cost for registered non-profits, charities, and academic researchers. You’ll verify your status via an institutional email address.
+            </p>
+          </div>
 
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-8">
-          Commercial use
-        </h2>
-        <p className="text-slate-600 dark:text-slate-400">
-          For businesses or any other commercial purpose, a formal request is required. Please use the form below to request access and share a brief description of your use case.
-        </p>
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+              Commercial Access
+            </h2>
+            <p className="mt-2 text-slate-700 dark:text-slate-300">
+              For businesses and commercial projects, request a paid plan tailored to your usage. Fill out the form below with your use case details.
+            </p>
+          </div>
+        </div>
 
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-white mt-8 mb-4">
-          API Access Request Form
-        </h2>
-
-        <form className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
+        <form className="space-y-6 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <input
               type="text"
+              name="firstName"
               placeholder="First name"
-              className="
-                flex-1 p-3 rounded-md
-                bg-white dark:bg-slate-800
-                border border-slate-300 dark:border-slate-600
-                text-slate-900 dark:text-white
-                transition-colors duration-200
-              "
+              className="w-full p-3 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-greenbuzz transition"
               required
             />
             <input
               type="text"
+              name="lastName"
               placeholder="Last name"
-              className="
-                flex-1 p-3 rounded-md
-                bg-white dark:bg-slate-800
-                border border-slate-300 dark:border-slate-600
-                text-slate-900 dark:text-white
-                transition-colors duration-200
-              "
+              className="w-full p-3 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-greenbuzz transition"
               required
             />
           </div>
-
           <input
             type="email"
+            name="email"
             placeholder="Email address"
-            className="
-              w-full p-3 rounded-md
-              bg-white dark:bg-slate-800
-              border border-slate-300 dark:border-slate-600
-              text-slate-900 dark:text-white
-              transition-colors duration-200
-            "
+            className="w-full p-3 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-greenbuzz transition"
             required
           />
-
           <input
             type="text"
-            placeholder="Organisation (optional)"
-            className="
-              w-full p-3 rounded-md
-              bg-white dark:bg-slate-800
-              border border-slate-300 dark:border-slate-600
-              text-slate-900 dark:text-white
-              transition-colors duration-200
-            "
+            name="organization"
+            placeholder="Organization (optional)"
+            className="w-full p-3 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white transition"
           />
-
           <input
-            type="text"
-            placeholder="Estimated number of tests per month"
-            className="
-              w-full p-3 rounded-md
-              bg-white dark:bg-slate-800
-              border border-slate-300 dark:border-slate-600
-              text-slate-900 dark:text-white
-              transition-colors duration-200
-            "
+            type="number"
+            name="testsPerMonth"
+            placeholder="Estimated tests per month"
+            className="w-full p-3 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-greenbuzz transition"
           />
 
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <label className="text-slate-900 dark:text-white">Access type:</label>
+          <fieldset className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <legend className="sr-only">Access type</legend>
             <label className="flex items-center gap-2">
-              <input type="radio" name="access" value="non-commercial" required />
-              <span className="text-slate-700 dark:text-slate-300">Non-commercial</span>
+              <input
+                type="radio"
+                name="accessType"
+                value="nonCommercial"
+                required
+                className="focus:ring-greenbuzz text-greenbuzz"
+              />
+              <span className="text-slate-900 dark:text-white">Non-Commercial</span>
             </label>
             <label className="flex items-center gap-2">
-              <input type="radio" name="access" value="commercial" required />
-              <span className="text-slate-700 dark:text-slate-300">Commercial</span>
+              <input
+                type="radio"
+                name="accessType"
+                value="commercial"
+                required
+                className="focus:ring-greenbuzz text-greenbuzz"
+              />
+              <span className="text-slate-900 dark:text-white">Commercial</span>
             </label>
-          </div>
+          </fieldset>
 
           <textarea
-            placeholder="Message (optional) — tell us about your project or use case."
-            className="
-              w-full p-3 rounded-md
-              bg-white dark:bg-slate-800
-              border border-slate-300 dark:border-slate-600
-              text-slate-900 dark:text-white
-              transition-colors duration-200
-            "
+            name="message"
+            placeholder="Tell us about your project (optional)"
             rows={4}
+            className="w-full p-3 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white transition focus:outline-none focus:ring-2 focus:ring-greenbuzz"
           />
 
-          <label className="flex items-center gap-2">
-            <input type="checkbox" required />
-            <span className="text-slate-700 dark:text-slate-300 text-sm">
-              I agree to the Attribution-NonCommercial 4.0 International (CC BY-NC 4.0) license.
-            </span>
-          </label>
+          {/* Terms of Service note */}
+          <p className="text-sm text-slate-700 dark:text-slate-300">
+            By submitting this form, you agree to our{' '}
+            <a
+              href="/terms"
+              className="text-greenbuzz hover:text-greenbuzz-light transition-colors duration-200"
+            >
+              Terms of Service
+            </a>.
+          </p>
 
           <button
             type="submit"
-            className="
-              bg-green-600 hover:bg-green-500 text-white
-              font-semibold py-3 px-6 rounded-md
-              transition-colors duration-200
-            "
+            className="w-full bg-greenbuzz hover:bg-greenbuzz-light text-white font-semibold py-3 rounded-full transition"
           >
             Request Access
           </button>

@@ -1,5 +1,5 @@
 import React from 'react';
-import WorldImage from '../assets/world.png'; // ensure the path/filename matches
+import WorldImage from '../assets/world.png';
 
 export default function Methodology() {
   return (
@@ -11,7 +11,7 @@ export default function Methodology() {
         {/* Text Content */}
         <div className="space-y-8">
           <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white">
-            How <span className="text-green-500">GreenTrace</span> Works
+            How <span className="text-greenbuzz">GreenTrace</span> Works
           </h2>
           <p className="text-lg text-slate-700 dark:text-slate-300 max-w-prose">
             Follow these simple steps to accurately measure and reduce your website’s carbon footprint:
@@ -24,7 +24,7 @@ export default function Methodology() {
           </ol>
           <a
             href="#input-form"
-            className="inline-block mt-4 px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-full shadow-md transition-colors duration-200 text-base"
+            className="inline-block mt-4 px-6 py-3 bg-greenbuzz hover:bg-greenbuzz-light text-white font-semibold rounded-full transition-colors duration-200 text-base"
           >
             Run Your CO₂ Check
           </a>
@@ -34,12 +34,12 @@ export default function Methodology() {
         <div className="relative flex justify-center md:justify-end">
           {/* Subtle green glow behind image */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-72 h-72 bg-[radial-gradient(ellipse_at_center,rgba(34,197,94,0.15),transparent_70%)] blur-3xl" />
+            <div className="w-72 h-72 bg-glow-green blur-3xl" />
           </div>
           <img
             src={WorldImage}
             alt="Workflow: URL → CO₂ rating → optimization tips"
-            className="relative w-full max-w-md h-auto rounded-2xl shadow-xl"
+            className="relative w-full max-w-md h-auto"
           />
         </div>
       </div>

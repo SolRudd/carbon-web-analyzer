@@ -8,6 +8,8 @@ import HowItWorks from "./pages/HowItWorks";
 import Faq from "./pages/Faq";
 import ApiAccess from "./pages/ApiAccess";
 import Badge from "./pages/Badge";
+// ← add this import:
+import ResultPage from "./pages/ResultPage";
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
             <Route path="/faq" element={<Faq />} />
             <Route path="/api-access" element={<ApiAccess />} />
             <Route path="/badge" element={<Badge />} />
+            {/* ← add this Route: */}
+            <Route path="/result/:slug" element={<ResultPage />} />
           </Routes>
         </main>
         <Footer />
@@ -31,4 +35,3 @@ function App() {
 }
 
 export default App;
-

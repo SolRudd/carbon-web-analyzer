@@ -1,99 +1,189 @@
-const express = require("express");
-const cors = require("cors");
-const axios = require("axios");
+// backend/index.js
+const express   = require("express");
+const cors      = require("cors");
+const axios     = require("axios");
 const puppeteer = require("puppeteer");
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 5050;
 
-// ✅ Middleware
-app.use(cors({
-  origin: "http://localhost:5173",
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type"],
-}));
+app.use(cors());
 app.use(express.json());
 
-// ✅ Green Web Foundation check
+// ——— Helpers ———
+
+// 1) Green hosting check
 async function isGreenHosted(domain) {
   try {
-    const res = await axios.get(`https://api.thegreenwebfoundation.org/greencheck/${domain}`);
-    return res.data.green; // true or false
-  } catch (err) {
-    console.error("Failed to fetch green host status:", err.message);
-    return false; // fallback if API fails
-  }
-}
-
-// ✅ Puppeteer-based page size calculation
-async function getPageSizeInMB(url) {
-  try {
-    const browser = await puppeteer.launch({ headless: "new" });
-    const page = await browser.newPage();
-
-    await page.goto(url, { waitUntil: "networkidle2" });
-    const performance = JSON.parse(
-      await page.evaluate(() => JSON.stringify(window.performance.getEntries()))
+    const { data } = await axios.get(
+      `https://api.thegreenwebfoundation.org/greencheck/${domain}`
     );
-
-    await browser.close();
-
-    const totalBytes = performance.reduce((sum, item) => sum + (item.transferSize || 0), 0);
-    return totalBytes / (1024 * 1024); // Convert to MB
-  } catch (error) {
-    console.error("Puppeteer error:", error.message);
-    return 2; // fallback to default if it fails
+    return data.green;
+  } catch {
+    return false;
   }
 }
 
-// ✅ Carbon rating logic
-function getCarbonGrade(grams) {
-  if (grams <= 0.2) return "A+";
-  if (grams <= 0.4) return "A";
-  if (grams <= 0.8) return "B";
-  if (grams <= 1.5) return "C";
-  if (grams <= 2.5) return "D";
+// 2) Page-size (MB)
+async function getPageSizeInMB(url) {
+  let browser;
+  try {
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox","--disable-setuid-sandbox"],
+    });
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
+    const totalBytes = await page.evaluate(() => {
+      const nav = performance.getEntriesByType("navigation")[0];
+      const res = performance.getEntriesByType("resource");
+      const navBytes = nav?.encodedBodySize ?? nav?.transferSize ?? 0;
+      const resBytes = res.reduce((sum, r) =>
+        sum + (r.encodedBodySize ?? r.transferSize ?? 0)
+      , 0);
+      return navBytes + resBytes;
+    });
+    return totalBytes / (1024 * 1024);
+  } catch {
+    return 0;
+  } finally {
+    if (browser) await browser.close();
+  }
+}
+
+// 3) Grade thresholds (g CO₂/view)
+const THRESHOLDS = {
+  "A+": 0.095,
+  A:   0.186,
+  B:   0.341,
+  C:   0.493,
+  D:   0.656,
+  E:   0.846,
+};
+
+// 4) Map grams → letter grade
+function getCarbonGrade(g) {
+  if (g <= THRESHOLDS["A+"]) return "A+";
+  if (g <= THRESHOLDS.A)   return "A";
+  if (g <= THRESHOLDS.B)   return "B";
+  if (g <= THRESHOLDS.C)   return "C";
+  if (g <= THRESHOLDS.D)   return "D";
+  if (g <= THRESHOLDS.E)   return "E";
   return "F";
 }
 
-// ✅ Base route
-app.get("/", (req, res) => {
-  res.send("GreenTrace API is live ✅");
-});
+// 5) Compute percentile vs. global E-grade threshold
+function getPercentile(actualGrams) {
+  const avg = THRESHOLDS.E;
+  // cleaner than X% = (avg - g) / avg * 100, clamped [0–100]
+  const raw = Math.round(((avg - actualGrams) / avg) * 100);
+  return Math.max(0, Math.min(100, raw));
+}
 
-// ✅ Main POST route
-app.post("/api/check-carbon", async (req, res) => {
-  const { url } = req.body;
+// ——— In-memory cache ———
+const resultsStore = new Map();
 
-  if (!url) return res.status(400).json({ error: "No URL provided" });
+// ——— LIVE TRACE — no slug ———
+app.get("/api/trace", async (req, res) => {
+  const site = req.query.site;
+  if (!site) return res.status(400).json({ error: "Missing site query param" });
 
   try {
-    const domain = new URL(url).hostname;
-    const greenHost = await isGreenHosted(domain);
-    const pageSizeInMB = await getPageSizeInMB(url);
+    const { hostname } = new URL(site);
+    const [greenHost, sizeMB] = await Promise.all([
+      isGreenHosted(hostname),
+      getPageSizeInMB(site),
+    ]);
 
-    // CO2 calculation logic
-    const energyPerGB = 0.81;
-    const carbonIntensity = 442;
-    const sizeInGB = pageSizeInMB / 1024;
-    const energyUsed = sizeInGB * energyPerGB;
-    const carbonEstimate = energyUsed * carbonIntensity;
+    const sizeGB       = sizeMB / 1024;
+    const energyPerGB  = 0.81;    // kWh/GB
+    const carbonFactor = 442;     // gCO₂/kWh
+    const baselineGrams = sizeGB * energyPerGB * carbonFactor;
 
-    const grade = getCarbonGrade(carbonEstimate);
+    // 9% off for green hosting
+    const reductionPct = 0.09;
+    const actualGrams   = greenHost
+      ? baselineGrams * (1 - reductionPct)
+      : baselineGrams;
 
-    res.json({
-      url,
-      carbonEstimate: `${carbonEstimate.toFixed(2)}g CO₂ per view`,
+    const grade      = getCarbonGrade(actualGrams);
+    const percentile = getPercentile(actualGrams);
+
+    return res.json({
+      url:            site,
       greenHost,
+      sizeMB:         +sizeMB.toFixed(2),
+      baselineGrams:  +baselineGrams.toFixed(2),
+      carbonEstimate: +actualGrams.toFixed(2),
+      reductionPct,
       grade,
+      percentile,
+      timestamp:      Date.now(),
     });
-  } catch (error) {
-    console.error("Carbon check failed:", error);
-    res.status(500).json({ error: "Something went wrong!" });
+  } catch (err) {
+    console.error("TRACE ERROR:", err);
+    return res.status(500).json({ error: err.message });
   }
 });
 
-// ✅ Start server
+// ——— CACHED SLUG FLOW — POST + GET/:slug ———
+app.post("/api/check-carbon", async (req, res) => {
+  const { url } = req.body;
+  if (!url) return res.status(400).json({ error: "URL required" });
+
+  try {
+    const parsed = new URL(url);
+    const slug   = (
+      parsed.hostname +
+      parsed.pathname.replace(/\/$/, "")
+    )
+      .replace(/[^a-z0-9]/gi, "-")
+      .toLowerCase();
+
+    const [greenHost, sizeMB] = await Promise.all([
+      isGreenHosted(parsed.hostname),
+      getPageSizeInMB(url),
+    ]);
+
+    const sizeGB       = sizeMB / 1024;
+    const energyPerGB  = 0.81;
+    const carbonFactor = 442;
+    const baselineGrams = sizeGB * energyPerGB * carbonFactor;
+    const reductionPct = 0.09;
+    const actualGrams   = greenHost
+      ? baselineGrams * (1 - reductionPct)
+      : baselineGrams;
+
+    const grade      = getCarbonGrade(actualGrams);
+    const percentile = getPercentile(actualGrams);
+
+    const record = {
+      slug,
+      url,
+      greenHost,
+      sizeMB:         +sizeMB.toFixed(2),
+      baselineGrams:  +baselineGrams.toFixed(2),
+      carbonEstimate: +actualGrams.toFixed(2),
+      reductionPct,
+      grade,
+      percentile,
+      timestamp:      Date.now(),
+    };
+
+    resultsStore.set(slug, record);
+    return res.json(record);
+  } catch (err) {
+    console.error("CHECK‐CARBON ERROR:", err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/result/:slug", (req, res) => {
+  const rec = resultsStore.get(req.params.slug);
+  if (!rec) return res.status(404).json({ error: "Not found" });
+  return res.json(rec);
+});
+
 app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`🚀 API running on http://localhost:${PORT}`);
 });
