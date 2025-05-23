@@ -53,6 +53,7 @@ export default function Faq() {
       }
     >
       <div className="max-w-4xl mx-auto">
+        {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-extrabold text-greenbuzz dark:text-greenbuzz-light">
             Got Questions? We've Got Answers!
@@ -73,7 +74,7 @@ export default function Faq() {
               }
             >
               <div className="flex items-start space-x-3">
-                <span className="text-2xl">{item.emoji}</span>
+                <span className="text-2xl" aria-hidden="true">{item.emoji}</span>
                 <div>
                   <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
                     {item.question}
@@ -87,13 +88,27 @@ export default function Faq() {
           ))}
         </div>
 
-        <div className="text-center mt-12">
+        {/* CTAs */}
+        <div className="flex flex-col sm:flex-row justify-center gap-4 mt-12">
+          <Link
+            to="/badge"
+            className="px-6 py-3 bg-greenbuzz hover:bg-greenbuzz-light text-white font-semibold rounded-full transition-transform hover:scale-105"
+          >
+            Embed Verification Badge
+          </Link>
+          <Link
+            to="/api-access"
+            className="px-6 py-3 border-2 border-greenbuzz text-greenbuzz hover:bg-greenbuzz hover:text-white rounded-full transition-colors"
+          >
+            View API Access
+          </Link>
+        </div>
+
+        {/* Secondary back link */}
+        <div className="text-center mt-8">
           <Link
             to="/"
-            className={
-              "inline-block bg-greenbuzz hover:bg-greenbuzz-light text-white " +
-              "font-semibold py-3 px-6 rounded-full transition-colors duration-200"
-            }
+            className="text-slate-600 dark:text-slate-400 underline hover:text-slate-800 dark:hover:text-white"
           >
             ← Back to Homepage
           </Link>

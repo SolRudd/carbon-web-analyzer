@@ -2,17 +2,32 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- index.html -->
+
+    <!-- 1) Immediately apply the saved theme -->
+    <script>
+      (function () {
+        const theme = localStorage.getItem("theme");
+        if (theme === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      })();
+    </script>
+
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/src/index.css" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+    <title>GreenTrace</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <!-- greentrace badge loader -->
+    <script src="/greentrace-badge.js" defer></script>
   </body>
 </html>

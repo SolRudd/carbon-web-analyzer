@@ -20,7 +20,7 @@ export default function ImpactSection() {
         w-full
         bg-white dark:bg-slate-950
         text-slate-900 dark:text-white
-        py-20 px-4 md:px-8
+        py-12 px-4 md:px-8
         transition-colors duration-300
       "
     >
@@ -71,7 +71,7 @@ export default function ImpactSection() {
             Want to work with us? Let’s make it happen!
           </h3>
           <a
-            href="/services"
+            href="https://buzzboost.co.uk"
             className="
               inline-block
               bg-[#00c471] hover:bg-green-400
@@ -80,7 +80,7 @@ export default function ImpactSection() {
               transition-shadow shadow-md
             "
           >
-            Our services
+            Check Our Agency
           </a>
         </div>
       </div>
