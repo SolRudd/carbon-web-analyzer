@@ -1,5 +1,4 @@
-// backend/index.js
-require("dotenv").config();               // 1) Load .env
+require("dotenv").config();
 
 const path       = require("path");
 const express    = require("express");
@@ -7,34 +6,29 @@ const cors       = require("cors");
 const helmet     = require("helmet");
 const rateLimit  = require("express-rate-limit");
 const axios      = require("axios");
-const puppeteer  = require("puppeteer");
+const puppeteer  = require("puppeteer"); // ✅ Full version
 const Database   = require("better-sqlite3");
 
 const app        = express();
+app.set("trust proxy", 1); // ✅ Enables accurate rate limiting behind proxy (e.g., DigitalOcean)
+
 const PORT       = process.env.PORT || 5050;
-const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
+const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 
-// ─── Security & CORS ─────────────────────────────────────────────────────────
 app.use(helmet());
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN.split(","), // from your .env
-    optionsSuccessStatus: 200,
-  })
-);
-app.use(
-  rateLimit({
-    windowMs: 60_000, // 1 minute
-    max: 30,          // limit each IP
-    message: { error: "Too many requests, slow down." },
-  })
-);
+app.use(cors({
+  origin: process.env.CORS_ORIGIN.split(","),
+  optionsSuccessStatus: 200
+}));
+app.use(rateLimit({
+  windowMs: 60_000,
+  max: 30,
+  message: { error: "Too many requests, slow down." }
+}));
 
-// ─── Body + Static ────────────────────────────────────────────────────────────
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public"))); // serves greentrace-badge.js, etc.
+app.use(express.static(path.join(__dirname, "public"))); // ✅ Serves badge JS & SVG assets
 
-// ─── SQLite setup ────────────────────────────────────────────────────────────
 const db = new Database(path.join(__dirname, "results.db"));
 db.exec(`
   CREATE TABLE IF NOT EXISTS results (
@@ -50,11 +44,10 @@ db.exec(`
   );
 `);
 
-// ─── Helpers & Constants ─────────────────────────────────────────────────────
-const ENERGY_PER_GB        = 0.81;
-const CARBON_FACTOR        = 442;
+const ENERGY_PER_GB = 0.81;
+const CARBON_FACTOR = 442;
 const GREEN_HOST_REDUCTION = 0.09;
-const THRESHOLDS           = {
+const THRESHOLDS = {
   "A+": 0.095,
   A:    0.186,
   B:    0.341,
@@ -70,7 +63,6 @@ async function retry(fn, retries = 3, delay = 1000) {
       return await fn();
     } catch (err) {
       lastErr = err;
-      console.warn(`Attempt ${i} failed: ${err.message}`);
       if (i < retries) await new Promise(r => setTimeout(r, delay * i));
     }
   }
@@ -79,9 +71,7 @@ async function retry(fn, retries = 3, delay = 1000) {
 
 async function isGreenHosted(domain) {
   try {
-    const { data } = await axios.get(
-      `https://api.thegreenwebfoundation.org/greencheck/${domain}`
-    );
+    const { data } = await axios.get(`https://api.thegreenwebfoundation.org/greencheck/${domain}`);
     return !!data.green;
   } catch {
     return false;
@@ -93,7 +83,7 @@ async function getPageSizeInMB(url) {
   try {
     browser = await puppeteer.launch({
       headless: true,
-      args: ["--no-sandbox","--disable-setuid-sandbox"],
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
       timeout: 60000
     });
     const page = await browser.newPage();
@@ -115,7 +105,7 @@ async function getPageSizeInMB(url) {
 
 function calculateCarbon(sizeMB, greenHost) {
   const sizeGB = sizeMB / 1024;
-  const base   = sizeGB * ENERGY_PER_GB * CARBON_FACTOR;
+  const base = sizeGB * ENERGY_PER_GB * CARBON_FACTOR;
   return greenHost ? base * (1 - GREEN_HOST_REDUCTION) : base;
 }
 
@@ -131,17 +121,15 @@ function getCarbonGrade(g) {
 
 function getPercentile(g) {
   const avg = THRESHOLDS.E;
-  return Math.max(0, Math.min(100,
-    Math.round(((avg - Math.min(g, avg)) / avg) * 100)
-  ));
+  return Math.max(0, Math.min(100, Math.round(((avg - Math.min(g, avg)) / avg) * 100)));
 }
 
-// ─── Routes ──────────────────────────────────────────────────────────────────
+// ────── API ROUTES ───────────────────────────────────────────────────────────
 
-// 1) LIVE TRACE
 app.get("/api/trace", async (req, res) => {
   const site = req.query.site;
   if (!site) return res.status(400).json({ error: "Missing site query." });
+
   try { new URL(site); }
   catch { return res.status(400).json({ error: "Invalid site URL." }); }
 
@@ -167,24 +155,21 @@ app.get("/api/trace", async (req, res) => {
   }
 });
 
-// 2) CACHED CHECK (7-day guard)
 app.post("/api/check-carbon", async (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: "URL required." });
+
   try { new URL(url); }
   catch { return res.status(400).json({ error: "Invalid URL." }); }
 
   const parsed = new URL(url);
-  const slug   = (parsed.hostname + parsed.pathname.replace(/\/$/, ""))
-    .replace(/[^a-z0-9]/gi, "-").toLowerCase();
+  const slug = (parsed.hostname + parsed.pathname.replace(/\/$/, "")).replace(/[^a-z0-9]/gi, "-").toLowerCase();
 
-  // a) Check existing
   const existing = db.prepare("SELECT * FROM results WHERE slug = ?").get(slug);
   if (existing && (Date.now() - existing.timestamp) < SEVEN_DAYS) {
     return res.json({ ...existing, cached: true });
   }
 
-  // b) Recalculate & upsert
   try {
     const [greenHost, sizeMB] = await Promise.all([
       retry(() => isGreenHosted(parsed.hostname)),
@@ -227,7 +212,6 @@ app.post("/api/check-carbon", async (req, res) => {
   }
 });
 
-// 3) GET BY SLUG
 app.get("/api/results/:slug", (req, res) => {
   try {
     const row = db.prepare("SELECT * FROM results WHERE slug = ?").get(req.params.slug);
@@ -239,17 +223,17 @@ app.get("/api/results/:slug", (req, res) => {
   }
 });
 
-// 4) BADGE SVG
 app.get("/badge.svg", async (req, res) => {
   const { url, theme = "light" } = req.query;
   if (!url) return res.status(400).send("Missing url");
   let record;
   try { record = db.prepare("SELECT * FROM results WHERE url = ?").get(url); }
   catch {}
+
   if (!record) {
     try {
       const hostname = new URL(url).hostname;
-      const [gh, sz]  = await Promise.all([
+      const [gh, sz] = await Promise.all([
         retry(() => isGreenHosted(hostname)),
         retry(() => getPageSizeInMB(url))
       ]);
@@ -257,8 +241,8 @@ app.get("/badge.svg", async (req, res) => {
       record = {
         url,
         carbonEstimate: ce,
-        grade:          getCarbonGrade(ce),
-        percentile:     getPercentile(ce)
+        grade: getCarbonGrade(ce),
+        percentile: getPercentile(ce)
       };
     } catch {
       return res.status(500).send("Error generating badge");
@@ -272,8 +256,8 @@ app.get("/badge.svg", async (req, res) => {
     F:   "#E74C3C"
   };
   const barColor = colors[record.grade] || "#888";
-  const bg       = theme === "dark" ? "#1F2937" : "#FFF";
-  const fg       = theme === "dark" ? "#FFF" : "#111827";
+  const bg = theme === "dark" ? "#1F2937" : "#FFF";
+  const fg = theme === "dark" ? "#FFF" : "#111827";
 
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="220" height="40">
@@ -287,18 +271,9 @@ app.get("/badge.svg", async (req, res) => {
   </text>
 </svg>`;
 
-  res
-    .set("Content-Type", "image/svg+xml")
-    .set("Cache-Control", "public, max-age=604800")
-    .send(svg);
+  res.set("Content-Type", "image/svg+xml").set("Cache-Control", "public, max-age=604800").send(svg);
 });
 
-// 5) SPA fallback
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-// ─── Start server ───────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🚀 API & frontend served at http://localhost:${PORT}`);
+  console.log(`🚀 API ready at http://localhost:${PORT}`);
 });
