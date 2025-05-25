@@ -1,8 +1,8 @@
 ;(function () {
   const API_BASE =
     location.hostname.includes("localhost") || location.hostname.includes("127.")
-      ? "http://localhost:8080/api/trace?site="
-      : "https://api.greentracer.org/api/trace?site=";
+      ? "http://localhost:8080"
+      : "https://api.greentracer.org";
 
   const LOGO = "/GreenTraceLogo.svg";
 
@@ -10,7 +10,7 @@
     document.querySelectorAll(".greentrace-badge").forEach(el => {
       const page = el.dataset.url || window.location.href;
 
-      fetch(API_BASE + encodeURIComponent(page))
+      fetch(`${API_BASE}/api/trace?site=${encodeURIComponent(page)}`)
         .then(res => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return res.json();
