@@ -12,7 +12,7 @@ const Database   = require("better-sqlite3");
 const app        = express();
 app.set("trust proxy", 1); // ✅ Enables accurate rate limiting behind proxy (e.g., DigitalOcean)
 
-const PORT       = process.env.PORT || 5050;
+const PORT       = process.env.PORT || 8080;
 const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 
 app.use(helmet());
@@ -27,7 +27,7 @@ app.use(rateLimit({
 }));
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public"))); // ✅ Serves badge JS & SVG assets
+app.use(express.static(path.join(__dirname, "public")));
 
 const db = new Database(path.join(__dirname, "results.db"));
 db.exec(`
@@ -123,8 +123,6 @@ function getPercentile(g) {
   const avg = THRESHOLDS.E;
   return Math.max(0, Math.min(100, Math.round(((avg - Math.min(g, avg)) / avg) * 100)));
 }
-
-// ────── API ROUTES ───────────────────────────────────────────────────────────
 
 app.get("/api/trace", async (req, res) => {
   const site = req.query.site;
