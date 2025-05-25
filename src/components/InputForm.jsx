@@ -22,7 +22,7 @@ export default function InputForm() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/check-carbon", {
+      const res = await fetch("https://api.greentracer.org/api/check-carbon", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: site }),
@@ -93,5 +93,5 @@ export default function InputForm() {
         {loading && <LoadingOverlay />}
       </div>
     </section>
-);
+  );
 }
