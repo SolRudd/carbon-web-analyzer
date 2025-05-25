@@ -1,8 +1,8 @@
-;(function(){
-  // choose dev vs prod API
-  const API_BASE = window.location.hostname === 'localhost'
-    ? '/api/trace?site='
-    : 'https://www.greetracer.org/api/trace?site=';
+;(function () {
+  const API_BASE =
+    location.hostname.includes('localhost') || location.hostname.includes('127.')
+      ? 'http://localhost:8080/api/trace?site='
+      : 'https://api.greentracer.org/api/trace?site=';
 
   const LOGO = '/GreenTraceLogo.svg';
 
@@ -11,10 +11,13 @@
       const page = el.dataset.url || window.location.href;
 
       fetch(API_BASE + encodeURIComponent(page))
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
         .then(d => {
-          const co2 = d.carbonEstimate.toFixed(2);
-          const pct = d.percentile;
+          const co2 = d.carbonEstimate?.toFixed(2) || "–";
+          const pct = d.percentile ?? "–";
 
           el.innerHTML = `
             <div style="
@@ -48,7 +51,7 @@
         })
         .catch(err => {
           console.error('Greentrace badge error:', err);
-          el.textContent = 'Badge failed to load';
+          el.innerHTML = `<div style="color:#dc2626; font-size:12px;">Badge failed to load</div>`;
         });
     });
   }
