@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
- "start": "node index.js",
-  "dev": "NODE_ENV=development nodemon index.js",
-  "postinstall": "puppeteer install"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "postinstall": "puppeteer install"
   },
   "dependencies": {
     "axios": "^1.9.0",

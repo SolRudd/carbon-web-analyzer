@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: greentracer-backend
+    env: node
+    plan: free
+    branch: main
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: CORS_ORIGIN
+        value: https://www.greentracer.org
