@@ -10,7 +10,7 @@ const puppeteer  = require("puppeteer"); // ✅ Full version
 const Database   = require("better-sqlite3");
 
 const app        = express();
-app.set("trust proxy", 1); // ✅ Enables accurate rate limiting behind proxy (e.g., DigitalOcean)
+app.set("trust proxy", 1);
 
 const PORT       = process.env.PORT || 8080;
 const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;

@@ -2,7 +2,7 @@
  const API_BASE =
   location.hostname.includes("localhost") || location.hostname.includes("127.")
     ? "http://localhost:8080"
-    : "https://carbon-web-analyzer.onrender.com"; // fallback to render base
+    : "https://api.greentracer.org"; // fallback to render base
 
 
   const LOGO = "/GreenTraceLogo.svg";
