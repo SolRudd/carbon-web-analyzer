@@ -1,9 +1,8 @@
 ;(function () {
- const API_BASE =
-  location.hostname.includes("localhost") || location.hostname.includes("127.")
-    ? "http://localhost:8080"
-    : "https://api.greentracer.org"; // fallback to render base
-
+  const API_BASE =
+    location.hostname.includes("localhost") || location.hostname.includes("127.")
+      ? "http://localhost:8080"
+      : "https://api.greentracer.org"; // ✅ Corrected API base
 
   const LOGO = "/GreenTraceLogo.svg";
 
@@ -36,7 +35,7 @@
           `;
         })
         .catch(err => {
-          console.error("Greentrace badge error:", err);
+          console.error("GreenTrace badge error:", err);
           el.innerHTML = `<div style="color:#dc2626; font-size:12px;">Badge failed to load</div>`;
         });
     });
