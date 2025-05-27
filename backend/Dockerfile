@@ -1,17 +1,16 @@
 # ✅ Use official Puppeteer image WITH Chromium preinstalled
 FROM ghcr.io/puppeteer/puppeteer:latest
 
-# Set working directory
-WORKDIR /app
+# Set working directory and switch to pptruser (non-root)
+USER pptruser
+WORKDIR /home/pptruser/app
 
-# Copy only the package files first
-COPY package*.json ./
-
-# Install dependencies
+# Copy package files and install dependencies
+COPY --chown=pptruser:pptruser package*.json ./
 RUN npm install
 
-# Copy rest of the code
-COPY . .
+# Copy the rest of the code with correct ownership
+COPY --chown=pptruser:pptruser . .
 
 # Expose app port
 EXPOSE 8080
