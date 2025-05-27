@@ -6,7 +6,7 @@ const cors       = require("cors");
 const helmet     = require("helmet");
 const rateLimit  = require("express-rate-limit");
 const axios      = require("axios");
-const puppeteer  = require("puppeteer"); // ✅ Full version
+const puppeteer  = require("puppeteer");
 const Database   = require("better-sqlite3");
 
 const app        = express();
@@ -29,7 +29,6 @@ app.use(rateLimit({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// ✅ Health check for Render
 app.get("/healthz", (req, res) => {
   res.status(200).send("OK");
 });
@@ -88,7 +87,8 @@ async function getPageSizeInMB(url) {
   try {
     browser = await puppeteer.launch({
       headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome', // ✅ Fix for Render
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
       timeout: 60000
     });
     const page = await browser.newPage();
