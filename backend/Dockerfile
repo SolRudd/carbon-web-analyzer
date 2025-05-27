@@ -1,24 +1,20 @@
-# Use full Puppeteer image with Chrome pre-installed
+# ✅ Use official Puppeteer image WITH Chromium preinstalled
 FROM ghcr.io/puppeteer/puppeteer:latest
 
-# Set working dir
+# Set working directory
 WORKDIR /app
 
-# Set to root to install dependencies
-USER root
-
-# Copy package files and install dependencies
+# Copy only the package files first
 COPY package*.json ./
+
+# Install dependencies
 RUN npm install
 
-# Copy remaining backend code
+# Copy rest of the code
 COPY . .
 
-# Revert to the default non-root user for safety
-USER pptruser
-
-# Expose port 8080
+# Expose app port
 EXPOSE 8080
 
-# Start app
+# Start the app
 CMD ["node", "index.js"]
