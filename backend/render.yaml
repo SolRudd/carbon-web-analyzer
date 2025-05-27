@@ -1,13 +1,15 @@
 services:
   - type: web
     name: greentracer-backend
-    env: node
+    env: docker
     plan: free
+    region: frankfurt
     branch: main
-    buildCommand: npm install
-    startCommand: npm start
+    repo: https://github.com/SolRudd/carbon-web-analyzer
+    dockerfilePath: ./backend/Dockerfile
+    autoDeploy: true
     envVars:
       - key: PORT
         value: 8080
       - key: CORS_ORIGIN
-        value: https://www.greentracer.org
+        value: https://www.greentracer.org,https://greentracer.org
