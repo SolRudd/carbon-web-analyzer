@@ -3,9 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
-    "postinstall": "puppeteer install"
+    "start": "node index.js"
   },
   "dependencies": {
     "axios": "^1.9.0",
@@ -15,6 +13,7 @@
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.1.0",
-    "puppeteer": "^24.9.0"
+    "puppeteer": "^22.4.0"
   }
 }
+
