@@ -29,6 +29,11 @@ app.use(rateLimit({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+// ✅ Health check for Render
+app.get("/healthz", (req, res) => {
+  res.status(200).send("OK");
+});
+
 const db = new Database(path.join(__dirname, "results.db"));
 db.exec(`
   CREATE TABLE IF NOT EXISTS results (
