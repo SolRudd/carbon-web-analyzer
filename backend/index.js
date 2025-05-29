@@ -1,5 +1,3 @@
-// backend/index.js
-
 require("dotenv").config();
 const path = require("path");
 const express = require("express");
@@ -127,6 +125,37 @@ function getPercentile(g) {
   return Math.max(0, Math.min(100, Math.round(((avg - Math.min(g, avg)) / avg) * 100)));
 }
 
+// ✅ NEW: Handle POST from frontend form
+app.post("/api/check-carbon", async (req, res) => {
+  const site = req.body.url;
+  if (!site) return res.status(400).json({ error: "Missing URL." });
+
+  try {
+    const hostname = new URL(site).hostname;
+    const [greenHost, sizeMB] = await Promise.all([
+      retry(() => isGreenHosted(hostname)),
+      retry(() => getPageSizeInMB(site))
+    ]);
+    const ce = calculateCarbon(sizeMB, greenHost);
+    const grade = getCarbonGrade(ce);
+    const percentile = getPercentile(ce);
+
+    const slug = hostname.replace(/[^a-z0-9]/gi, "-").toLowerCase();
+    db.prepare(`
+      INSERT OR REPLACE INTO results (slug, url, greenHost, sizeMB, carbonEstimate, reductionPct, grade, percentile, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      slug, site, greenHost ? 1 : 0, sizeMB, ce, GREEN_HOST_REDUCTION, grade, percentile, Date.now()
+    );
+
+    res.json({ slug });
+  } catch (err) {
+    console.error("check-carbon error:", err.stack || err.message || err);
+    res.status(500).json({ error: "Carbon check failed." });
+  }
+});
+
+// Already existing route for the badge
 app.get("/api/trace", async (req, res) => {
   const site = req.query.site;
   if (!site) return res.status(400).json({ error: "Missing site query." });
