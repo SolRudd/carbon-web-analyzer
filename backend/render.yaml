@@ -10,6 +10,8 @@ services:
     autoDeploy: true
     envVars:
       - key: PORT
-        value: 8080
+        value: "8080"
       - key: CORS_ORIGIN
-        value: https://www.greentracer.org,https://greentracer.org
+        value: "https://www.greentracer.org,https://greentracer.org"
+      - key: PUPPETEER_EXECUTABLE_PATH
+        value: "/usr/bin/chromium"

@@ -1,24 +1,34 @@
-FROM node:20-slim
-
-# Install Chrome and dependencies
-RUN apt-get update && apt-get install -y \
-    wget gnupg \
-    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list \
-    && apt-get update \
-    && apt-get install -y \
-    google-chrome-stable \
-    fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-khmeros fonts-kacst fonts-freefont-ttf \
+# Stage 1: install deps + build modules
+FROM node:20-slim AS builder
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium \
+    ca-certificates \
+    fonts-liberation \
+    libgbm1 \
+    libnss3 \
     libxss1 \
-    --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
-
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
-
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
+RUN npm ci
 
+# Stage 2: runtime image
+FROM node:20-slim
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium \
+    ca-certificates \
+    fonts-liberation \
+    libgbm1 \
+    libnss3 \
+    libxss1 \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+COPY . .
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
+    PUPPETEER_SKIP_DOWNLOAD=true \
+    NODE_ENV=production \
+    PORT=8080
 EXPOSE 8080
 CMD ["node", "index.js"]
