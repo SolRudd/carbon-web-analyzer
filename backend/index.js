@@ -1,13 +1,14 @@
+// backend/index.js
+
 require("dotenv").config();
-const path = require("path");
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
-const axios = require("axios");
-const puppeteer = require("puppeteer-core");
-const chromium = require("@sparticuz/chromium");
-const Database = require("better-sqlite3");
+const path        = require("path");
+const express     = require("express");
+const cors        = require("cors");
+const helmet      = require("helmet");
+const rateLimit   = require("express-rate-limit");
+const axios       = require("axios");
+const puppeteer   = require("puppeteer");
+const Database    = require("better-sqlite3");
 
 const app = express();
 app.set("trust proxy", 1);
@@ -16,10 +17,17 @@ const PORT = process.env.PORT || 8080;
 
 app.use(helmet());
 app.use(
-  cors({ origin: process.env.CORS_ORIGIN.split(","), optionsSuccessStatus: 200 })
+  cors({
+    origin: process.env.CORS_ORIGIN.split(","),
+    optionsSuccessStatus: 200,
+  })
 );
 app.use(
-  rateLimit({ windowMs: 60_000, max: 30, message: { error: "Too many requests, slow down." } })
+  rateLimit({
+    windowMs: 60_000,
+    max: 30,
+    message: { error: "Too many requests, slow down." },
+  })
 );
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -28,8 +36,7 @@ app.get("/healthz", (req, res) => res.status(200).send("OK"));
 
 // SQLite DB
 const db = new Database(path.join(__dirname, "results.db"));
-db.exec(
-  `
+db.exec(`
   CREATE TABLE IF NOT EXISTS results (
     slug TEXT PRIMARY KEY,
     url TEXT NOT NULL,
@@ -41,28 +48,34 @@ db.exec(
     percentile INTEGER NOT NULL,
     timestamp INTEGER NOT NULL
   );
-`
-);
+`);
 
-// Constants
-const ENERGY_PER_GB = 0.81;
-const CARBON_FACTOR = 442;
+// Carbon calculation constants
+const ENERGY_PER_GB        = 0.81;
+const CARBON_FACTOR        = 442;
 const GREEN_HOST_REDUCTION = 0.09;
-const THRESHOLDS = { "A+": 0.095, A: 0.186, B: 0.341, C: 0.493, D: 0.656, E: 0.846 };
+const THRESHOLDS = {
+  "A+": 0.095,
+  A:    0.186,
+  B:    0.341,
+  C:    0.493,
+  D:    0.656,
+  E:    0.846,
+};
 
 function calculateCarbon(sizeMB, greenHost) {
   const sizeGB = sizeMB / 1024;
-  const base = sizeGB * ENERGY_PER_GB * CARBON_FACTOR;
+  const base   = sizeGB * ENERGY_PER_GB * CARBON_FACTOR;
   return greenHost ? base * (1 - GREEN_HOST_REDUCTION) : base;
 }
 
 function getCarbonGrade(g) {
   if (g <= THRESHOLDS["A+"]) return "A+";
-  if (g <= THRESHOLDS.A) return "A";
-  if (g <= THRESHOLDS.B) return "B";
-  if (g <= THRESHOLDS.C) return "C";
-  if (g <= THRESHOLDS.D) return "D";
-  if (g <= THRESHOLDS.E) return "E";
+  if (g <= THRESHOLDS.A)    return "A";
+  if (g <= THRESHOLDS.B)    return "B";
+  if (g <= THRESHOLDS.C)    return "C";
+  if (g <= THRESHOLDS.D)    return "D";
+  if (g <= THRESHOLDS.E)    return "E";
   return "F";
 }
 
@@ -106,10 +119,6 @@ async function getPageSizeInMB(url) {
   try {
     browser = await puppeteer.launch({
       headless: true,
-      executablePath:
-        process.env.PUPPETEER_EXECUTABLE_PATH ||
-        process.env.CHROMIUM_PATH ||
-        (await chromium.executablePath()),
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
@@ -120,8 +129,13 @@ async function getPageSizeInMB(url) {
       ignoreHTTPSErrors: true,
       timeout: 60000,
     });
+
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: "networkidle2", timeout: 45000 });
+    await page.goto(url, {
+      waitUntil: "networkidle2",
+      timeout:     45000,
+    });
+
     const totalBytes = await page.evaluate(() => {
       const nav = performance.getEntriesByType("navigation")[0] || {};
       const res = performance.getEntriesByType("resource") || [];
@@ -132,16 +146,58 @@ async function getPageSizeInMB(url) {
       );
       return navB + resB;
     });
+
     return totalBytes / (1024 * 1024);
   } finally {
     if (browser) await browser.close();
   }
 }
 
+// POST /api/check-carbon (stores a slug in SQLite)
+app.post("/api/check-carbon", async (req, res) => {
+  const site = req.body.url;
+  if (!site) return res.status(400).json({ error: "Missing URL." });
+
+  try {
+    const hostname = new URL(site).hostname;
+    const [greenHost, sizeMB] = await Promise.all([
+      retry(() => isGreenHosted(hostname)),
+      retry(() => getPageSizeInMB(site)),
+    ]);
+
+    const ce         = calculateCarbon(sizeMB, greenHost);
+    const grade      = getCarbonGrade(ce);
+    const percentile = getPercentile(ce);
+    const slug       = hostname.replace(/[^a-z0-9]/gi, "-").toLowerCase();
+
+    db.prepare(`
+      INSERT OR REPLACE INTO results
+      (slug, url, greenHost, sizeMB, carbonEstimate, reductionPct, grade, percentile, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      slug,
+      site,
+      greenHost ? 1 : 0,
+      sizeMB,
+      ce,
+      GREEN_HOST_REDUCTION,
+      grade,
+      percentile,
+      Date.now()
+    );
+
+    res.json({ slug });
+  } catch (err) {
+    console.error("check-carbon error:", err);
+    res.status(500).json({ error: "Carbon check failed.", details: err.message });
+  }
+});
+
+// GET /api/trace (run live trace)
 app.get("/api/trace", async (req, res) => {
   const site = req.query.site;
-  if (!site)
-    return res.status(400).json({ error: "Missing site query." });
+  if (!site) return res.status(400).json({ error: "Missing site query." });
+
   try {
     new URL(site);
   } catch {
@@ -155,6 +211,7 @@ app.get("/api/trace", async (req, res) => {
       retry(() => getPageSizeInMB(site)),
     ]);
     const ce = calculateCarbon(sizeMB, greenHost);
+
     res.json({
       url: site,
       greenHost,
@@ -166,7 +223,9 @@ app.get("/api/trace", async (req, res) => {
     });
   } catch (err) {
     console.error(`❌ Trace error for ${site}:`, err);
-    res.status(500).json({ error: "Unable to trace site.", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Unable to trace site.", details: err.message });
   }
 });
 
