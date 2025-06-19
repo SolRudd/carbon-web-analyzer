@@ -22,7 +22,7 @@ export default function InputForm() {
 
     setLoading(true);
     try {
-      const res = await fetch("https://api.greentracer.org/api/check-carbon", {
+      const res = await fetch(`${API_BASE}/api/check-carbon`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: site }),

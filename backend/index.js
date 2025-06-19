@@ -1,40 +1,34 @@
 // backend/index.js
 
 require("dotenv").config();
-const path        = require("path");
-const express     = require("express");
-const cors        = require("cors");
-const helmet      = require("helmet");
-const rateLimit   = require("express-rate-limit");
-const axios       = require("axios");
-const puppeteer   = require("puppeteer");
-const Database    = require("better-sqlite3");
+const path      = require("path");
+const express   = require("express");
+const cors      = require("cors");
+const helmet    = require("helmet");
+const rateLimit = require("express-rate-limit");
+const axios     = require("axios");
+const puppeteer = require("puppeteer");
+const Database  = require("better-sqlite3");
 
 const app = express();
 app.set("trust proxy", 1);
-
 const PORT = process.env.PORT || 8080;
 
+// Middlewares
 app.use(helmet());
 app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN.split(","),
-    optionsSuccessStatus: 200,
-  })
+  cors({ origin: process.env.CORS_ORIGIN.split(","), optionsSuccessStatus: 200 })
 );
 app.use(
-  rateLimit({
-    windowMs: 60_000,
-    max: 30,
-    message: { error: "Too many requests, slow down." },
-  })
+  rateLimit({ windowMs: 60_000, max: 30, message: { error: "Too many requests, slow down." } })
 );
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+// Healthcheck
 app.get("/healthz", (req, res) => res.status(200).send("OK"));
 
-// SQLite DB
+// SQLite & schema
 const db = new Database(path.join(__dirname, "results.db"));
 db.exec(`
   CREATE TABLE IF NOT EXISTS results (
@@ -50,18 +44,11 @@ db.exec(`
   );
 `);
 
-// Carbon calculation constants
+// Calculation constants
 const ENERGY_PER_GB        = 0.81;
 const CARBON_FACTOR        = 442;
 const GREEN_HOST_REDUCTION = 0.09;
-const THRESHOLDS = {
-  "A+": 0.095,
-  A:    0.186,
-  B:    0.341,
-  C:    0.493,
-  D:    0.656,
-  E:    0.846,
-};
+const THRESHOLDS = { "A+": 0.095, A: 0.186, B: 0.341, C: 0.493, D: 0.656, E: 0.846 };
 
 function calculateCarbon(sizeMB, greenHost) {
   const sizeGB = sizeMB / 1024;
@@ -131,10 +118,7 @@ async function getPageSizeInMB(url) {
     });
 
     const page = await browser.newPage();
-    await page.goto(url, {
-      waitUntil: "networkidle2",
-      timeout:     45000,
-    });
+    await page.goto(url, { waitUntil: "networkidle2", timeout: 45000 });
 
     const totalBytes = await page.evaluate(() => {
       const nav = performance.getEntriesByType("navigation")[0] || {};
@@ -153,7 +137,7 @@ async function getPageSizeInMB(url) {
   }
 }
 
-// POST /api/check-carbon (stores a slug in SQLite)
+// POST: create or update a result slug
 app.post("/api/check-carbon", async (req, res) => {
   const site = req.body.url;
   if (!site) return res.status(400).json({ error: "Missing URL." });
@@ -170,11 +154,11 @@ app.post("/api/check-carbon", async (req, res) => {
     const percentile = getPercentile(ce);
     const slug       = hostname.replace(/[^a-z0-9]/gi, "-").toLowerCase();
 
-    db.prepare(`
-      INSERT OR REPLACE INTO results
-      (slug, url, greenHost, sizeMB, carbonEstimate, reductionPct, grade, percentile, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    db.prepare(
+      `INSERT OR REPLACE INTO results
+      (slug,url,greenHost,sizeMB,carbonEstimate,reductionPct,grade,percentile,timestamp)
+      VALUES(?,?,?,?,?,?,?,?,?)`
+    ).run(
       slug,
       site,
       greenHost ? 1 : 0,
@@ -193,14 +177,11 @@ app.post("/api/check-carbon", async (req, res) => {
   }
 });
 
-// GET /api/trace (run live trace)
+// GET: live trace
 app.get("/api/trace", async (req, res) => {
   const site = req.query.site;
   if (!site) return res.status(400).json({ error: "Missing site query." });
-
-  try {
-    new URL(site);
-  } catch {
+  try { new URL(site); } catch {
     return res.status(400).json({ error: "Invalid site URL." });
   }
 
@@ -223,12 +204,29 @@ app.get("/api/trace", async (req, res) => {
     });
   } catch (err) {
     console.error(`❌ Trace error for ${site}:`, err);
-    res
-      .status(500)
-      .json({ error: "Unable to trace site.", details: err.message });
+    res.status(500).json({ error: "Unable to trace site.", details: err.message });
   }
 });
 
-app.listen(PORT, () =>
-  console.log(`🚀 API ready at http://localhost:${PORT}`)
-);
+// GET: cached result by slug
+app.get("/api/results/:slug", (req, res) => {
+  try {
+    const row = db.prepare("SELECT * FROM results WHERE slug = ?").get(req.params.slug);
+    if (!row) return res.status(404).json({ error: "Not found." });
+
+    row.greenHost      = Boolean(row.greenHost);
+    row.sizeMB         = +row.sizeMB;
+    row.carbonEstimate = +row.carbonEstimate;
+    row.reductionPct   = +row.reductionPct;
+    row.percentile     = +row.percentile;
+    row.timestamp      = +row.timestamp;
+
+    res.json(row);
+  } catch (err) {
+    console.error("results lookup error:", err);
+    res.status(500).json({ error: "Server error." });
+  }
+});
+
+// Start server
+app.listen(PORT, () => console.log(`🚀 API ready at http://localhost:${PORT}`));
