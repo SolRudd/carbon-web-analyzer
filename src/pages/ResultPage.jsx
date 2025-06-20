@@ -9,14 +9,14 @@ import ImpactSection from "../components/ImpactSection";
 import BadgePromo from "../components/BadgePromo";
 import TestCTA from "../components/TestCTA";
 
-// Use VITE_API_URL (from Vercel) if set, else local relative
+// Pull in your Vercel env var or default to relative
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
 export default function ResultPage() {
   const { slug } = useParams();
-  const [result, setResult] = useState(null);
+  const [result, setResult]   = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError]     = useState(null);
 
   // Fetch cached result
   useEffect(() => {
@@ -49,7 +49,6 @@ export default function ResultPage() {
     }
   };
 
-  // Loading & error states
   if (loading) return <LoadingOverlay />;
   if (error)
     return (
@@ -61,14 +60,10 @@ export default function ResultPage() {
       </div>
     );
 
-  // Main render
   return (
     <section className="py-16 px-4 bg-white dark:bg-slate-950 min-h-screen">
       <div className="mx-auto max-w-4xl space-y-12">
-        {/* Top-level summary card */}
         <ResultCard result={result} onRetest={handleRetest} />
-
-        {/* Detailed breakdown */}
         <ResultDetails
           carbonEstimate={Number(result.carbonEstimate)}
           greenHost={Boolean(result.greenHost)}
@@ -76,21 +71,13 @@ export default function ResultPage() {
           grade={result.grade}
           percentile={result.percentile}
         />
-
-        {/* Impact statistics */}
         <ImpactStats
           carbonPerView={Number(result.carbonEstimate)}
           siteUrl={result.url}
           grade={result.grade}
         />
-
-        {/* Impact section */}
         <ImpactSection />
-
-        {/* Website Carbon Badge promo */}
         <BadgePromo siteUrl={result.url} />
-
-        {/* Test another page CTA */}
         <TestCTA />
       </div>
     </section>
