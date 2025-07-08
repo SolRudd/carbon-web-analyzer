@@ -5,7 +5,7 @@ import LoadingOverlay from "./LoadingOverlay";
 import globeSvg from "../assets/bubble.svg";
 import { FaLeaf } from 'react-icons/fa';
 
-// Use VITE_API_URL (from Vercel) if set, else fallback to relative
+// Use VITE_API_URL (from Vercel or .env) if set, else fallback to relative
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
 export default function InputForm() {
@@ -43,7 +43,6 @@ export default function InputForm() {
 
   return (
     <section id="input-form" className="relative overflow-hidden bg-white dark:bg-slate-950 py-20 px-4 transition-colors duration-300">
-      {/* decorative green glow */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 w-[900px] h-[900px] bg-glow-green transform -translate-x-1/2 -translate-y-1/2 blur-3xl opacity-50" />
       </div>
