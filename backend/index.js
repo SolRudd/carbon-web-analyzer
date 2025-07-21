@@ -7,6 +7,7 @@ const rateLimit = require("express-rate-limit");
 const axios     = require("axios");
 const puppeteer = require("puppeteer");
 const Database  = require("better-sqlite3");
+const fs        = require("fs");
 
 const app  = express();
 const PORT = process.env.PORT || 8080;
@@ -69,30 +70,122 @@ const retry = async (fn, tries=3, delay=1e3) => {
 const isGreen = d => axios.get(`https://api.thegreenwebfoundation.org/greencheck/${d}`)
   .then(r=>!!r.data.green).catch(()=>false);
 
+/* ─── Find Chrome executable ─── */
+function findChromeExecutable() {
+  const possiblePaths = [
+    // Render cache paths
+    '/opt/render/.cache/puppeteer/chrome/linux-*/chrome-linux*/chrome',
+    '/opt/render/.cache/puppeteer/chrome/linux-*/chrome-linux/chrome',
+    // System Chrome paths
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium',
+    // Environment variable
+    process.env.CHROME_BIN,
+    process.env.PUPPETEER_EXECUTABLE_PATH
+  ].filter(Boolean);
+
+  for (const chromePath of possiblePaths) {
+    try {
+      if (chromePath.includes('*')) {
+        // Handle wildcard paths for Render
+        const { execSync } = require('child_process');
+        try {
+          const expanded = execSync(`ls ${chromePath} 2>/dev/null | head -1`, { encoding: 'utf8' }).trim();
+          if (expanded && fs.existsSync(expanded)) {
+            console.log(`✅ Found Chrome at: ${expanded}`);
+            return expanded;
+          }
+        } catch (e) {
+          // Continue to next path
+        }
+      } else if (fs.existsSync(chromePath)) {
+        console.log(`✅ Found Chrome at: ${chromePath}`);
+        return chromePath;
+      }
+    } catch (e) {
+      // Continue to next path
+    }
+  }
+  
+  console.log('⚠️  No Chrome executable found, using Puppeteer default');
+  return null;
+}
+
 /* ─── Puppeteer page-weight ─── */
 async function getPageSizeInMB(url){
   let browser;
   try{
-    browser = await puppeteer.launch({
-      headless: 'new',                 // <── modern headless
-      args:[
-        '--no-sandbox','--disable-setuid-sandbox',
-        '--disable-dev-shm-usage','--disable-gpu','--single-process'
+    const launchOptions = {
+      headless: 'new',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--single-process',
+        '--no-zygote',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-ipc-flooding-protection',
+        '--disable-extensions',
+        '--disable-default-apps',
+        '--disable-sync',
+        '--no-first-run',
+        '--disable-plugins'
       ],
-      ignoreHTTPSErrors:true,
-      timeout:60000
-    });
+      ignoreHTTPSErrors: true,
+      timeout: 60000
+    };
+
+    // Try to find Chrome executable
+    const chromeExecutable = findChromeExecutable();
+    if (chromeExecutable) {
+      launchOptions.executablePath = chromeExecutable;
+    }
+
+    console.log(`🔍 Launching browser for: ${url}`);
+    browser = await puppeteer.launch(launchOptions);
+    
     const page = await browser.newPage();
-    await page.goto(url,{waitUntil:'networkidle2',timeout:45000});
-    const bytes = await page.evaluate(()=>{
+    
+    // Set a reasonable viewport
+    await page.setViewport({ width: 1280, height: 720 });
+    
+    // Set user agent to avoid being blocked
+    await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    
+    console.log(`📄 Loading page: ${url}`);
+    await page.goto(url, {
+      waitUntil: 'networkidle2',
+      timeout: 45000
+    });
+    
+    // Get page size using performance API
+    const bytes = await page.evaluate(() => {
       const nav = performance.getEntriesByType('navigation')[0] || {};
-      const res = performance.getEntriesByType('resource')  || [];
+      const res = performance.getEntriesByType('resource') || [];
       const navB = nav.encodedBodySize ?? nav.transferSize ?? 0;
-      const resB = res.reduce((s,r)=>s+(r.encodedBodySize ?? r.transferSize ?? 0),0);
+      const resB = res.reduce((s, r) => s + (r.encodedBodySize ?? r.transferSize ?? 0), 0);
       return navB + resB;
     });
-    return bytes / (1024*1024);
-  }finally{ if(browser) await browser.close(); }
+    
+    const sizeMB = bytes / (1024 * 1024);
+    console.log(`📊 Page size: ${sizeMB.toFixed(2)} MB`);
+    
+    return sizeMB;
+  } catch (error) {
+    console.error(`❌ Error measuring page size for ${url}:`, error.message);
+    throw error;
+  } finally { 
+    if (browser) {
+      await browser.close();
+    }
+  }
 }
 
 /* ──────── Routes ──────── */
@@ -157,4 +250,15 @@ app.get("/api/results/:slug",(req,res)=>{
 });
 
 /* ──────── Start ──────── */
-app.listen(PORT,()=>console.log(`🚀 API ready on port ${PORT}`));
+app.listen(PORT,()=>{
+  console.log(`🚀 API ready on port ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Test Chrome availability on startup
+  const chromeExecutable = findChromeExecutable();
+  if (chromeExecutable) {
+    console.log(`✅ Chrome found and ready`);
+  } else {
+    console.log(`⚠️  Chrome not found, will use Puppeteer default`);
+  }
+});

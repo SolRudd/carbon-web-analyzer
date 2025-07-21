@@ -2,16 +2,18 @@ services:
   - type: web
     name: greentracer-backend
     env: docker
-    plan: free
+    plan: starter # Not free - you need at least starter for Puppeteer
     region: frankfurt
     branch: main
     repo: https://github.com/SolRudd/carbon-web-analyzer
     dockerfilePath: ./backend/Dockerfile
     autoDeploy: true
     envVars:
-      - key: PORT
-        value: "8080"
+      - key: NODE_ENV
+        value: "production"
       - key: CORS_ORIGIN
         value: "https://www.greentracer.org,https://greentracer.org"
       - key: PUPPETEER_EXECUTABLE_PATH
         value: "/usr/bin/chromium"
+      - key: PUPPETEER_SKIP_DOWNLOAD
+        value: "true"
