@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE } from "../config";
 
 export default function CarbonBadge({ url, data: preData }) {
   const [data, setData] = useState(preData);
@@ -13,9 +14,9 @@ export default function CarbonBadge({ url, data: preData }) {
       return;
     }
 
-    fetch(`/api/trace?site=${encodeURIComponent(url)}`)
+    fetch(`${API_BASE}/api/trace?site=${encodeURIComponent(url)}`)
       .then((r) => {
-        if (!r.ok) throw new Error(r.statusText);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
       .then((d) => {
@@ -31,7 +32,7 @@ export default function CarbonBadge({ url, data: preData }) {
   const co2 = data.carbonEstimate.toFixed(2);
   const pct = data.percentile;
 
-  // make a slug to link back to your result page
+  // slug for linking back to your result page
   const slug = (() => {
     try {
       const u = new URL(url);
@@ -52,7 +53,6 @@ export default function CarbonBadge({ url, data: preData }) {
         <div className="px-4 py-2 bg-white dark:bg-slate-800 border border-greenbuzz text-sm font-semibold text-slate-900 dark:text-slate-200 rounded-l-md">
           {co2}g CO₂/view
         </div>
-
         {/* Logo panel */}
         <div className="flex items-center px-4 py-2 bg-greenbuzz rounded-r-md">
           <img
@@ -62,10 +62,10 @@ export default function CarbonBadge({ url, data: preData }) {
           />
         </div>
       </a>
-
       <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">
         Cleaner than {pct}% of pages tested
       </div>
     </div>
   );
 }
+

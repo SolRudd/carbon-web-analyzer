@@ -1,4 +1,4 @@
-# Logs
+# ─────── Logs ───────
 logs
 *.log
 npm-debug.log*
@@ -7,16 +7,23 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# ─────── Environment ───────
+.env
+.env.local
+.env.*.local
+
+# ─────── Node & build ───────
 node_modules
 dist
 dist-ssr
 *.local
+.vite
+.cache
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# ─────── OS & editors ───────
 .DS_Store
+.idea/
+.vscode/
 *.suo
 *.ntvs*
 *.njsproj
