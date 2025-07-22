@@ -4,7 +4,7 @@ require('dotenv').config();
 const fs         = require('fs');
 const path       = require('path');
 const express    = require('express');
-const cors       = require('cors');
+const cors       = require('cors');               // ← unchanged
 const helmet     = require('helmet');
 const rateLimit  = require('express-rate-limit');
 const axios      = require('axios');
@@ -17,10 +17,8 @@ app.set('trust proxy', 1);
 
 // ──────── Middleware ────────
 app.use(helmet());
-app.use(cors({
-  origin: process.env.CORS_ORIGIN.split(','),
-  optionsSuccessStatus: 200
-}));
+// Allow requests from *any* origin so your badge loader + frontend will work:
+app.use(cors());                                   
 app.use(rateLimit({
   windowMs:  60_000,
   max:       30,
@@ -32,9 +30,7 @@ app.get('/healthz', (_req, res) => res.status(200).send('OK'));
 
 // ──────── Persistent SQLite ────────
 const DB_FILE = process.env.RESULTS_DB_PATH || path.join(__dirname, 'results.db');
-// ensure mount-dir exists
 fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
-
 const db = new Database(DB_FILE);
 db.exec(`
   CREATE TABLE IF NOT EXISTS results (
@@ -68,7 +64,7 @@ function percentileFor(g) {
   return Math.max(0, Math.min(100, Math.round(pct)));
 }
 
-// ──────── Retry helper ────────
+// ──────── Helpers ────────
 async function retry(fn, tries = 3, delay = 1000) {
   let err;
   for (let i = 0; i < tries; i++) {
@@ -77,8 +73,6 @@ async function retry(fn, tries = 3, delay = 1000) {
   }
   throw err;
 }
-
-// ──────── Green-host check ────────
 function isGreen(host) {
   return axios
     .get(`https://api.thegreenwebfoundation.org/greencheck/${host}`)
@@ -86,33 +80,21 @@ function isGreen(host) {
     .catch(() => false);
 }
 
-// ──────── Puppeteer launch options ────────
+// ──────── Puppeteer options ────────
 const chromeLaunchOpts = {
   headless: 'new',
   args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--disable-dev-shm-usage',
-    '--disable-gpu',
-    '--single-process',
-    '--no-zygote',
-    '--disable-web-security',
-    '--disable-features=VizDisplayCompositor',
-    '--disable-background-timer-throttling',
-    '--disable-backgrounding-occluded-windows',
-    '--disable-renderer-backgrounding',
-    '--disable-ipc-flooding-protection',
-    '--disable-extensions',
-    '--disable-default-apps',
-    '--disable-sync',
-    '--no-first-run',
-    '--disable-plugins'
+    '--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage',
+    '--disable-gpu','--single-process','--no-zygote','--disable-web-security',
+    '--disable-features=VizDisplayCompositor','--disable-background-timer-throttling',
+    '--disable-backgrounding-occluded-windows','--disable-renderer-backgrounding',
+    '--disable-ipc-flooding-protection','--disable-extensions',
+    '--disable-default-apps','--disable-sync','--no-first-run','--disable-plugins'
   ],
   ignoreHTTPSErrors: true,
   timeout: 60_000
 };
 
-// ─── Puppeteer page-weight ───
 async function getPageSizeInMB(url) {
   const browser = await puppeteer.launch(chromeLaunchOpts);
   try {
@@ -124,10 +106,7 @@ async function getPageSizeInMB(url) {
     );
 
     console.log(`🔍 Navigating to: ${url}`);
-    await page.goto(url, {
-      waitUntil: 'domcontentloaded',
-      timeout:   20_000
-    });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20_000 });
 
     const bytes = await page.evaluate(() => {
       const nav = performance.getEntriesByType('navigation')[0] || {};
@@ -139,28 +118,22 @@ async function getPageSizeInMB(url) {
       return navB + resB;
     });
 
-    const mb = bytes / (1024 * 1024);
-    console.log(`📊 Page weight: ${mb.toFixed(2)} MB`);
-    return mb;
+    return bytes / (1024 * 1024);
   } finally {
     await browser.close();
   }
 }
 
 // ──────── Routes ────────
-
-// POST /api/check-carbon  → runs a check, writes to SQLite, returns the full row
 app.post('/api/check-carbon', async (req, res) => {
   const site = req.body.url;
   if (!site) return res.status(400).json({ error: 'Missing URL.' });
-
   try {
     const host       = new URL(site).hostname;
     const [green, sizeMB] = await Promise.all([
       retry(() => isGreen(host)),
       retry(() => getPageSizeInMB(site))
     ]);
-
     const carbonEstimate = calcCarbon(sizeMB, green);
     const slug           = host.replace(/[^a-z0-9]/gi, '-').toLowerCase();
 
@@ -169,22 +142,15 @@ app.post('/api/check-carbon', async (req, res) => {
       (slug,url,greenHost,sizeMB,carbonEstimate,reductionPct,grade,percentile,timestamp)
       VALUES(?,?,?,?,?,?,?,?,?)
     `).run(
-      slug,
-      site,
-      green ? 1 : 0,
-      sizeMB,
-      carbonEstimate,
-      GREEN_HOST_REDUCTION,
-      gradeFor(carbonEstimate),
-      percentileFor(carbonEstimate),
-      Date.now()
+      slug, site, green?1:0, sizeMB, carbonEstimate,
+      GREEN_HOST_REDUCTION, gradeFor(carbonEstimate),
+      percentileFor(carbonEstimate), Date.now()
     );
 
     const row = db.prepare('SELECT * FROM results WHERE slug = ?').get(slug);
     row.greenHost = !!row.greenHost;
     ['sizeMB','carbonEstimate','reductionPct','percentile','timestamp']
       .forEach(k => row[k] = +row[k]);
-
     res.json(row);
 
   } catch (e) {
@@ -193,12 +159,10 @@ app.post('/api/check-carbon', async (req, res) => {
   }
 });
 
-// GET /api/trace?site=…  → just returns a one-off trace
 app.get('/api/trace', async (req, res) => {
   const site = req.query.site;
   if (!site) return res.status(400).json({ error: 'Missing site query.' });
-  try { new URL(site); }
-  catch { return res.status(400).json({ error: 'Invalid site URL.' }); }
+  try { new URL(site); } catch { return res.status(400).json({ error: 'Invalid site URL.' }); }
 
   try {
     const host       = new URL(site).hostname;
@@ -206,36 +170,30 @@ app.get('/api/trace', async (req, res) => {
       retry(() => isGreen(host)),
       retry(() => getPageSizeInMB(site))
     ]);
-
     const ce = calcCarbon(sizeMB, green);
     res.json({
-      url:            site,
-      greenHost:      green,
-      sizeMB:         +sizeMB.toFixed(2),
+      url: site,
+      greenHost: green,
+      sizeMB: +sizeMB.toFixed(2),
       carbonEstimate: +ce.toFixed(2),
-      grade:          gradeFor(ce),
-      percentile:     percentileFor(ce),
-      timestamp:      Date.now()
+      grade: gradeFor(ce),
+      percentile: percentileFor(ce),
+      timestamp: Date.now()
     });
-
   } catch (e) {
     console.error(`❌ trace error for ${site}:`, e);
     res.status(500).json({ error: 'Unable to trace site.', details: e.message });
   }
 });
 
-// GET /api/results/:slug  → fetch last stored result
 app.get('/api/results/:slug', (req, res) => {
   try {
     const row = db.prepare('SELECT * FROM results WHERE slug = ?').get(req.params.slug);
     if (!row) return res.status(404).json({ error: 'Not found.' });
-
     row.greenHost = !!row.greenHost;
     ['sizeMB','carbonEstimate','reductionPct','percentile','timestamp']
       .forEach(k => row[k] = +row[k]);
-
     res.json(row);
-
   } catch (e) {
     console.error('❌ results lookup error:', e);
     res.status(500).json({ error: 'Server error.' });
