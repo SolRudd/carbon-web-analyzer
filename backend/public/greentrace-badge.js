@@ -2,9 +2,10 @@
   const API_BASE =
     location.hostname.includes("localhost") || location.hostname.includes("127.")
       ? "http://localhost:8080"
-      : "https://api.greentracer.org"; // ✅ Corrected API base
+      : "https://api.greentracer.org";
 
-  const LOGO = "/GreenTraceLogo.svg";
+  // Load the logo from your backend’s public folder:
+  const LOGO = `${API_BASE}/GreenTraceLogo.svg`;
 
   function initBadges() {
     document.querySelectorAll(".greentrace-badge").forEach(el => {

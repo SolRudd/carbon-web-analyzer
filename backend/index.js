@@ -1,34 +1,32 @@
 'use strict';
 require('dotenv').config();
 
-const fs         = require('fs');
-const path       = require('path');
-const express    = require('express');
-const cors       = require('cors');               // ← unchanged
-const helmet     = require('helmet');
-const rateLimit  = require('express-rate-limit');
-const axios      = require('axios');
-const puppeteer  = require('puppeteer');
-const Database   = require('better-sqlite3');
+const fs        = require('fs');
+const path      = require('path');
+const express   = require('express');
+const cors      = require('cors');
+const helmet    = require('helmet');
+const rateLimit = require('express-rate-limit');
+const axios     = require('axios');
+const puppeteer = require('puppeteer');
+const Database  = require('better-sqlite3');
 
-const app  = express();
+const app = express();
 const PORT = Number(process.env.PORT) || 8080;
-app.set('trust proxy', 1);
 
 // ──────── Middleware ────────
 app.use(helmet());
-// Allow requests from *any* origin so your badge loader + frontend will work:
-app.use(cors());                                   
+app.use(cors());  // allow everyone
 app.use(rateLimit({
-  windowMs:  60_000,
-  max:       30,
-  message:   { error: 'Too many requests, slow down.' }
+  windowMs: 60_000,
+  max: 30,
+  message: { error: 'Too many requests, slow down.' }
 }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/healthz', (_req, res) => res.status(200).send('OK'));
 
-// ──────── Persistent SQLite ────────
+// ──────── SQLite setup ────────
 const DB_FILE = process.env.RESULTS_DB_PATH || path.join(__dirname, 'results.db');
 fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
 const db = new Database(DB_FILE);
@@ -50,7 +48,7 @@ db.exec(`
 const ENERGY_PER_GB        = 0.81;
 const CARBON_FACTOR        = 442;
 const GREEN_HOST_REDUCTION = 0.09;
-const THRESHOLDS           = { 'A+':0.095, A:0.186, B:0.341, C:0.493, D:0.656, E:0.846 };
+const THRESHOLDS = { 'A+':0.095, A:0.186, B:0.341, C:0.493, D:0.656, E:0.846 };
 
 function calcCarbon(mb, green) {
   const base = (mb / 1024) * ENERGY_PER_GB * CARBON_FACTOR;
@@ -95,6 +93,7 @@ const chromeLaunchOpts = {
   timeout: 60_000
 };
 
+// ─── Measure full page weight ───
 async function getPageSizeInMB(url) {
   const browser = await puppeteer.launch(chromeLaunchOpts);
   try {
@@ -106,7 +105,10 @@ async function getPageSizeInMB(url) {
     );
 
     console.log(`🔍 Navigating to: ${url}`);
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20_000 });
+    await page.goto(url, {
+      waitUntil: 'networkidle2',  // ← wait for all resources
+      timeout:   30_000
+    });
 
     const bytes = await page.evaluate(() => {
       const nav = performance.getEntriesByType('navigation')[0] || {};
@@ -118,16 +120,19 @@ async function getPageSizeInMB(url) {
       return navB + resB;
     });
 
-    return bytes / (1024 * 1024);
+    const mb = bytes / (1024 * 1024);
+    console.log(`📊 Page weight: ${mb.toFixed(2)} MB`);
+    return mb;
   } finally {
     await browser.close();
   }
 }
 
-// ──────── Routes ────────
+// ──────── API Routes ────────
+
+// 1) run & store a check
 app.post('/api/check-carbon', async (req, res) => {
-  const site = req.body.url;
-  if (!site) return res.status(400).json({ error: 'Missing URL.' });
+  const site = req.body.url; if (!site) return res.status(400).json({ error: 'Missing URL.' });
   try {
     const host       = new URL(site).hostname;
     const [green, sizeMB] = await Promise.all([
@@ -149,8 +154,7 @@ app.post('/api/check-carbon', async (req, res) => {
 
     const row = db.prepare('SELECT * FROM results WHERE slug = ?').get(slug);
     row.greenHost = !!row.greenHost;
-    ['sizeMB','carbonEstimate','reductionPct','percentile','timestamp']
-      .forEach(k => row[k] = +row[k]);
+    ['sizeMB','carbonEstimate','reductionPct','percentile','timestamp'].forEach(k => row[k] = +row[k]);
     res.json(row);
 
   } catch (e) {
@@ -159,11 +163,10 @@ app.post('/api/check-carbon', async (req, res) => {
   }
 });
 
+// 2) one‑off trace (no DB write)
 app.get('/api/trace', async (req, res) => {
-  const site = req.query.site;
-  if (!site) return res.status(400).json({ error: 'Missing site query.' });
+  const site = req.query.site; if (!site) return res.status(400).json({ error: 'Missing site query.' });
   try { new URL(site); } catch { return res.status(400).json({ error: 'Invalid site URL.' }); }
-
   try {
     const host       = new URL(site).hostname;
     const [green, sizeMB] = await Promise.all([
@@ -186,13 +189,13 @@ app.get('/api/trace', async (req, res) => {
   }
 });
 
+// 3) lookup last result
 app.get('/api/results/:slug', (req, res) => {
   try {
     const row = db.prepare('SELECT * FROM results WHERE slug = ?').get(req.params.slug);
     if (!row) return res.status(404).json({ error: 'Not found.' });
     row.greenHost = !!row.greenHost;
-    ['sizeMB','carbonEstimate','reductionPct','percentile','timestamp']
-      .forEach(k => row[k] = +row[k]);
+    ['sizeMB','carbonEstimate','reductionPct','percentile','timestamp'].forEach(k => row[k] = +row[k]);
     res.json(row);
   } catch (e) {
     console.error('❌ results lookup error:', e);
@@ -200,13 +203,13 @@ app.get('/api/results/:slug', (req, res) => {
   }
 });
 
-// ──────── Global error handler ────────
+// global error handler
 app.use((err, _req, res, _next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ error: 'Internal server error.' });
 });
 
-// ──────── Start server ────────
+// start
 app.listen(PORT, () => {
   console.log(`🚀 API ready on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
