@@ -1,8 +1,13 @@
+# render.yaml
+disks:
+  - name: results-data
+    sizeGB: 1
+
 services:
   - type: web
     name: greentracer-backend
     env: docker
-    plan: starter # Puppeteer requires at least “starter”
+    plan: starter # you already have this
     region: frankfurt
     branch: main
     repo: https://github.com/SolRudd/carbon-web-analyzer
@@ -17,13 +22,6 @@ services:
         value: "/usr/bin/chromium"
       - key: PUPPETEER_SKIP_DOWNLOAD
         value: "true"
-    # ← add this block to persist your SQLite database
-    volumes:
-      - type: disk
-        name: results-data
+    disks:
+      - name: results-data
         mountPath: /app/results.db
-
-# and at the bottom of the file, declare your disk:
-disks:
-  - name: results-data
-    sizeGb: 1
