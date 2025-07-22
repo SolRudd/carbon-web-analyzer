@@ -86,7 +86,7 @@ function isGreen(host) {
     .catch(() => false);
 }
 
-// ──────── Chrome launcher (once) ────────
+// ──────── Puppeteer launch options ────────
 const chromeLaunchOpts = {
   headless: 'new',
   args: [
@@ -111,47 +111,40 @@ const chromeLaunchOpts = {
   ignoreHTTPSErrors: true,
   timeout: 60_000
 };
-const browserPromise = (async () => {
-  // you can add custom Chrome-path logic here if needed…
-  const b = await puppeteer.launch(chromeLaunchOpts);
-  console.log('✅ Puppeteer launched once');
-  return b;
-})();
 
 // ─── Puppeteer page-weight ───
 async function getPageSizeInMB(url) {
-  const browser = await browserPromise;
-  const page    = await browser.newPage();
+  const browser = await puppeteer.launch(chromeLaunchOpts);
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1280, height: 720 });
+    await page.setUserAgent(
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ' +
+      '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    );
 
-  await page.setViewport({ width: 1280, height: 720 });
-  await page.setUserAgent(
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ' +
-    '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-  );
+    console.log(`🔍 Navigating to: ${url}`);
+    await page.goto(url, {
+      waitUntil: 'domcontentloaded',
+      timeout:   20_000
+    });
 
-  console.log(`🔍 Navigating to: ${url}`);
-  await page.goto(url, {
-    waitUntil: 'domcontentloaded',  // much faster
-    timeout:   20_000               // 20s
-  });
+    const bytes = await page.evaluate(() => {
+      const nav = performance.getEntriesByType('navigation')[0] || {};
+      const res = performance.getEntriesByType('resource') || [];
+      const navB = nav.encodedBodySize ?? nav.transferSize ?? 0;
+      const resB = res.reduce((sum, r) =>
+        sum + (r.encodedBodySize ?? r.transferSize ?? 0)
+      , 0);
+      return navB + resB;
+    });
 
-  // sum up transfer sizes
-  const bytes = await page.evaluate(() => {
-    const nav = performance
-      .getEntriesByType('navigation')[0] || {};
-    const res = performance
-      .getEntriesByType('resource') || [];
-    const navB = nav.encodedBodySize ?? nav.transferSize ?? 0;
-    const resB = res.reduce((sum, r) =>
-      sum + (r.encodedBodySize ?? r.transferSize ?? 0)
-    , 0);
-    return navB + resB;
-  });
-
-  await page.close();
-  const mb = bytes / (1024 * 1024);
-  console.log(`📊 Page weight: ${mb.toFixed(2)} MB`);
-  return mb;
+    const mb = bytes / (1024 * 1024);
+    console.log(`📊 Page weight: ${mb.toFixed(2)} MB`);
+    return mb;
+  } finally {
+    await browser.close();
+  }
 }
 
 // ──────── Routes ────────
@@ -234,8 +227,7 @@ app.get('/api/trace', async (req, res) => {
 // GET /api/results/:slug  → fetch last stored result
 app.get('/api/results/:slug', (req, res) => {
   try {
-    const row = db.prepare('SELECT * FROM results WHERE slug = ?')
-                  .get(req.params.slug);
+    const row = db.prepare('SELECT * FROM results WHERE slug = ?').get(req.params.slug);
     if (!row) return res.status(404).json({ error: 'Not found.' });
 
     row.greenHost = !!row.greenHost;
