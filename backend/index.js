@@ -56,20 +56,20 @@ db.exec(`
 `);
 
 /* ──────── Carbon maths ──────── */
-const ENERGY_PER_GB       = 0.81;
-const CARBON_FACTOR       = 442;
+const ENERGY_PER_GB        = 0.81;
+const CARBON_FACTOR        = 442;
 const GREEN_HOST_REDUCTION = 0.09;
-const THRESHOLDS = { 'A+':0.095, A:0.186, B:0.341, C:0.493, D:0.656, E:0.846 };
+const THRESHOLDS           = { 'A+':0.095, A:0.186, B:0.341, C:0.493, D:0.656, E:0.846 };
 
 const calcCarbon = (mb, green) => {
-  const base = (mb/1024) * ENERGY_PER_GB * CARBON_FACTOR;
+  const base = (mb / 1024) * ENERGY_PER_GB * CARBON_FACTOR;
   return green ? base * (1 - GREEN_HOST_REDUCTION) : base;
 };
 const gradeFor = g =>
-  Object.entries(THRESHOLDS).find(([_,t]) => g <= t)?.[0] ?? 'F';
+  Object.entries(THRESHOLDS).find(([_, t]) => g <= t)?.[0] ?? 'F';
 const percentileFor = g =>
   Math.max(0, Math.min(100,
-    Math.round(((THRESHOLDS.E - Math.min(g,THRESHOLDS.E))/THRESHOLDS.E)*100)
+    Math.round(((THRESHOLDS.E - Math.min(g, THRESHOLDS.E)) / THRESHOLDS.E) * 100)
   ));
 
 /* ──────── Helpers ──────── */
@@ -77,7 +77,7 @@ const retry = async (fn, tries = 3, delay = 1000) => {
   let err;
   for (let i = 0; i < tries; i++) {
     try { return await fn(); }
-    catch (e) { err = e; await new Promise(r => setTimeout(r, delay * (i+1))); }
+    catch (e) { err = e; await new Promise(r => setTimeout(r, delay * (i + 1))); }
   }
   throw err;
 };
@@ -184,6 +184,7 @@ app.post('/api/check-carbon', async (req, res) => {
     const ce   = calcCarbon(size, green);
     const slug = host.replace(/[^a-z0-9]/gi, '-').toLowerCase();
 
+    // write to SQLite
     db.prepare(`
       INSERT OR REPLACE INTO results
       (slug, url, greenHost, sizeMB, carbonEstimate, reductionPct, grade, percentile, timestamp)
@@ -193,7 +194,14 @@ app.post('/api/check-carbon', async (req, res) => {
       gradeFor(ce), percentileFor(ce), Date.now()
     );
 
-    res.json({ slug });
+    // now return the full row, not just the slug
+    const row = db.prepare('SELECT * FROM results WHERE slug = ?').get(slug);
+    row.greenHost = !!row.greenHost;
+    ['sizeMB','carbonEstimate','reductionPct','percentile','timestamp']
+      .forEach(k => row[k] = +row[k]);
+
+    res.json(row);
+
   } catch (e) {
     console.error('check-carbon error:', e);
     res.status(500).json({ error: 'Carbon check failed.', details: e.message });
@@ -222,6 +230,7 @@ app.get('/api/trace', async (req, res) => {
       percentile:     percentileFor(ce),
       timestamp:      Date.now()
     });
+
   } catch (e) {
     console.error(`❌ Trace error for ${site}:`, e);
     res.status(500).json({ error: 'Unable to trace site.', details: e.message });
