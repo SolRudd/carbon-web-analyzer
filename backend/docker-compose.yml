@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  greentracer-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: greentracer-backend:local
+    ports:
+      - "8080:8080"
+    environment:
+      - CORS_ORIGIN=https://www.greentracer.org,https://greentracer.org,https://greentracer-frontend.vercel.app
+      - PORT=8080
+      - NODE_ENV=production
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+      - PUPPETEER_SKIP_DOWNLOAD=true
+    volumes:
+      - ./backend/results.db:/app/results.db
+    restart: unless-stopped
+
+volumes:
+  results-data:
