@@ -1,5 +1,3 @@
-'use strict';
-require('express-async-errors');   // allow thrown errors in async routes
 require('dotenv').config();
 
 const fs         = require('fs');
