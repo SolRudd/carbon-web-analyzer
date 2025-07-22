@@ -12,6 +12,10 @@ services:
     branch: main
     repo: https://github.com/SolRudd/carbon-web-analyzer
     dockerfilePath: ./backend/Dockerfile
+
+    # make Render probe your existing /healthz endpoint
+    healthCheckPath: /healthz
+
     autoDeploy: true
     envVars:
       - key: NODE_ENV
@@ -22,6 +26,11 @@ services:
         value: "/usr/bin/chromium"
       - key: PUPPETEER_SKIP_DOWNLOAD
         value: "true"
+      # point your app at the disk-mounted file
+      - key: RESULTS_DB_PATH
+        value: "/app/data/results.db"
+
     disks:
       - name: results-data
-        mountPath: /app/results.db
+        # mount the disk as a directory
+        mountPath: /app/data
