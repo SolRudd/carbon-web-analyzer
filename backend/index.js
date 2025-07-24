@@ -1,11 +1,12 @@
+// backend/index.js
 'use strict';
 require('dotenv').config();
 
 const fs         = require('fs');
 const path       = require('path');
 const express    = require('express');
-const cors       = require('cors');
 const helmet     = require('helmet');
+const cors       = require('cors');
 const rateLimit  = require('express-rate-limit');
 const axios      = require('axios');
 const puppeteer  = require('puppeteer');
@@ -14,7 +15,7 @@ const Database   = require('better-sqlite3');
 const app  = express();
 const PORT = Number(process.env.PORT) || 8080;
 
-// ─── Trust proxy for correct X-Forwarded-For handling (rate-limit) ───────────
+// ─── Trust proxy for correct IP parsing (X‑Forwarded‑For) ───────────────────────
 app.set('trust proxy', 1);
 
 // ─── Security & CORS ─────────────────────────────────────────────────────────
@@ -27,15 +28,13 @@ app.get('/healthz', (_req, res) => res.send('OK'));
 // ─── Rate‑limiters ────────────────────────────────────────────────────────────
 // Full carbon checks (heavy): 5/minute
 const limiterCheck = rateLimit({
-  windowMs: 60_000,
-  max:      5,
-  message:  { error: 'Too many carbon checks, please wait a minute.' }
+  windowMs: 60_000, max: 5,
+  message: { error: 'Too many carbon checks, please wait a minute.' }
 });
 // Badge loads (cache only): 30/minute
 const limiterBadge = rateLimit({
-  windowMs: 60_000,
-  max:      30,
-  message:  { error: 'Too many badge requests, please wait a minute.' }
+  windowMs: 60_000, max: 30,
+  message: { error: 'Too many badge requests, please wait a minute.' }
 });
 
 // ─── Database & 7‑day Cache Helper ─────────────────────────────────────────────
@@ -55,7 +54,8 @@ db.exec(`
     timestamp       INTEGER NOT NULL
   );
 `);
-const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 function getCachedResult(slug) {
   const row = db.prepare('SELECT * FROM results WHERE slug = ?').get(slug);
   if (!row) return null;
@@ -73,21 +73,22 @@ const GREEN_REDUCTION = 0.09;
 const THRESHOLDS      = { 'A+':0.095, A:0.186, B:0.341, C:0.493, D:0.656, E:0.846 };
 
 function calcCarbon(mb, green) {
-  const base = mb/1024 * ENERGY_PER_GB * CARBON_FACTOR;
+  const base = (mb/1024) * ENERGY_PER_GB * CARBON_FACTOR;
   return green ? base * (1 - GREEN_REDUCTION) : base;
 }
 function gradeFor(g) {
   return Object.entries(THRESHOLDS).find(([_, t]) => g <= t)?.[0] ?? 'F';
 }
 function percentileFor(g) {
-  const raw = (THRESHOLDS.E - Math.min(g, THRESHOLDS.E)) / THRESHOLDS.E * 100;
-  return Math.round(Math.max(0, Math.min(100, raw)));
+  const pct = ((THRESHOLDS.E - Math.min(g, THRESHOLDS.E)) / THRESHOLDS.E) * 100;
+  return Math.round(Math.max(0, Math.min(100, pct)));
 }
+
 async function retry(fn, tries = 3, delay = 1000) {
   let err;
   for (let i = 0; i < tries; i++) {
     try { return await fn(); }
-    catch (e) { err = e; await new Promise(r => setTimeout(r, delay*(i+1))); }
+    catch (e) { err = e; await new Promise(r => setTimeout(r, delay * (i+1))); }
   }
   throw err;
 }
@@ -98,30 +99,27 @@ function isGreen(host) {
     .catch(() => false);
 }
 
-// ─── Puppeteer Singleton ───────────────────────────────────────────────────────
+// ─── Puppeteer singleton ───────────────────────────────────────────────────────
 const browserPromise = puppeteer.launch({
-  headless:       'new',
-  args:           ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage'],
+  headless: 'new',
+  args: ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage'],
   ignoreHTTPSErrors: true,
-  timeout:        60000
+  timeout: 60000
 });
-
 async function getPageSizeInMB(url) {
   const browser = await browserPromise;
   const page    = await browser.newPage();
   try {
     await page.setCacheEnabled(false);
     await page.setViewport({ width:1280, height:720 });
-    await page.setUserAgent(
-      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36'
-    );
+    await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36');
     console.log(`🔍 Navigating to: ${url}`);
     await page.goto(url, { waitUntil:'networkidle2', timeout:30000 });
     const bytes = await page.evaluate(() => {
       const nav  = performance.getEntriesByType('navigation')[0] || {};
       const res  = performance.getEntriesByType('resource')   || [];
       const navB = nav.encodedBodySize ?? nav.transferSize ?? 0;
-      const resB = res.reduce((s,r) => s + (r.encodedBodySize ?? r.transferSize ?? 0), 0);
+      const resB = res.reduce((sum, r) => sum + (r.encodedBodySize ?? r.transferSize ?? 0), 0);
       return navB + resB;
     });
     return bytes / (1024 * 1024);
@@ -167,18 +165,16 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
   }
 });
 
-// 2) Badge loader → only SQLite cache (<7 days old)
+// 2) Badge loader → only SQLite cache (<7 days old)
 app.get('/api/trace', limiterBadge, (req, res) => {
   const site = req.query.site;
   if (!site) return res.status(400).json({ error:'Missing site query.' });
-  let url;
-  try { url = new URL(site).toString(); }
-  catch { return res.status(400).json({ error:'Invalid site URL.' }); }
-
+  let url; try { url = new URL(site).toString(); } catch {
+    return res.status(400).json({ error:'Invalid site URL.' });
+  }
   const slug   = new URL(url).hostname.replace(/[^a-z0-9]/gi,'-').toLowerCase();
   const cached = getCachedResult(slug);
   if (cached) return res.json(cached);
-
   return res.status(404).json({
     error: 'No recent trace found. Please run a carbon check first.'
   });
@@ -199,13 +195,13 @@ app.get('/api/results/:slug', (req, res) => {
   }
 });
 
-// Error handler
-app.use((err,_req,res,_next) => {
+// global error handler
+app.use((err, _req, res, _next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ error:'Internal server error.' });
 });
 
-// Start
+// start
 app.listen(PORT, () => {
   console.log(`🚀 API listening on port ${PORT}`);
 });
