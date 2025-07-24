@@ -22,7 +22,7 @@
                 <span>GreenTrace</span>
               </div>
             </div>
-            <div style="margin-top:4px;font-family:sans-serif;font-size:11px;color:#334155;">
+            <div style="margin-top:4px;font-size:11px;color:#334155;">
               Cleaner than ${pct}% of pages tested
             </div>`;
         })
@@ -34,8 +34,9 @@
     });
   }
 
-  if (document.readyState === 'loading')
+  if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initBadges);
-  else
+  } else {
     initBadges();
+  }
 })();

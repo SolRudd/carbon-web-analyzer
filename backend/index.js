@@ -14,6 +14,9 @@ const Database   = require('better-sqlite3');
 const app  = express();
 const PORT = Number(process.env.PORT) || 8080;
 
+// ─── Trust proxy for correct X-Forwarded-For handling (rate-limit) ───────────
+app.set('trust proxy', 1);
+
 // ─── Security & CORS ─────────────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors());
@@ -24,13 +27,15 @@ app.get('/healthz', (_req, res) => res.send('OK'));
 // ─── Rate‑limiters ────────────────────────────────────────────────────────────
 // Full carbon checks (heavy): 5/minute
 const limiterCheck = rateLimit({
-  windowMs: 60_000, max: 5,
-  message: { error: 'Too many carbon checks, please wait a minute.' }
+  windowMs: 60_000,
+  max:      5,
+  message:  { error: 'Too many carbon checks, please wait a minute.' }
 });
 // Badge loads (cache only): 30/minute
 const limiterBadge = rateLimit({
-  windowMs: 60_000, max: 30,
-  message: { error: 'Too many badge requests, please wait a minute.' }
+  windowMs: 60_000,
+  max:      30,
+  message:  { error: 'Too many badge requests, please wait a minute.' }
 });
 
 // ─── Database & 7‑day Cache Helper ─────────────────────────────────────────────
@@ -62,10 +67,10 @@ function getCachedResult(slug) {
 }
 
 // ─── Carbon Math & Helpers ────────────────────────────────────────────────────
-const ENERGY_PER_GB        = 0.81;
-const CARBON_FACTOR        = 442;
-const GREEN_REDUCTION      = 0.09;
-const THRESHOLDS           = { 'A+':0.095, A:0.186, B:0.341, C:0.493, D:0.656, E:0.846 };
+const ENERGY_PER_GB   = 0.81;
+const CARBON_FACTOR   = 442;
+const GREEN_REDUCTION = 0.09;
+const THRESHOLDS      = { 'A+':0.095, A:0.186, B:0.341, C:0.493, D:0.656, E:0.846 };
 
 function calcCarbon(mb, green) {
   const base = mb/1024 * ENERGY_PER_GB * CARBON_FACTOR;
@@ -75,14 +80,14 @@ function gradeFor(g) {
   return Object.entries(THRESHOLDS).find(([_, t]) => g <= t)?.[0] ?? 'F';
 }
 function percentileFor(g) {
-  const pct = (THRESHOLDS.E - Math.min(g, THRESHOLDS.E)) / THRESHOLDS.E * 100;
-  return Math.round(Math.max(0, Math.min(100, pct)));
+  const raw = (THRESHOLDS.E - Math.min(g, THRESHOLDS.E)) / THRESHOLDS.E * 100;
+  return Math.round(Math.max(0, Math.min(100, raw)));
 }
 async function retry(fn, tries = 3, delay = 1000) {
   let err;
   for (let i = 0; i < tries; i++) {
     try { return await fn(); }
-    catch (e) { err = e; await new Promise(r => setTimeout(r, delay * (i+1))); }
+    catch (e) { err = e; await new Promise(r => setTimeout(r, delay*(i+1))); }
   }
   throw err;
 }
@@ -95,10 +100,10 @@ function isGreen(host) {
 
 // ─── Puppeteer Singleton ───────────────────────────────────────────────────────
 const browserPromise = puppeteer.launch({
-  headless: 'new',
-  args: ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage'],
+  headless:       'new',
+  args:           ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage'],
   ignoreHTTPSErrors: true,
-  timeout: 60000
+  timeout:        60000
 });
 
 async function getPageSizeInMB(url) {
@@ -107,14 +112,16 @@ async function getPageSizeInMB(url) {
   try {
     await page.setCacheEnabled(false);
     await page.setViewport({ width:1280, height:720 });
-    await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36');
+    await page.setUserAgent(
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36'
+    );
     console.log(`🔍 Navigating to: ${url}`);
     await page.goto(url, { waitUntil:'networkidle2', timeout:30000 });
     const bytes = await page.evaluate(() => {
       const nav  = performance.getEntriesByType('navigation')[0] || {};
       const res  = performance.getEntriesByType('resource')   || [];
       const navB = nav.encodedBodySize ?? nav.transferSize ?? 0;
-      const resB = res.reduce((sum,r) => sum + (r.encodedBodySize ?? r.transferSize ?? 0), 0);
+      const resB = res.reduce((s,r) => s + (r.encodedBodySize ?? r.transferSize ?? 0), 0);
       return navB + resB;
     });
     return bytes / (1024 * 1024);
@@ -167,9 +174,11 @@ app.get('/api/trace', limiterBadge, (req, res) => {
   let url;
   try { url = new URL(site).toString(); }
   catch { return res.status(400).json({ error:'Invalid site URL.' }); }
-  const slug = new URL(url).hostname.replace(/[^a-z0-9]/gi,'-').toLowerCase();
+
+  const slug   = new URL(url).hostname.replace(/[^a-z0-9]/gi,'-').toLowerCase();
   const cached = getCachedResult(slug);
   if (cached) return res.json(cached);
+
   return res.status(404).json({
     error: 'No recent trace found. Please run a carbon check first.'
   });

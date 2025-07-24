@@ -1,10 +1,9 @@
-// src/components/CarbonBadge.jsx
 import React, { useState, useEffect } from "react";
 import { API_BASE } from "../config";
 
 export default function CarbonBadge({ url, data: preData }) {
   const [data, setData] = useState(preData);
-  const [err, setErr] = useState(false);
+  const [err,  setErr]  = useState(false);
 
   useEffect(() => {
     if (preData) return;
@@ -16,24 +15,19 @@ export default function CarbonBadge({ url, data: preData }) {
     }
 
     fetch(`${API_BASE}/api/trace?site=${encodeURIComponent(url)}`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((d) => {
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
+      .then(d => {
         setData(d);
         sessionStorage.setItem(key, JSON.stringify(d));
       })
       .catch(() => setErr(true));
   }, [url, preData]);
 
-  if (err) return <div className="text-red-500 text-xs">Badge failed to load</div>;
-  if (!data) return <div className="text-xs">Loading badge…</div>;
+  if (err)      return <div className="text-red-500 text-xs">Badge failed to load</div>;
+  if (!data)    return <div className="text-xs">Loading badge…</div>;
 
   const co2 = data.carbonEstimate.toFixed(2);
   const pct = data.percentile;
-
-  // slug for linking back to your result page
   const slug = (() => {
     try {
       const u = new URL(url);
@@ -48,16 +42,14 @@ export default function CarbonBadge({ url, data: preData }) {
     <div className="inline-flex flex-col items-center text-center">
       <a
         href={`/result/${slug}`}
-        className="inline-flex overflow-hidden rounded-md shadow-lg transform transition hover:scale-105 no-underline"
+        className="inline-flex overflow-hidden rounded-md shadow-lg transform transition hover:scale-105"
       >
-        {/* CO₂ panel */}
         <div className="px-4 py-2 bg-white dark:bg-slate-800 border border-greenbuzz text-sm font-semibold text-slate-900 dark:text-slate-200 rounded-l-md">
           {co2}g CO₂/view
         </div>
-        {/* Logo panel */}
         <div className="flex items-center px-4 py-2 bg-greenbuzz rounded-r-md">
           <img
-            src={`${API_BASE}/GreenTraceLogo.svg`}
+            src="/GreenTraceLogo.svg"
             alt="GreenTrace"
             className="h-6 w-auto filter brightness-0 invert"
           />
