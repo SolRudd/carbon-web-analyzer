@@ -1,3 +1,4 @@
+// src/components/CarbonBadge.jsx
 import React, { useState, useEffect } from "react";
 import { API_BASE } from "../config";
 
@@ -56,7 +57,7 @@ export default function CarbonBadge({ url, data: preData }) {
         {/* Logo panel */}
         <div className="flex items-center px-4 py-2 bg-greenbuzz rounded-r-md">
           <img
-            src="/GreenTraceLogo.svg"
+            src={`${API_BASE}/GreenTraceLogo.svg`}
             alt="GreenTrace"
             className="h-6 w-auto filter brightness-0 invert"
           />
@@ -68,4 +69,3 @@ export default function CarbonBadge({ url, data: preData }) {
     </div>
   );
 }
-
