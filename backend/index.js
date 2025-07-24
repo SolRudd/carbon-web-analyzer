@@ -15,14 +15,14 @@ const Database   = require('better-sqlite3');
 const app  = express();
 const PORT = Number(process.env.PORT) || 8080;
 
-// ─── Trust proxy for correct IP parsing (X‑Forwarded‑For) ───────────────────────
+// ─── Trust proxy so rate‑limit sees real client IPs ──────────────────────────
 app.set('trust proxy', 1);
 
-// ─── Security & CORS ─────────────────────────────────────────────────────────
+// ─── Security, CORS & JSON ───────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'))); // serves /public/greentrace-badge.js & logo
 app.get('/healthz', (_req, res) => res.send('OK'));
 
 // ─── Rate‑limiters ────────────────────────────────────────────────────────────
@@ -31,13 +31,13 @@ const limiterCheck = rateLimit({
   windowMs: 60_000, max: 5,
   message: { error: 'Too many carbon checks, please wait a minute.' }
 });
-// Badge loads (cache only): 30/minute
+// Badge loads (cache‑only): 30/minute
 const limiterBadge = rateLimit({
   windowMs: 60_000, max: 30,
   message: { error: 'Too many badge requests, please wait a minute.' }
 });
 
-// ─── Database & 7‑day Cache Helper ─────────────────────────────────────────────
+// ─── SQLite & 7 day cache helper ──────────────────────────────────────────────
 const DB_FILE = process.env.RESULTS_DB_PATH || path.join(__dirname, 'results.db');
 fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
 const db = new Database(DB_FILE);
@@ -54,8 +54,7 @@ db.exec(`
     timestamp       INTEGER NOT NULL
   );
 `);
-
-const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 function getCachedResult(slug) {
   const row = db.prepare('SELECT * FROM results WHERE slug = ?').get(slug);
   if (!row) return null;
@@ -66,7 +65,7 @@ function getCachedResult(slug) {
   return row;
 }
 
-// ─── Carbon Math & Helpers ────────────────────────────────────────────────────
+// ─── Carbon math & helpers ───────────────────────────────────────────────────
 const ENERGY_PER_GB   = 0.81;
 const CARBON_FACTOR   = 442;
 const GREEN_REDUCTION = 0.09;
@@ -99,7 +98,7 @@ function isGreen(host) {
     .catch(() => false);
 }
 
-// ─── Puppeteer singleton ───────────────────────────────────────────────────────
+// ─── Puppeteer singleton ─────────────────────────────────────────────────────
 const browserPromise = puppeteer.launch({
   headless: 'new',
   args: ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage'],
@@ -112,14 +111,17 @@ async function getPageSizeInMB(url) {
   try {
     await page.setCacheEnabled(false);
     await page.setViewport({ width:1280, height:720 });
-    await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36');
+    await page.setUserAgent(
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ' +
+      '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    );
     console.log(`🔍 Navigating to: ${url}`);
     await page.goto(url, { waitUntil:'networkidle2', timeout:30000 });
     const bytes = await page.evaluate(() => {
       const nav  = performance.getEntriesByType('navigation')[0] || {};
       const res  = performance.getEntriesByType('resource')   || [];
       const navB = nav.encodedBodySize ?? nav.transferSize ?? 0;
-      const resB = res.reduce((sum, r) => sum + (r.encodedBodySize ?? r.transferSize ?? 0), 0);
+      const resB = res.reduce((s,r) => s + (r.encodedBodySize ?? r.transferSize ?? 0), 0);
       return navB + resB;
     });
     return bytes / (1024 * 1024);
@@ -130,18 +132,18 @@ async function getPageSizeInMB(url) {
 
 // ─── Routes ────────────────────────────────────────────────────────────────────
 
-// 1) Full carbon check → Puppeteer + store result
+// 1) Full check → Puppeteer + store
 app.post('/api/check-carbon', limiterCheck, async (req, res) => {
   const site = req.body.url;
   if (!site) return res.status(400).json({ error:'Missing URL.' });
   try {
-    const host       = new URL(site).hostname;
-    const [green, sizeMB] = await Promise.all([
+    const host = new URL(site).hostname;
+    const [ green, sizeMB ] = await Promise.all([
       retry(() => isGreen(host)),
       retry(() => getPageSizeInMB(site))
     ]);
     const carbonEstimate = calcCarbon(sizeMB, green);
-    const slug           = host.replace(/[^a-z0-9]/gi,'-').toLowerCase();
+    const slug = host.replace(/[^a-z0-9]/gi,'-').toLowerCase();
 
     db.prepare(`
       INSERT OR REPLACE INTO results
@@ -157,38 +159,43 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
     row.greenHost = !!row.greenHost;
     ['sizeMB','carbonEstimate','reductionPct','percentile','timestamp']
       .forEach(k => row[k] = +row[k]);
-
     res.json(row);
+
   } catch (e) {
     console.error('❌ check-carbon error:', e);
     res.status(500).json({ error:'Carbon check failed.', details:e.message });
   }
 });
 
-// 2) Badge loader → only SQLite cache (<7 days old)
+// 2) Badge loader → cache‑only
 app.get('/api/trace', limiterBadge, (req, res) => {
   const site = req.query.site;
   if (!site) return res.status(400).json({ error:'Missing site query.' });
-  let url; try { url = new URL(site).toString(); } catch {
-    return res.status(400).json({ error:'Invalid site URL.' });
-  }
-  const slug   = new URL(url).hostname.replace(/[^a-z0-9]/gi,'-').toLowerCase();
+  let url;
+  try { url = new URL(site).toString(); }
+  catch { return res.status(400).json({ error:'Invalid site URL.' }); }
+
+  const slug = new URL(url).hostname.replace(/[^a-z0-9]/gi,'-').toLowerCase();
   const cached = getCachedResult(slug);
   if (cached) return res.json(cached);
+
   return res.status(404).json({
     error: 'No recent trace found. Please run a carbon check first.'
   });
 });
 
-// 3) Lookup last stored result (any age)
+// 3) Fetch last stored result (any age)
 app.get('/api/results/:slug', (req, res) => {
   try {
-    const row = db.prepare('SELECT * FROM results WHERE slug = ?').get(req.params.slug);
+    const row = db.prepare('SELECT * FROM results WHERE slug = ?')
+                  .get(req.params.slug);
     if (!row) return res.status(404).json({ error:'Not found.' });
+
     row.greenHost = !!row.greenHost;
     ['sizeMB','carbonEstimate','reductionPct','percentile','timestamp']
       .forEach(k => row[k] = +row[k]);
     res.json(row);
+
   } catch (e) {
     console.error('❌ results lookup error:', e);
     res.status(500).json({ error:'Server error.' });
@@ -201,7 +208,7 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error:'Internal server error.' });
 });
 
-// start
+// ─── Start server ─────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`🚀 API listening on port ${PORT}`);
 });
