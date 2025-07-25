@@ -18,35 +18,33 @@ const PORT = Number(process.env.PORT) || 8080;
 // ─── Trust proxy (for express‑rate‑limit behind a proxy) ─────────────────────
 app.set('trust proxy', 1);
 
-// ─── Security headers ────────────────────────────────────────────────────────
-// We disable only the frameguard so badge‐loader script can run cross‑origin.
-// All other Helmet defaults remain in place.
+// ─── Serve badge script & logo (no CSP/frameguard) ──────────────────────────
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(cors());
+app.use(express.json());
+
+// ─── Now apply all Helmet defaults **except** frameguard ─────────────────────
 app.use(helmet({
   frameguard: false
 }));
 
-// ─── CORS & JSON & Static ────────────────────────────────────────────────────
-app.use(cors());
-app.use(express.json());
-// Serve your badge loader + logo from /public
-app.use(express.static(path.join(__dirname, 'public')));
 app.get('/healthz', (_req, res) => res.send('OK'));
 
-// ─── Rate Limiters ───────────────────────────────────────────────────────────
-// Full Puppeteer checks: 5 per minute
+// ─── Rate‑limiters ────────────────────────────────────────────────────────────
+// Full Puppeteer checks: 5/min
 const limiterCheck = rateLimit({
   windowMs: 60_000,
   max: 5,
   message: { error: 'Too many carbon checks, please wait a minute.' }
 });
-// Badge loads (cache only): 30 per minute
+// Badge loads (cache only): 30/min
 const limiterBadge = rateLimit({
   windowMs: 60_000,
   max: 30,
   message: { error: 'Too many badge requests, please wait a minute.' }
 });
 
-// ─── SQLite + 7‑day cache helper ─────────────────────────────────────────────
+// ─── SQLite + 7‑day cache helper ──────────────────────────────────────────────
 const DB_FILE = process.env.RESULTS_DB_PATH || path.join(__dirname, 'results.db');
 fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
 const db = new Database(DB_FILE);
@@ -91,8 +89,6 @@ function percentileFor(g) {
   const pct = ((THRESHOLDS.E - Math.min(g, THRESHOLDS.E)) / THRESHOLDS.E) * 100;
   return Math.round(Math.max(0, Math.min(100, pct)));
 }
-
-// retry helper
 async function retry(fn, tries = 3, delay = 1000) {
   let err;
   for (let i = 0; i < tries; i++) {
@@ -108,7 +104,7 @@ function isGreen(host) {
     .catch(() => false);
 }
 
-// ─── Puppeteer singleton (shared browser instance) ─────────────────────────
+// ─── Puppeteer singleton ─────────────────────────────────────────────────────
 const browserPromise = puppeteer.launch({
   headless: 'new',
   args: ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage'],
@@ -126,17 +122,12 @@ async function getPageSizeInMB(url) {
       '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     );
     console.log(`🔍 Navigating to: ${url}`);
-    await page.goto(url, {
-      waitUntil: 'networkidle2',
-      timeout:   60000   // 60 s
-    });
+    await page.goto(url, { waitUntil:'networkidle2', timeout:60000 });
     const bytes = await page.evaluate(() => {
       const nav = performance.getEntriesByType('navigation')[0] || {};
       const res = performance.getEntriesByType('resource')   || [];
       const navB = nav.encodedBodySize ?? nav.transferSize ?? 0;
-      const resB = res.reduce((sum, r) =>
-        sum + (r.encodedBodySize ?? r.transferSize ?? 0)
-      , 0);
+      const resB = res.reduce((s,r) => s+(r.encodedBodySize ?? r.transferSize ?? 0), 0);
       return navB + resB;
     });
     return bytes / (1024 * 1024);
@@ -151,15 +142,13 @@ async function getPageSizeInMB(url) {
 app.post('/api/check-carbon', limiterCheck, async (req, res) => {
   const site = req.body.url;
   if (!site) return res.status(400).json({ error: 'Missing URL.' });
-
   try {
-    const host = new URL(site).hostname;
-    const [ green, sizeMB ] = await Promise.all([
+    const host           = new URL(site).hostname;
+    const [ green, size ] = await Promise.all([
       retry(() => isGreen(host)),
       retry(() => getPageSizeInMB(site))
     ]);
-
-    const carbonEstimate = calcCarbon(sizeMB, green);
+    const carbonEstimate = calcCarbon(size, green);
     const slug           = host.replace(/[^a-z0-9]/gi,'-').toLowerCase();
 
     db.prepare(`
@@ -167,7 +156,7 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
         (slug,url,greenHost,sizeMB,carbonEstimate,reductionPct,grade,percentile,timestamp)
       VALUES(?,?,?,?,?,?,?,?,?)
     `).run(
-      slug, site, green?1:0, sizeMB, carbonEstimate,
+      slug, site, green?1:0, size, carbonEstimate,
       GREEN_REDUCTION, gradeFor(carbonEstimate),
       percentileFor(carbonEstimate), Date.now()
     );
@@ -176,7 +165,6 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
     row.greenHost = !!row.greenHost;
     ['sizeMB','carbonEstimate','reductionPct','percentile','timestamp']
       .forEach(k => row[k] = +row[k]);
-
     res.json(row);
 
   } catch (e) {
@@ -185,17 +173,15 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
   }
 });
 
-// 2) Badge loader → only cache lookup (no Puppeteer)
+// 2) Badge loader → cache lookup only (no Puppeteer)
 app.get('/api/trace', limiterBadge, (req, res) => {
   const site = req.query.site;
   if (!site) return res.status(400).json({ error: 'Missing site query.' });
+  let url;
+  try { url = new URL(site).toString(); }
+  catch { return res.status(400).json({ error: 'Invalid site URL.' }); }
 
-  let normalized;
-  try { normalized = new URL(site).toString(); }
-  catch {
-    return res.status(400).json({ error: 'Invalid site URL.' });
-  }
-  const slug   = new URL(normalized).hostname.replace(/[^a-z0-9]/gi,'-').toLowerCase();
+  const slug   = new URL(url).hostname.replace(/[^a-z0-9]/gi,'-').toLowerCase();
   const cached = getCachedResult(slug);
   if (cached) return res.json(cached);
 
@@ -204,18 +190,18 @@ app.get('/api/trace', limiterBadge, (req, res) => {
   });
 });
 
-// 3) Retrieve last stored result (any age)
-app.get('/api/results/:slug', (_req, res) => {
+// 3) Fetch last stored result (any age)
+app.get('/api/results/:slug', (req, res) => {
   try {
     const row = db.prepare('SELECT * FROM results WHERE slug = ?')
-                  .get(_req.params.slug);
+                  .get(req.params.slug);
     if (!row) return res.status(404).json({ error: 'Not found.' });
 
     row.greenHost = !!row.greenHost;
     ['sizeMB','carbonEstimate','reductionPct','percentile','timestamp']
       .forEach(k => row[k] = +row[k]);
-
     res.json(row);
+
   } catch (e) {
     console.error('❌ results lookup error:', e);
     res.status(500).json({ error: 'Server error.' });
@@ -228,7 +214,7 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error.' });
 });
 
-// Start the server
+// Start server
 app.listen(PORT, () => {
   console.log(`🚀 API listening on port ${PORT}`);
 });
