@@ -15,29 +15,38 @@ const Database   = require('better-sqlite3');
 const app  = express();
 const PORT = Number(process.env.PORT) || 8080;
 
-// ─── Trust proxy so rate‑limit sees real client IPs ──────────────────────────
+// ─── Trust proxy (for express‑rate‑limit behind a proxy) ─────────────────────
 app.set('trust proxy', 1);
 
-// ─── Security, CORS & JSON ───────────────────────────────────────────────────
-app.use(helmet());
+// ─── Security headers ────────────────────────────────────────────────────────
+// We disable only the frameguard so badge‐loader script can run cross‑origin.
+// All other Helmet defaults remain in place.
+app.use(helmet({
+  frameguard: false
+}));
+
+// ─── CORS & JSON & Static ────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public'))); // serves /public/greentrace-badge.js & logo
+// Serve your badge loader + logo from /public
+app.use(express.static(path.join(__dirname, 'public')));
 app.get('/healthz', (_req, res) => res.send('OK'));
 
-// ─── Rate‑limiters ────────────────────────────────────────────────────────────
-// Full carbon checks (heavy): 5/minute
+// ─── Rate Limiters ───────────────────────────────────────────────────────────
+// Full Puppeteer checks: 5 per minute
 const limiterCheck = rateLimit({
-  windowMs: 60_000, max: 5,
+  windowMs: 60_000,
+  max: 5,
   message: { error: 'Too many carbon checks, please wait a minute.' }
 });
-// Badge loads (cache‑only): 30/minute
+// Badge loads (cache only): 30 per minute
 const limiterBadge = rateLimit({
-  windowMs: 60_000, max: 30,
+  windowMs: 60_000,
+  max: 30,
   message: { error: 'Too many badge requests, please wait a minute.' }
 });
 
-// ─── SQLite & 7 day cache helper ──────────────────────────────────────────────
+// ─── SQLite + 7‑day cache helper ─────────────────────────────────────────────
 const DB_FILE = process.env.RESULTS_DB_PATH || path.join(__dirname, 'results.db');
 fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
 const db = new Database(DB_FILE);
@@ -54,11 +63,11 @@ db.exec(`
     timestamp       INTEGER NOT NULL
   );
 `);
-const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 function getCachedResult(slug) {
   const row = db.prepare('SELECT * FROM results WHERE slug = ?').get(slug);
   if (!row) return null;
-  if (Date.now() - row.timestamp > CACHE_TTL_MS) return null;
+  if (Date.now() - row.timestamp > CACHE_TTL) return null;
   row.greenHost = !!row.greenHost;
   ['sizeMB','carbonEstimate','reductionPct','percentile','timestamp']
     .forEach(k => row[k] = +row[k]);
@@ -83,6 +92,7 @@ function percentileFor(g) {
   return Math.round(Math.max(0, Math.min(100, pct)));
 }
 
+// retry helper
 async function retry(fn, tries = 3, delay = 1000) {
   let err;
   for (let i = 0; i < tries; i++) {
@@ -98,7 +108,7 @@ function isGreen(host) {
     .catch(() => false);
 }
 
-// ─── Puppeteer singleton ─────────────────────────────────────────────────────
+// ─── Puppeteer singleton (shared browser instance) ─────────────────────────
 const browserPromise = puppeteer.launch({
   headless: 'new',
   args: ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage'],
@@ -116,12 +126,17 @@ async function getPageSizeInMB(url) {
       '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     );
     console.log(`🔍 Navigating to: ${url}`);
-    await page.goto(url, { waitUntil:'networkidle2', timeout:30000 });
+    await page.goto(url, {
+      waitUntil: 'networkidle2',
+      timeout:   60000   // 60 s
+    });
     const bytes = await page.evaluate(() => {
-      const nav  = performance.getEntriesByType('navigation')[0] || {};
-      const res  = performance.getEntriesByType('resource')   || [];
+      const nav = performance.getEntriesByType('navigation')[0] || {};
+      const res = performance.getEntriesByType('resource')   || [];
       const navB = nav.encodedBodySize ?? nav.transferSize ?? 0;
-      const resB = res.reduce((s,r) => s + (r.encodedBodySize ?? r.transferSize ?? 0), 0);
+      const resB = res.reduce((sum, r) =>
+        sum + (r.encodedBodySize ?? r.transferSize ?? 0)
+      , 0);
       return navB + resB;
     });
     return bytes / (1024 * 1024);
@@ -132,22 +147,24 @@ async function getPageSizeInMB(url) {
 
 // ─── Routes ────────────────────────────────────────────────────────────────────
 
-// 1) Full check → Puppeteer + store
+// 1) Full carbon check → Puppeteer + write to DB
 app.post('/api/check-carbon', limiterCheck, async (req, res) => {
   const site = req.body.url;
-  if (!site) return res.status(400).json({ error:'Missing URL.' });
+  if (!site) return res.status(400).json({ error: 'Missing URL.' });
+
   try {
     const host = new URL(site).hostname;
     const [ green, sizeMB ] = await Promise.all([
       retry(() => isGreen(host)),
       retry(() => getPageSizeInMB(site))
     ]);
+
     const carbonEstimate = calcCarbon(sizeMB, green);
-    const slug = host.replace(/[^a-z0-9]/gi,'-').toLowerCase();
+    const slug           = host.replace(/[^a-z0-9]/gi,'-').toLowerCase();
 
     db.prepare(`
       INSERT OR REPLACE INTO results
-      (slug,url,greenHost,sizeMB,carbonEstimate,reductionPct,grade,percentile,timestamp)
+        (slug,url,greenHost,sizeMB,carbonEstimate,reductionPct,grade,percentile,timestamp)
       VALUES(?,?,?,?,?,?,?,?,?)
     `).run(
       slug, site, green?1:0, sizeMB, carbonEstimate,
@@ -159,56 +176,59 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
     row.greenHost = !!row.greenHost;
     ['sizeMB','carbonEstimate','reductionPct','percentile','timestamp']
       .forEach(k => row[k] = +row[k]);
+
     res.json(row);
 
   } catch (e) {
     console.error('❌ check-carbon error:', e);
-    res.status(500).json({ error:'Carbon check failed.', details:e.message });
+    res.status(500).json({ error: 'Carbon check failed.', details: e.message });
   }
 });
 
-// 2) Badge loader → cache‑only
+// 2) Badge loader → only cache lookup (no Puppeteer)
 app.get('/api/trace', limiterBadge, (req, res) => {
   const site = req.query.site;
-  if (!site) return res.status(400).json({ error:'Missing site query.' });
-  let url;
-  try { url = new URL(site).toString(); }
-  catch { return res.status(400).json({ error:'Invalid site URL.' }); }
+  if (!site) return res.status(400).json({ error: 'Missing site query.' });
 
-  const slug = new URL(url).hostname.replace(/[^a-z0-9]/gi,'-').toLowerCase();
+  let normalized;
+  try { normalized = new URL(site).toString(); }
+  catch {
+    return res.status(400).json({ error: 'Invalid site URL.' });
+  }
+  const slug   = new URL(normalized).hostname.replace(/[^a-z0-9]/gi,'-').toLowerCase();
   const cached = getCachedResult(slug);
   if (cached) return res.json(cached);
 
-  return res.status(404).json({
+  res.status(404).json({
     error: 'No recent trace found. Please run a carbon check first.'
   });
 });
 
-// 3) Fetch last stored result (any age)
-app.get('/api/results/:slug', (req, res) => {
+// 3) Retrieve last stored result (any age)
+app.get('/api/results/:slug', (_req, res) => {
   try {
     const row = db.prepare('SELECT * FROM results WHERE slug = ?')
-                  .get(req.params.slug);
-    if (!row) return res.status(404).json({ error:'Not found.' });
+                  .get(_req.params.slug);
+    if (!row) return res.status(404).json({ error: 'Not found.' });
 
     row.greenHost = !!row.greenHost;
     ['sizeMB','carbonEstimate','reductionPct','percentile','timestamp']
       .forEach(k => row[k] = +row[k]);
-    res.json(row);
 
+    res.json(row);
   } catch (e) {
     console.error('❌ results lookup error:', e);
-    res.status(500).json({ error:'Server error.' });
+    res.status(500).json({ error: 'Server error.' });
   }
 });
 
-// global error handler
+// Global error handler
 app.use((err, _req, res, _next) => {
   console.error('Unhandled error:', err);
-  res.status(500).json({ error:'Internal server error.' });
+  res.status(500).json({ error: 'Internal server error.' });
 });
 
-// ─── Start server ─────────────────────────────────────────────────────────────
+// Start the server
 app.listen(PORT, () => {
   console.log(`🚀 API listening on port ${PORT}`);
 });
