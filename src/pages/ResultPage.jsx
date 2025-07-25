@@ -1,4 +1,3 @@
-// src/pages/ResultPage.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import LoadingOverlay from "../components/LoadingOverlay";
@@ -18,20 +17,21 @@ export default function ResultPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
 
-  // Fetch cached result
+  // Fetch cached result on mount
   useEffect(() => {
     setLoading(true);
+    setError(null);
     fetch(`${API_BASE}/api/results/${slug}`)
-      .then((res) => {
+      .then(res => {
         if (!res.ok) throw new Error(`Server ${res.status}`);
         return res.json();
       })
-      .then((data) => setResult(data))
-      .catch((err) => setError(err.message))
+      .then(data => setResult(data))
+      .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, [slug]);
 
-  // Manual re-test
+  // Manual re‑test (cached trace)
   const handleRetest = async () => {
     if (!result?.url) return;
     setLoading(true);
@@ -43,14 +43,14 @@ export default function ResultPage() {
       const fresh = await res.json();
       setResult(fresh);
     } catch (err) {
-      alert("Re-test failed: " + err.message);
+      alert("Re‑test failed: " + err.message);
     } finally {
       setLoading(false);
     }
   };
 
   if (loading) return <LoadingOverlay />;
-  if (error)
+  if (error) {
     return (
       <div className="text-center py-20 text-red-500">
         <p>Error: {error}</p>
@@ -59,6 +59,7 @@ export default function ResultPage() {
         </Link>
       </div>
     );
+  }
 
   return (
     <section className="py-16 px-4 bg-white dark:bg-slate-950 min-h-screen">

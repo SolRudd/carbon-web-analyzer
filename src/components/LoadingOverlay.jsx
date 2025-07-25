@@ -33,6 +33,7 @@ export default function LoadingOverlay() {
           </a>
         </p>
       </div>
+
       {/* Pulsing trees */}
       <div className="flex items-center justify-center space-x-8 mb-6">
         {[...Array(3)].map((_, i) => (
@@ -47,6 +48,7 @@ export default function LoadingOverlay() {
           />
         ))}
       </div>
+
       {/* Dynamic message */}
       <p className="text-2xl font-medium text-greenbuzz animate-pulse">
         {status} ({secs}s)

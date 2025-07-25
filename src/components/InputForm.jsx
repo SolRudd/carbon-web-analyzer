@@ -1,48 +1,62 @@
-// src/components/InputForm.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LoadingOverlay from "./LoadingOverlay";
 import globeSvg from "../assets/bubble.svg";
-import { FaLeaf } from 'react-icons/fa';
+import { FaLeaf } from "react-icons/fa";
 
 // Use VITE_API_URL (from Vercel or .env) if set, else fallback to relative
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
 export default function InputForm() {
-  const [url, setUrl] = useState("");
+  const [url, setUrl]         = useState("");
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const navigate              = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     let site = url.trim();
     if (!site) return;
 
-    // Auto-prepend protocol
+    // Auto‑prepend protocol
     if (!/^https?:\/\//i.test(site)) {
       site = `https://${site}`;
     }
 
     setLoading(true);
     try {
+      // 40 s client‑side timeout
+      const controller = new AbortController();
+      const timer      = setTimeout(() => controller.abort(), 40_000);
+
       const res = await fetch(`${API_BASE}/api/check-carbon`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: site }),
+        signal: controller.signal,
       });
+      clearTimeout(timer);
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `Server returned ${res.status}`);
+      if (!res.ok) throw new Error(data.error || `Server ${res.status}`);
+
       navigate(`/result/${data.slug}`);
     } catch (err) {
       console.error("Error fetching carbon data:", err);
-      alert("❌ " + err.message);
+      if (err.name === "AbortError") {
+        alert("⏱️ Request timed out. Please try again in a minute.");
+      } else {
+        alert("❌ " + err.message);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <section id="input-form" className="relative overflow-hidden bg-white dark:bg-slate-950 py-20 px-4 transition-colors duration-300">
+    <section
+      id="input-form"
+      className="relative overflow-hidden bg-white dark:bg-slate-950 py-20 px-4 transition-colors duration-300"
+    >
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 w-[900px] h-[900px] bg-glow-green transform -translate-x-1/2 -translate-y-1/2 blur-3xl opacity-50" />
       </div>
@@ -52,7 +66,7 @@ export default function InputForm() {
           <img
             src={globeSvg}
             alt="Stylized globe illustrating global sustainability"
-            className="w-full h-auto pointer-events-none"
+            className="w-full h-auto"
           />
         </div>
 
@@ -88,7 +102,8 @@ export default function InputForm() {
           </button>
 
           <p className="col-span-1 sm:col-span-3 text-center text-xs text-slate-600 dark:text-slate-400 mt-4">
-            By using this carbon calculator, you agree to have your submitted data stored and published in our public database.
+            By using this carbon calculator, you agree to have your submitted data
+            stored and published in our public database.
           </p>
         </form>
 
