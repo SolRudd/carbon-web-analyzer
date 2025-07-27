@@ -56,12 +56,30 @@ db.exec(`
   );
 `);
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+
+// ─── Grade calculation function ─────────────────────────────────
+function getGrade(carbonGrams) {
+  if (carbonGrams <= 0.095) return 'A+';
+  if (carbonGrams <= 0.186) return 'A';
+  if (carbonGrams <= 0.341) return 'B';
+  if (carbonGrams <= 0.493) return 'C';
+  if (carbonGrams <= 0.656) return 'D';
+  if (carbonGrams <= 0.846) return 'E';
+  return 'F';
+}
+
 function getCached(slug) {
   const row = db.prepare('SELECT * FROM results WHERE slug = ?').get(slug);
   if (!row || Date.now() - row.timestamp > CACHE_TTL) return null;
+  
   row.greenHost = !!row.greenHost;
   ['sizeMB','carbonEstimate','percentile','timestamp']
     .forEach(k => row[k] = +row[k]);
+  
+  // ADD MISSING FIELDS FOR FRONTEND:
+  row.grade = getGrade(row.carbonEstimate);
+  row.reductionPct = row.greenHost ? 9 : 0;
+  
   return row;
 }
 
@@ -251,8 +269,13 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
     ]);
     
     const carbon = calcCarbon(sizeMB, green);
-    const pct    = Math.round(Math.max(0, Math.min(100, (1 - carbon/0.846)*100)));
-    const slug   = host.replace(/[^a-z0-9]/gi,'-').toLowerCase();
+    const pct = Math.round(Math.max(0, Math.min(100, (1 - carbon/0.846)*100)));
+    
+    // ADD THESE MISSING CALCULATIONS:
+    const grade = getGrade(carbon);
+    const reductionPct = green ? 9 : 0; // 9% reduction if green hosting
+    
+    const slug = host.replace(/[^a-z0-9]/gi,'-').toLowerCase();
     
     // Store in database
     db.prepare(`
@@ -261,7 +284,7 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
       VALUES(?,?,?,?,?,?,?)
     `).run(slug, site, green?1:0, sizeMB, carbon, pct, Date.now());
     
-    console.log(`✅ AI analysis completed for ${site}: ${carbon}g CO2 (${sizeMB.toFixed(2)}MB)`);
+    console.log(`✅ AI analysis completed for ${site}: ${carbon}g CO2 (${sizeMB.toFixed(2)}MB) Grade: ${grade}`);
     
     return res.json({ 
       slug, 
@@ -270,7 +293,9 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
       sizeMB: +sizeMB.toFixed(2), 
       carbonEstimate: carbon, 
       percentile: pct,
-      method: 'ai-powered' // Show it's AI-powered!
+      grade: grade,           // FRONTEND NEEDS THIS
+      reductionPct: reductionPct, // FRONTEND NEEDS THIS
+      method: 'ai-powered'
     });
   } catch (e) {
     console.error('AI carbon check error', e);
