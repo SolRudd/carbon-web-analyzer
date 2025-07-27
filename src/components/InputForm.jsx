@@ -1,12 +1,11 @@
 // src/components/InputForm.jsx
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LoadingOverlay from "./LoadingOverlay";
 import globeSvg from "../assets/bubble.svg";
 import { FaLeaf } from 'react-icons/fa';
-
-// Use VITE_API_URL (from Vercel or .env) if set, else fallback to relative
-const API_BASE = import.meta.env.VITE_API_URL || "";
+import { API_BASE } from "../config";    // ← use shared config
 
 export default function InputForm() {
   const [url, setUrl] = useState("");
@@ -23,7 +22,9 @@ export default function InputForm() {
       site = `https://${site}`;
     }
 
+    console.log("→ Posting to", `${API_BASE}/api/check-carbon`);
     setLoading(true);
+
     try {
       const res = await fetch(`${API_BASE}/api/check-carbon`, {
         method: "POST",
@@ -95,5 +96,5 @@ export default function InputForm() {
         {loading && <LoadingOverlay />}
       </div>
     </section>
-  );
+);
 }
