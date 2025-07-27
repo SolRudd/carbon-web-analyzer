@@ -1,62 +1,35 @@
-// backend/index.js
 'use strict';
 require('dotenv').config();
 
-const fs        = require('fs');
-const path      = require('path');
-const express   = require('express');
-const helmet    = require('helmet');
-const cors      = require('cors');
+const express = require('express');
+const helmet = require('helmet');
+const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const axios     = require('axios');
-const Database  = require('better-sqlite3');
+const axios = require('axios');
+const path = require('path');
 
-const app  = express();
+const app = express();
 const PORT = Number(process.env.PORT) || 8080;
 
-// ─── Trust proxy ─────────────────────────────────────────────
+// Trust proxy
 app.set('trust proxy', 1);
 
-// ─── Security & CORS ──────────────────────────────────────────
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type']
-}));
+// Security & CORS
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+app.use(cors({ origin: '*', methods: ['GET', 'POST'], allowedHeaders: ['Content-Type'] }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/healthz', (_req, res) => res.send('OK'));
 
-// ─── Rate limiters ─────────────────────────────────────────────
+// Rate limiters
 const limiterCheck = rateLimit({ windowMs: 60_000, max: 5, message: { error: 'Too many checks, please wait a minute.' } });
 const limiterBadge = rateLimit({ windowMs: 60_000, max: 30, message: { error: 'Too many badge loads, please wait a minute.' } });
 
-// ─── SQLite + 7‑day cache ──────────────────────────────────────
-const DB_FILE = process.env.RESULTS_DB_PATH || path.join(__dirname, 'results.db');
-try {
-  fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
-} catch (e) {
-  console.warn('Directory creation warning:', e.message);
-}
-
-const db = new Database(DB_FILE);
-db.exec(`
-  CREATE TABLE IF NOT EXISTS results (
-    slug TEXT PRIMARY KEY,
-    url  TEXT,
-    greenHost INTEGER,
-    sizeMB REAL,
-    carbonEstimate REAL,
-    percentile INTEGER,
-    timestamp INTEGER
-  );
-`);
+// In-memory storage (no database crashes)
+const results = new Map();
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 
-// ─── UNIFIED SLUG GENERATION (CRITICAL FIX!) ──────────────────
+// Utility functions
 function createSlug(url) {
   try {
     const normalized = url.startsWith('http') ? url : `https://${url}`;
@@ -67,7 +40,6 @@ function createSlug(url) {
   }
 }
 
-// ─── Grade calculation function ─────────────────────────────────
 function getGrade(carbonGrams) {
   if (carbonGrams <= 0.095) return 'A+';
   if (carbonGrams <= 0.186) return 'A';
@@ -79,24 +51,17 @@ function getGrade(carbonGrams) {
 }
 
 function getCached(slug) {
-  try {
-    const row = db.prepare('SELECT * FROM results WHERE slug = ?').get(slug);
-    if (!row || Date.now() - row.timestamp > CACHE_TTL) return null;
-    
-    row.greenHost = !!row.greenHost;
-    ['sizeMB','carbonEstimate','percentile','timestamp'].forEach(k => row[k] = +row[k]);
-    
-    row.grade = getGrade(row.carbonEstimate);
-    row.reductionPct = row.greenHost ? 9 : 0;
-    
-    return row;
-  } catch (e) {
-    console.error('Database read error:', e);
-    return null;
-  }
+  const item = results.get(slug);
+  if (!item || Date.now() - item.timestamp > CACHE_TTL) return null;
+  
+  return {
+    ...item,
+    grade: getGrade(item.carbonEstimate),
+    reductionPct: item.greenHost ? 9 : 0
+  };
 }
 
-// ─── AI-Powered Analysis ────────────────────────────────────────
+// AI-Powered Analysis
 async function getPageSizeWithAI(url) {
   try {
     console.log(`🔍 Analyzing: ${url}`);
@@ -146,6 +111,7 @@ async function isGreen(host) {
     const { data } = await axios.get(`https://api.thegreenwebfoundation.org/greencheck/${host}`, { timeout: 8000 });
     return !!data.green;
   } catch (e) {
+    console.warn(`Green check failed for ${host}`);
     return false;
   }
 }
@@ -156,7 +122,75 @@ function calcCarbon(mb, green) {
   return +(green ? c * 0.91 : c).toFixed(2);
 }
 
-// ─── Routes ─────────────────────────────────────────────────────
+// Badge Script Route (COMPLETE VERSION)
+app.get('/greentrace-badge.js', limiterBadge, (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  
+  const badgeScript = `
+;(function(){
+  const API_BASE = location.hostname.includes('localhost') 
+    ? 'http://localhost:8080' 
+    : 'https://api.greentracer.org';
+  const LOGO = \`\${API_BASE}/GreenTraceLogo.svg\`;
+
+  function initBadges(){
+    document.querySelectorAll('.greentrace-badge').forEach(el => {
+      const pageURL = el.dataset.url || window.location.href;
+      fetch(\`\${API_BASE}/api/trace?site=\${encodeURIComponent(pageURL)}\`)
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(d => {
+          const co2 = d.carbonEstimate.toFixed(2);
+          const pct = d.percentile;
+          el.innerHTML = \`
+            <div style="display:inline-flex;align-items:center;font-family:sans-serif;overflow:hidden;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+              <div style="padding:4px 8px;background:#fff;border:1px solid #16A34A;font-size:12px;color:#0F172A;font-weight:600;">
+                \${co2}g CO₂/view
+              </div>
+              <div style="display:flex;align-items:center;padding:4px 10px;background:#1E3A8A;color:#fff;font-size:12px;">
+                <img src="\${LOGO}" alt="GreenTrace" style="height:16px;margin-right:6px;">
+                <span>GreenTrace</span>
+              </div>
+            </div>
+            <div style="margin-top:4px;font-size:11px;color:#334155;">
+              Cleaner than \${pct}% of pages tested
+            </div>\`;
+        })
+        .catch(() => {
+          el.innerHTML = \`<div style="color:#dc2626;font-size:12px;">
+            Run a carbon check first at <a href="https://greentracer.org" target="_blank">greentracer.org</a>
+          </div>\`;
+        });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBadges);
+  } else {
+    initBadges();
+  }
+})();
+  `;
+  
+  res.send(badgeScript);
+});
+
+// Logo endpoint
+app.get('/GreenTraceLogo.svg', (req, res) => {
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  
+  const svg = `
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="10" cy="10" r="10" fill="#16A34A"/>
+  <path d="M10 4L12 8H14L10 12L6 8H8L10 4Z" fill="white"/>
+</svg>`;
+  
+  res.send(svg);
+});
+
+// Main carbon check endpoint
 app.post('/api/check-carbon', limiterCheck, async (req, res) => {
   const site = req.body.url;
   if (!site) return res.status(400).json({ error: 'Missing URL.' });
@@ -181,32 +215,19 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
     const pct = Math.round(Math.max(0, Math.min(100, (1 - carbon/0.846)*100)));
     const grade = getGrade(carbon);
     const reductionPct = green ? 9 : 0;
-    
-    // CONSISTENT SLUG GENERATION:
     const slug = createSlug(site);
     
-    try {
-      db.prepare(`
-        INSERT OR REPLACE INTO results
-        (slug,url,greenHost,sizeMB,carbonEstimate,percentile,timestamp)
-        VALUES(?,?,?,?,?,?,?)
-      `).run(slug, site, green?1:0, sizeMB, carbon, pct, Date.now());
-    } catch (dbError) {
-      console.error('Database write error:', dbError);
-    }
+    const result = {
+      slug, url: site, greenHost: green, sizeMB: +sizeMB.toFixed(2), 
+      carbonEstimate: carbon, percentile: pct, timestamp: Date.now()
+    };
     
+    results.set(slug, result);
     console.log(`✅ Completed: ${site} = ${carbon}g CO2, Grade: ${grade}`);
     
     return res.json({ 
-      slug, 
-      url: site, 
-      greenHost: green, 
-      sizeMB: +sizeMB.toFixed(2), 
-      carbonEstimate: carbon, 
-      percentile: pct,
-      grade,
-      reductionPct,
-      method: 'ai-powered'
+      slug, url: site, greenHost: green, sizeMB: +sizeMB.toFixed(2), 
+      carbonEstimate: carbon, percentile: pct, grade, reductionPct, method: 'ai-powered'
     });
   } catch (e) {
     console.error('Carbon check error:', e);
@@ -214,13 +235,13 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
   }
 });
 
+// Badge trace endpoint
 app.get('/api/trace', limiterBadge, (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   
   const site = req.query.site;
   if (!site) return res.status(400).json({ error: 'Missing site parameter.' });
   
-  // CONSISTENT SLUG GENERATION:
   const slug = createSlug(site);
   const row = getCached(slug);
   
@@ -231,6 +252,7 @@ app.get('/api/trace', limiterBadge, (req, res) => {
   return res.status(404).json({ error: 'No recent data found. Please run a carbon check first at greentracer.org' });
 });
 
+// Results lookup
 app.get('/api/results/:slug', (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   
@@ -242,25 +264,14 @@ app.get('/api/results/:slug', (req, res) => {
   return res.json(row);
 });
 
+// Health check
 app.get('/api/health', (req, res) => {
-  try {
-    const dbStats = db.prepare('SELECT COUNT(*) as count FROM results').get();
-    res.json({
-      status: 'healthy',
-      method: 'ai-powered',
-      totalResults: dbStats.count,
-      uptime: process.uptime()
-    });
-  } catch (e) {
-    res.status(500).json({ error: 'Health check failed' });
-  }
-});
-
-// Badge script (keeping existing)
-app.get('/greentrace-badge.js', limiterBadge, (req, res) => {
-  res.setHeader('Content-Type', 'application/javascript');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.send(`console.log('Badge loaded');`); // Simplified for now
+  res.json({
+    status: 'healthy',
+    method: 'ai-powered',
+    totalResults: results.size,
+    uptime: process.uptime()
+  });
 });
 
 // Error handlers
@@ -272,11 +283,21 @@ app.use((err, req, res, next) => {
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  try { db.close(); } catch (e) {}
+  console.log('Shutting down gracefully');
   process.exit(0);
 });
 
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
+});
+
+// Start Server
 app.listen(PORT, () => {
-  console.log(`🚀 GreenTrace API on port ${PORT}`);
-  console.log(`🤖 Method: AI-Powered`);
+  console.log(`🚀 GreenTrace API listening on port ${PORT}`);
+  console.log(`🌱 Badge endpoint: /greentrace-badge.js`);
+  console.log(`🤖 Method: AI-Powered (Stable!)`);
 });
