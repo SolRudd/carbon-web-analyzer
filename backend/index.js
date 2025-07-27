@@ -1,12 +1,14 @@
 'use strict';
 require('dotenv').config();
 
+const fs = require('fs');
+const path = require('path');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const axios = require('axios');
-const path = require('path');
+const Database = require('better-sqlite3');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 8080;
@@ -16,17 +18,49 @@ app.set('trust proxy', 1);
 
 // Security & CORS
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
-app.use(cors({ origin: '*', methods: ['GET', 'POST'], allowedHeaders: ['Content-Type'] }));
+app.use(cors({ 
+  origin: ['https://www.greentracer.org', 'https://greentracer.org', '*'],
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type']
+}));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Health check (for Docker)
 app.get('/healthz', (_req, res) => res.send('OK'));
 
 // Rate limiters
-const limiterCheck = rateLimit({ windowMs: 60_000, max: 5, message: { error: 'Too many checks, please wait a minute.' } });
-const limiterBadge = rateLimit({ windowMs: 60_000, max: 30, message: { error: 'Too many badge loads, please wait a minute.' } });
+const limiterCheck = rateLimit({ 
+  windowMs: 60_000, 
+  max: 5, 
+  message: { error: 'Too many checks, please wait a minute.' } 
+});
+const limiterBadge = rateLimit({ 
+  windowMs: 60_000, 
+  max: 30, 
+  message: { error: 'Too many badge loads, please wait a minute.' } 
+});
 
-// In-memory storage (no database crashes)
-const results = new Map();
+// SQLite Database Setup (KEEP THIS FOR BADGES!)
+const DB_FILE = process.env.RESULTS_DB_PATH || path.join(__dirname, 'results.db');
+try {
+  fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
+} catch (e) {
+  console.warn('Directory creation warning:', e.message);
+}
+
+const db = new Database(DB_FILE);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS results (
+    slug TEXT PRIMARY KEY,
+    url  TEXT,
+    greenHost INTEGER,
+    sizeMB REAL,
+    carbonEstimate REAL,
+    percentile INTEGER,
+    timestamp INTEGER
+  );
+`);
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
 
 // Utility functions
@@ -51,24 +85,31 @@ function getGrade(carbonGrams) {
 }
 
 function getCached(slug) {
-  const item = results.get(slug);
-  if (!item || Date.now() - item.timestamp > CACHE_TTL) return null;
-  
-  return {
-    ...item,
-    grade: getGrade(item.carbonEstimate),
-    reductionPct: item.greenHost ? 9 : 0
-  };
+  try {
+    const row = db.prepare('SELECT * FROM results WHERE slug = ?').get(slug);
+    if (!row || Date.now() - row.timestamp > CACHE_TTL) return null;
+    
+    row.greenHost = !!row.greenHost;
+    ['sizeMB','carbonEstimate','percentile','timestamp'].forEach(k => row[k] = +row[k]);
+    
+    row.grade = getGrade(row.carbonEstimate);
+    row.reductionPct = row.greenHost ? 9 : 0;
+    
+    return row;
+  } catch (e) {
+    console.error('Database read error:', e);
+    return null;
+  }
 }
 
-// AI-Powered Analysis
+// Simplified analysis (NO PUPPETEER - just PageSpeed API)
 async function getPageSizeWithAI(url) {
   try {
     console.log(`🔍 Analyzing: ${url}`);
     const pageSpeedUrl = `https://www.googleapis.com/pagespeed/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=desktop&category=performance`;
     
     const response = await axios.get(pageSpeedUrl, { 
-      timeout: 25000,
+      timeout: 15000,  // Shorter timeout
       headers: { 'User-Agent': 'GreenTrace-Bot/1.0' }
     });
     
@@ -83,32 +124,13 @@ async function getPageSizeWithAI(url) {
     throw new Error('No valid PageSpeed data');
   } catch (error) {
     console.warn(`PageSpeed failed, using estimation:`, error.message);
-    return estimatePageSize(url);
-  }
-}
-
-function estimatePageSize(url) {
-  try {
-    const domain = new URL(url).hostname.toLowerCase();
-    const patterns = {
-      'shop': 3.5, 'store': 3.2, 'cart': 3.0, 'buy': 2.8,
-      'news': 2.5, 'blog': 2.0, 'post': 1.8,
-      'landing': 1.5, 'coming': 1.0,
-      '.com': 2.5, '.org': 2.0, '.io': 1.8
-    };
-    
-    for (const [pattern, size] of Object.entries(patterns)) {
-      if (domain.includes(pattern)) return size;
-    }
-    return 2.5;
-  } catch (e) {
-    return 2.5;
+    return 2.5; // Simple fallback
   }
 }
 
 async function isGreen(host) {
   try {
-    const { data } = await axios.get(`https://api.thegreenwebfoundation.org/greencheck/${host}`, { timeout: 8000 });
+    const { data } = await axios.get(`https://api.thegreenwebfoundation.org/greencheck/${host}`, { timeout: 5000 });
     return !!data.green;
   } catch (e) {
     console.warn(`Green check failed for ${host}`);
@@ -122,7 +144,7 @@ function calcCarbon(mb, green) {
   return +(green ? c * 0.91 : c).toFixed(2);
 }
 
-// Badge Script Route (COMPLETE VERSION)
+// Your EXACT badge script
 app.get('/greentrace-badge.js', limiterBadge, (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -130,8 +152,8 @@ app.get('/greentrace-badge.js', limiterBadge, (req, res) => {
   
   const badgeScript = `
 ;(function(){
-  const API_BASE = location.hostname.includes('localhost') 
-    ? 'http://localhost:8080' 
+  const API_BASE = location.hostname.includes('localhost')
+    ? 'http://localhost:8080'
     : 'https://api.greentracer.org';
   const LOGO = \`\${API_BASE}/GreenTraceLogo.svg\`;
 
@@ -159,7 +181,7 @@ app.get('/greentrace-badge.js', limiterBadge, (req, res) => {
         })
         .catch(() => {
           el.innerHTML = \`<div style="color:#dc2626;font-size:12px;">
-            Run a carbon check first at <a href="https://greentracer.org" target="_blank">greentracer.org</a>
+            Run a carbon check first at <a href="https://greentracer.org" target="_blank" style="color:#dc2626;">greentracer.org</a>
           </div>\`;
         });
     });
@@ -170,8 +192,7 @@ app.get('/greentrace-badge.js', limiterBadge, (req, res) => {
   } else {
     initBadges();
   }
-})();
-  `;
+})();`;
   
   res.send(badgeScript);
 });
@@ -181,8 +202,7 @@ app.get('/GreenTraceLogo.svg', (req, res) => {
   res.setHeader('Content-Type', 'image/svg+xml');
   res.setHeader('Cache-Control', 'public, max-age=86400');
   
-  const svg = `
-<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+  const svg = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
   <circle cx="10" cy="10" r="10" fill="#16A34A"/>
   <path d="M10 4L12 8H14L10 12L6 8H8L10 4Z" fill="white"/>
 </svg>`;
@@ -190,7 +210,7 @@ app.get('/GreenTraceLogo.svg', (req, res) => {
   res.send(svg);
 });
 
-// Main carbon check endpoint
+// Main endpoints
 app.post('/api/check-carbon', limiterCheck, async (req, res) => {
   const site = req.body.url;
   if (!site) return res.status(400).json({ error: 'Missing URL.' });
@@ -217,12 +237,17 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
     const reductionPct = green ? 9 : 0;
     const slug = createSlug(site);
     
-    const result = {
-      slug, url: site, greenHost: green, sizeMB: +sizeMB.toFixed(2), 
-      carbonEstimate: carbon, percentile: pct, timestamp: Date.now()
-    };
+    // Store in SQLite database
+    try {
+      db.prepare(`
+        INSERT OR REPLACE INTO results
+        (slug,url,greenHost,sizeMB,carbonEstimate,percentile,timestamp)
+        VALUES(?,?,?,?,?,?,?)
+      `).run(slug, site, green?1:0, sizeMB, carbon, pct, Date.now());
+    } catch (dbError) {
+      console.error('Database write error:', dbError);
+    }
     
-    results.set(slug, result);
     console.log(`✅ Completed: ${site} = ${carbon}g CO2, Grade: ${grade}`);
     
     return res.json({ 
@@ -235,7 +260,6 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
   }
 });
 
-// Badge trace endpoint
 app.get('/api/trace', limiterBadge, (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   
@@ -245,59 +269,67 @@ app.get('/api/trace', limiterBadge, (req, res) => {
   const slug = createSlug(site);
   const row = getCached(slug);
   
-  if (row) {
-    return res.json(row);
-  }
-  
+  if (row) return res.json(row);
   return res.status(404).json({ error: 'No recent data found. Please run a carbon check first at greentracer.org' });
 });
 
-// Results lookup
 app.get('/api/results/:slug', (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   
   const row = getCached(req.params.slug);
-  if (!row) {
-    return res.status(404).json({ error: 'Results not found.' });
-  }
+  if (!row) return res.status(404).json({ error: 'Results not found.' });
   
   return res.json(row);
 });
 
-// Health check
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    method: 'ai-powered',
-    totalResults: results.size,
-    uptime: process.uptime()
-  });
+  try {
+    const dbStats = db.prepare('SELECT COUNT(*) as count FROM results').get();
+    res.json({
+      status: 'healthy',
+      method: 'ai-powered',
+      totalResults: dbStats.count,
+      uptime: process.uptime()
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Health check failed' });
+  }
 });
 
-// Error handlers
+// 404 handler
 app.use((req, res) => res.status(404).json({ error: 'Endpoint not found' }));
+
+// Error handler
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(500).json({ error: 'Server error' });
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
-// Graceful shutdown
+// Graceful shutdown with database cleanup
 process.on('SIGTERM', () => {
-  console.log('Shutting down gracefully');
+  console.log('SIGTERM received, closing database and shutting down');
+  try {
+    db.close();
+  } catch (e) {
+    console.error('Error closing database:', e);
+  }
   process.exit(0);
 });
 
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
+process.on('SIGINT', () => {
+  console.log('SIGINT received, closing database and shutting down');
+  try {
+    db.close();
+  } catch (e) {
+    console.error('Error closing database:', e);
+  }
+  process.exit(0);
 });
 
-process.on('unhandledRejection', (reason) => {
-  console.error('Unhandled Rejection:', reason);
-});
-
-// Start Server
-app.listen(PORT, () => {
+// Start server
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 GreenTrace API listening on port ${PORT}`);
+  console.log(`📊 Database: ${DB_FILE}`);
   console.log(`🌱 Badge endpoint: /greentrace-badge.js`);
-  console.log(`🤖 Method: AI-Powered (Stable!)`);
+  console.log(`🤖 Method: AI-Powered (No Puppeteer)`);
 });
