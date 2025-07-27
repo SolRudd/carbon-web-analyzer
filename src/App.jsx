@@ -1,6 +1,7 @@
 // src/App.jsx
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { API_BASE } from "./config";                      // ← import your API_BASE
 
 import Header         from "./components/Header";
 import Footer         from "./components/Footer";
@@ -12,6 +13,9 @@ import Badge          from "./pages/Badge";
 import ResultPage     from "./pages/ResultPage";
 import RatingPage     from "./pages/RatingPage";
 import NotFoundPage   from "./pages/NotFoundPage";
+
+// Log once at startup so you can verify in the browser console:
+console.log("⚡️ API_BASE is:", API_BASE);
 
 function App() {
   return (
