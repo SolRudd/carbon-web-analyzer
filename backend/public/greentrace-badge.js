@@ -4,7 +4,7 @@
     : 'https://api.greentracer.org';
   const LOGO = `${API_BASE}/GreenTraceLogo.svg`;
 
-  function initBadges(){
+  function initBadges() {
     document.querySelectorAll('.greentrace-badge').forEach(el => {
       const pageURL = el.dataset.url || window.location.href;
       fetch(`${API_BASE}/api/trace?site=${encodeURIComponent(pageURL)}`)
@@ -17,7 +17,7 @@
               <div style="padding:4px 8px;background:#fff;border:1px solid #16A34A;font-size:12px;color:#0F172A;font-weight:600;">
                 ${co2}g CO₂/view
               </div>
-              <div style="display:flex;align-items:center;padding:4px 10px;background:#1E3A8A;color:#fff;font-size:12px;">
+              <div style="display:flex;align-items:center;padding:4px 10px;background:#16A34A;color:#fff;font-size:12px;">
                 <img src="${LOGO}" alt="GreenTrace" style="height:16px;margin-right:6px;">
                 <span>GreenTrace</span>
               </div>
@@ -28,13 +28,13 @@
         })
         .catch(() => {
           el.innerHTML = `<div style="color:#dc2626;font-size:12px;">
-            Run a carbon check first.
+            Run a carbon check first at <a href="https://greentracer.org" target="_blank">greentracer.org</a>
           </div>`;
         });
     });
   }
 
-  if (document.readyState === 'loading') {
+  if (document.readyState==='loading') {
     document.addEventListener('DOMContentLoaded', initBadges);
   } else {
     initBadges();

@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { TreeDeciduous as TreeIcon } from "lucide-react";
 
 export default function LoadingOverlay() {
   const [secs, setSecs] = useState(0);
   useEffect(() => {
-    const iv = setInterval(() => setSecs(s => s + 1), 1000);
+    const iv = setInterval(() => setSecs(s => s+1), 1000);
     return () => clearInterval(iv);
   }, []);
 
-  let status = secs < 10
+  const status = secs < 10
     ? "Checking…"
     : secs < 30
       ? "Still working…"
@@ -25,7 +25,7 @@ export default function LoadingOverlay() {
           <a
             href="https://www.smashingmagazine.com/2020/11/sustainable-web-development/"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="underline hover:text-greenbuzz"
           >
             Smashing Magazine
@@ -33,16 +33,11 @@ export default function LoadingOverlay() {
         </p>
       </div>
       <div className="flex items-center justify-center space-x-8 mb-6">
-        {[...Array(3)].map((_, i) => (
-          <TreeIcon
-            key={i}
-            className="text-greenbuzz"
-            style={{
-              fontSize: `${64 + i * 32}px`,
-              animation: `pulse 1.2s ${i * 0.4}s ease-in-out infinite`
-            }}
-            aria-hidden="true"
-          />
+        {[...Array(3)].map((_,i)=>(
+          <TreeIcon key={i} className="text-greenbuzz" style={{
+            fontSize:`${64 + i*32}px`,
+            animation:`pulse 1.2s ${i*0.4}s ease-in-out infinite`
+          }}/>
         ))}
       </div>
       <p className="text-2xl font-medium text-greenbuzz animate-pulse">
