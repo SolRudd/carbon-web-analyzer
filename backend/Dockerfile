@@ -10,7 +10,7 @@ RUN npm ci
 # ── Stage 2: runtime image ──
 FROM node:20-slim
 
-# Install Chromium if you ever need it
+# (Optional) Install Chromium
 RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     ca-certificates \
@@ -35,5 +35,5 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
 
 EXPOSE 8080
 
-# Start your backend
-CMD ["node", "backend/index.js"]
+# Start your backend (index.js lives at /app/index.js)
+CMD ["npm", "start"]
