@@ -3,14 +3,14 @@
 'use strict';
 require('dotenv').config();
 
-const fs         = require('fs');
-const path       = require('path');
-const express    = require('express');
-const helmet     = require('helmet');
-const cors       = require('cors');
-const rateLimit  = require('express-rate-limit');
-const axios      = require('axios');
-const Database   = require('better-sqlite3');
+const fs       = require('fs');
+const path     = require('path');
+const express  = require('express');
+const helmet   = require('helmet');
+const cors     = require('cors');
+const rateLimit= require('express-rate-limit');
+const axios    = require('axios');
+const Database = require('better-sqlite3');
 
 const app  = express();
 const PORT = Number(process.env.PORT) || 8080;
@@ -60,16 +60,18 @@ fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
 const db = new Database(DB_FILE);
 db.exec(`
   CREATE TABLE IF NOT EXISTS results (
-    slug TEXT PRIMARY KEY,
-    url  TEXT,
-    greenHost INTEGER,
-    sizeMB REAL,
-    carbonEstimate REAL,
-    percentile INTEGER,
-    timestamp INTEGER
+    slug            TEXT PRIMARY KEY,
+    url             TEXT,
+    greenHost       INTEGER,
+    sizeMB          REAL,
+    carbonEstimate  REAL,
+    percentile      INTEGER,
+    reductionPct    REAL,
+    grade           TEXT,
+    timestamp       INTEGER
   );
 `);
-const CACHE_TTL = 24 * 60 * 60 * 1000;
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 1 day
 
 // ─── Utility functions ───────────────────────────────────────────────────────
 function createSlug(site) {
@@ -94,10 +96,12 @@ function getGrade(c) {
 function getCached(slug) {
   const row = db.prepare('SELECT * FROM results WHERE slug = ?').get(slug);
   if (!row || Date.now() - row.timestamp > CACHE_TTL) return null;
-  row.greenHost = !!row.greenHost;
-  ['sizeMB','carbonEstimate','percentile'].forEach(k => row[k] = +row[k]);
-  row.grade = getGrade(row.carbonEstimate);
-  row.reductionPct = row.greenHost ? 9 : 0;
+  row.greenHost       = !!row.greenHost;
+  row.sizeMB          = +row.sizeMB;
+  row.carbonEstimate  = +row.carbonEstimate;
+  row.percentile      = +row.percentile;
+  row.reductionPct    = +row.reductionPct;
+  row.grade           = getGrade(row.carbonEstimate);
   return row;
 }
 
@@ -123,7 +127,8 @@ async function isGreen(host) {
 
 function calcCarbon(mb, green) {
   const CO2_PER_MB = 0.81 * 442 / 1024;
-  return +(mb * CO2_PER_MB * (green ? 0.91 : 1)).toFixed(2);
+  const base = mb * CO2_PER_MB;
+  return +(green ? base * 0.91 : base).toFixed(2);
 }
 
 // ─── Routes ────────────────────────────────────────────────────────────────────
@@ -139,18 +144,19 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
   catch { return res.status(400).json({ error: 'Invalid URL.' }); }
 
   const [green, sizeMB] = await Promise.all([ isGreen(host), getPageSize(normalized) ]);
-  const carbon = calcCarbon(sizeMB, green);
-  const pct    = Math.round(Math.max(0, Math.min(100, (0.846 - Math.min(carbon,0.846)) / 0.846 * 100)));
-  const grade  = getGrade(carbon);
-  const slug   = createSlug(site);
+  const carbon        = calcCarbon(sizeMB, green);
+  const percentile    = Math.round(Math.max(0, Math.min(100, (0.846 - Math.min(carbon,0.846)) / 0.846 * 100)));
+  const grade         = getGrade(carbon);
+  const reductionPct  = green ? 9 : 0;
+  const slug          = createSlug(site);
 
   db.prepare(`
     INSERT OR REPLACE INTO results
-    (slug,url,greenHost,sizeMB,carbonEstimate,percentile,timestamp)
-    VALUES (?,?,?,?,?,?,?)
-  `).run(slug, site, green?1:0, sizeMB, carbon, pct, Date.now());
+    (slug,url,greenHost,sizeMB,carbonEstimate,percentile,reductionPct,grade,timestamp)
+    VALUES (?,?,?,?,?,?,?,?,?)
+  `).run(slug, site, green?1:0, sizeMB, carbon, percentile, reductionPct, grade, Date.now());
 
-  res.json({ slug, url: site, greenHost: green, sizeMB, carbonEstimate: carbon, percentile: pct, grade });
+  return res.json({ slug, url: site, greenHost: green, sizeMB, carbonEstimate: carbon, percentile, reductionPct, grade });
 });
 
 // 2) Badge loader (cache‑only)
@@ -163,7 +169,7 @@ app.get('/api/trace', limiterBadge, (req, res) => {
   res.json(row);
 });
 
-// 3) Lookup last result
+// 3) Lookup last result by slug
 app.get('/api/results/:slug', (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   const row = getCached(req.params.slug);
