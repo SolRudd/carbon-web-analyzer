@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from "react";
-import { API_BASE } from "../config";
+import React, { useState, useEffect } from 'react';
 
 export default function CarbonBadge({ url, data: preData }) {
   const [data, setData] = useState(preData);
-  const [err,  setErr]  = useState(false);
+  const [err, setErr]   = useState(false);
 
   useEffect(() => {
-    if (preData) return;
+    // skip if we already have data, or if this is our own dev host
+    if (preData || url.startsWith(window.location.origin)) return;
+
     const key = `carbon:${url}`;
     const cached = sessionStorage.getItem(key);
     if (cached) {
@@ -14,11 +15,14 @@ export default function CarbonBadge({ url, data: preData }) {
       return;
     }
 
-    fetch(`${API_BASE}/api/trace?site=${encodeURIComponent(url)}`)
-      .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
+    fetch(`/api/trace?site=${encodeURIComponent(url)}`)
+      .then(r => {
+        if (!r.ok) throw new Error(`Status ${r.status}`);
+        return r.json();
+      })
       .then(d => {
-        setData(d);
         sessionStorage.setItem(key, JSON.stringify(d));
+        setData(d);
       })
       .catch(() => setErr(true));
   }, [url, preData]);
@@ -28,36 +32,20 @@ export default function CarbonBadge({ url, data: preData }) {
 
   const co2 = data.carbonEstimate.toFixed(2);
   const pct = data.percentile;
-  const slug = (() => {
-    try {
-      const u = new URL(url);
-      const base = (u.hostname + u.pathname).replace(/\/$/, "");
-      return base.replace(/[^a-z0-9]/gi, "-").toLowerCase();
-    } catch {
-      return "";
-    }
-  })();
+  const slug = new URL(url).hostname.replace(/[^a-z0-9]/gi,'-').toLowerCase();
 
   return (
     <div className="inline-flex flex-col items-center text-center">
       <a
         href={`/result/${slug}`}
-        className="inline-flex overflow-hidden rounded-md shadow-lg transform transition hover:scale-105"
+        className="inline-flex overflow-hidden rounded shadow hover:scale-105 transition"
       >
-        <div className="px-4 py-2 bg-white dark:bg-slate-800 border border-greenbuzz text-sm font-semibold text-slate-900 dark:text-slate-200 rounded-l-md">
+        <div className="px-3 py-1 bg-white border text-sm font-semibold">
           {co2}g CO₂/view
         </div>
-        <div className="flex items-center px-4 py-2 bg-greenbuzz rounded-r-md">
-          <img
-            src="/GreenTraceLogo.svg"
-            alt="GreenTrace"
-            className="h-6 w-auto filter brightness-0 invert"
-          />
-        </div>
+        <div className="px-3 py-1 bg-greenbuzz text-white">GreenTrace</div>
       </a>
-      <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-        Cleaner than {pct}% of pages tested
-      </div>
+      <div className="mt-1 text-xs">Cleaner than {pct}% of pages tested</div>
     </div>
   );
 }
