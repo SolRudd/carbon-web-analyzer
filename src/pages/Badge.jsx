@@ -1,4 +1,3 @@
-// src/pages/Badge.jsx
 import React from "react";
 import { Link } from "react-router-dom";
 
@@ -12,71 +11,74 @@ export default function Badge() {
         {/* Page Header */}
         <header className="text-center">
           <h1 className="text-5xl font-extrabold text-greenbuzz dark:text-greenbuzz-light mb-4">
-            🌿 GreenTracer Verification Badge
+            🌿 Add Your GreenTracer Badge
           </h1>
           <p className="text-lg text-slate-700 dark:text-slate-300">
-            Embed a compact badge in your footer to showcase your page’s carbon footprint via GreenTracer. Increase transparency and link back to your detailed report.
+            Show your website’s carbon score! Run a test below, then add a badge to your site. Badges update automatically every 7 days.
           </p>
         </header>
 
-        {/* Embed Snippet Section */}
-        <article className="bg-slate-100 dark:bg-slate-800 p-6 rounded-lg max-w-3xl mx-auto space-y-6">
+        {/* Step 1 */}
+        <article className="bg-slate-100 dark:bg-slate-800 p-6 rounded-lg max-w-3xl mx-auto space-y-4">
           <h2 className="text-2xl font-bold text-greenbuzz dark:text-greenbuzz-light">
-            How to Embed
+            1. Test Your Page
           </h2>
-          <pre className="font-mono text-sm whitespace-pre-wrap break-words text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 p-4 rounded">
+          <p>
+            Enter your site at <Link to="/" className="underline text-greenbuzz">greentracer.org</Link> and run a test. You must test each page before the badge will display.
+          </p>
+        </article>
+
+        {/* Step 2 */}
+        <article className="bg-slate-100 dark:bg-slate-800 p-6 rounded-lg max-w-3xl mx-auto space-y-4">
+          <h2 className="text-2xl font-bold text-greenbuzz dark:text-greenbuzz-light">
+            2. Embed the Badge
+          </h2>
+          <p>
+            Copy one of these snippets into your site’s HTML (e.g., in your footer).
+          </p>
+          <details className="my-2">
+            <summary className="cursor-pointer text-greenbuzz dark:text-greenbuzz-light">JavaScript Auto Badge (Recommended, Light &amp; Dark)</summary>
+            <pre className="font-mono text-sm whitespace-pre-wrap break-words bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-4 rounded">
+{`<div class="greentrace-badge" data-url="https://YOURDOMAIN.com"></div>
+<script src="https://api.greentracer.org/greentrace-badge.js" defer></script>`}
+            </pre>
+            <div className="text-xs text-slate-600 dark:text-slate-400 mt-2">
+              Auto detects light/dark mode. <b>Change <code>data-url</code> to your site/page.</b>
+            </div>
+          </details>
+          <details>
+            <summary className="cursor-pointer text-greenbuzz dark:text-greenbuzz-light">SVG Image Badge (Manual, Light/Dark)</summary>
+            <pre className="font-mono text-sm whitespace-pre-wrap break-words bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-4 rounded">
 {`<!-- Light Mode Badge -->
 <a href="https://greentracer.org?ref=badge" target="_blank" rel="noopener noreferrer">
-  <img src="https://api.greentracer.org/badge.svg?url={{YOUR_PAGE_URL_ENCODED}}" alt="GreenTracer Badge" width="100" />
+  <img src="https://api.greentracer.org/badge.svg?url=https://YOURDOMAIN.com" alt="GreenTracer Badge" width="120" />
 </a>
 
 <!-- Dark Mode Badge -->
 <a href="https://greentracer.org?ref=badge" target="_blank" rel="noopener noreferrer">
-  <img src="https://api.greentracer.org/badge.svg?theme=dark&url={{YOUR_PAGE_URL_ENCODED}}" alt="GreenTracer Badge (Dark)" width="100" />
+  <img src="https://api.greentracer.org/badge.svg?theme=dark&url=https://YOURDOMAIN.com" alt="GreenTracer Badge (Dark)" width="120" />
 </a>
-
-<!-- Auto-Detect Loader -->
-<div id="greentrace-badge" class="greentracer-badge" data-theme="auto" data-url="{{YOUR_PAGE_URL}}"></div>
-<script src="https://cdn.greentracer.org/badge-loader.js" defer></script>`}
-          </pre>
+`}
+            </pre>
+            <div className="text-xs text-slate-600 dark:text-slate-400 mt-2">
+              Use <code>?theme=dark</code> for dark backgrounds.
+            </div>
+          </details>
         </article>
 
-        {/* Additional Info */}
+        {/* Tips & FAQ */}
         <section className="text-center max-w-3xl mx-auto space-y-4 text-slate-600 dark:text-slate-400">
-          <p>• Results are cached for 7 days to minimize API calls.</p>
-          <p>• The loader script is ultra‑lightweight and open source.</p>
+          <p>• Badges update automatically every 7 days (run a test if you change your site).</p>
+          <p>• Loader script works on any site, including WordPress, Wix, and custom code.</p>
           <p>
-            • Customize via our{' '}
-            <a href="https://github.com/greentracer/js-badge-loader" target="_blank" rel="noopener noreferrer" className="underline text-greenbuzz dark:text-greenbuzz-light">
-              JS Loader Library
+            • Need help?{' '}
+            <a href="mailto:hello@greentracer.org" className="underline text-greenbuzz dark:text-greenbuzz-light">
+              Contact Us
             </a>
-            .
+            {' '}or see our{' '}
+            <Link to="/faq" className="underline text-greenbuzz dark:text-greenbuzz-light">FAQ</Link>.
           </p>
         </section>
-
-        {/* CTAs */}
-        <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <Link
-            to="/badge"
-            className="px-6 py-3 bg-greenbuzz hover:bg-greenbuzz-light text-white font-semibold rounded-full transition-transform hover:scale-105"
-          >
-            Get Your Badge
-          </Link>
-          <Link
-            to="/api-access"
-            className="px-6 py-3 border-2 border-greenbuzz text-greenbuzz hover:bg-greenbuzz hover:text-white rounded-full transition-colors"
-          >
-            View API Access
-          </Link>
-        </div>
-
-        {/* Footer Note */}
-        <footer className="text-center text-slate-700 dark:text-slate-300 mt-8">
-          <p>
-            Questions? See our <Link to="/faq" className="underline text-greenbuzz dark:text-greenbuzz-light">FAQ</Link> or{' '}
-            <Link to="/api-access" className="underline text-greenbuzz dark:text-greenbuzz-light">Contact Us</Link>.
-          </p>
-        </footer>
       </div>
     </section>
   );
