@@ -17,18 +17,28 @@ const PORT = Number(process.env.PORT) || 8080;
 app.set('trust proxy', 1);
 
 // ─── Security & CORS ─────────────────────────────────────────────────────────
+
+// Collect all valid origins
 const ALLOWED = [
   'http://localhost:5173',
   'https://greentracer.org',
-  'https://www.greentracer.org'
+  'https://www.greentracer.org',
+  'https://greentracer-frontend.vercel.app',
 ];
+
+// Allow ALL Vercel Preview deployments, e.g. https://greentracer-frontend-xyz123.vercel.app
+function dynamicCORS(origin, cb) {
+  if (!origin) return cb(null, true);
+  if (ALLOWED.includes(origin)) return cb(null, true);
+  // Match any Vercel preview deploy for your app
+  if (/^https:\/\/greentracer-frontend-[\w-]+\.vercel\.app$/.test(origin)) return cb(null, true);
+  cb(new Error(`Blocked CORS origin: ${origin}`));
+}
+
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({
-  origin: (origin, cb) => {
-    if (!origin || ALLOWED.includes(origin)) return cb(null, true);
-    cb(new Error(`Blocked CORS origin: ${origin}`));
-  },
-  methods: ['GET','POST'],
+  origin: dynamicCORS,
+  methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type']
 }));
 app.use(express.json());
