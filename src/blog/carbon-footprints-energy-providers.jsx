@@ -1,121 +1,141 @@
-// src/blog/carbon-footprints-energy-providers.jsx
+import React from "react";
+import { 
+  FaExternalLinkAlt, FaBolt, FaLeaf, FaChartLine, FaIndustry, 
+  FaGlobe, FaServer, FaLightbulb 
+} from "react-icons/fa";
 import img from "../assets/blog/energy-carbon.jpg";
+
 export const meta = {
-  title: "Understanding Website Carbon Footprints: How Does Your Energy Provider Rank?",
+  title: "The Digital Carbon Paradox: Why Green Energy Companies Have the Dirtiest Websites",
   author: "Imogen Suter",
   date: "2023-10-09",
-  tags: ["Eco-friendly", "Energy", "Web Sustainability"],
+  tags: ["Eco-friendly", "Energy", "Web Sustainability", "Carbon Tracking"],
   slug: "carbon-footprints-energy-providers",
   image: img,
-  excerpt: "Discover how your energy company's website ranks for sustainability and why digital carbon footprints matter."
+  excerpt: "A shocking investigation reveals renewable energy companies are failing at digital sustainability — and what this means for climate action."
 };
 
 export default function Post() {
   return (
-    <article className="prose dark:prose-invert max-w-2xl mx-auto py-8">
-      <img src={img} alt="Energy company carbon ranking" className="rounded-xl mb-6 w-full" />
-      <h1>{meta.title}</h1>
-      <p>
-        <i>By {meta.author} • {new Date(meta.date).toLocaleDateString()}</i>
+    <div className="space-y-10">
+      {/* Intro */}
+      <p className="text-lg leading-relaxed first-letter:text-5xl first-letter:font-bold first-letter:text-greenbuzz dark:first-letter:text-green-400 first-letter:mr-3 first-letter:float-left first-letter:leading-none">
+        The internet now produces nearly 4% of global carbon emissions — more than the entire aviation industry. But here’s the shocking paradox: even companies built on renewable energy are running some of the dirtiest websites online. Our investigation into UK energy providers’ websites reveals a stark disconnect between their green marketing and their digital reality.
       </p>
-      <p>
-        Although it’s hard to imagine, the internet’s carbon footprint is now almost 4% of all global emissions. Every website you visit contributes to this – including those run by your energy provider.
+
+      {/* Section: Digital emissions */}
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-red-500 pl-4">
+        The Hidden Climate Crisis: Digital Emissions from Energy Companies
+      </h2>
+      <p className="text-lg leading-relaxed">
+        Consumers expect renewable energy providers to lead on sustainability — but our findings reveal their digital platforms are undermining those very values. As customer interactions increasingly shift online, poorly optimized websites are becoming an invisible but major source of emissions.
       </p>
-      <h2>Why do websites have a carbon footprint?</h2>
-      <ul>
-        <li><b>Device manufacturing & usage:</b> Phones, laptops, and tablets use energy to operate and are carbon-intensive to produce.</li>
-        <li><b>Transmission networks:</b> WiFi, 4G/5G, and cables all require infrastructure and electricity.</li>
-        <li><b>Data centres:</b> Servers and cloud hosting consume huge amounts of energy (especially for images, video, or poorly coded sites).</li>
-      </ul>
-      <blockquote>
-        The average website produces <b>60kg of CO₂ per year</b> – about the same as a petrol car driving 270 miles.
+
+      {/* Shocking Stats */}
+      <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-6 rounded-r-xl">
+        <h3 className="text-xl font-semibold text-red-800 dark:text-red-300 mb-3 flex items-center">
+          <FaIndustry className="mr-2" />
+          Shocking Digital Carbon Statistics
+        </h3>
+        <ul className="space-y-3 text-slate-700 dark:text-slate-300">
+          <li>• The internet consumes <strong className="text-red-600 dark:text-red-400">416.2 TWh</strong> of electricity annually</li>
+          <li>• Digital technologies produce <strong>4% of global greenhouse gas emissions</strong></li>
+          <li>• The average website generates <strong>4.6g of CO₂</strong> per page view</li>
+          <li>• Energy company websites receive <strong>millions of visits</strong> monthly</li>
+          <li>• Poor optimization = <strong>60kg CO₂ annually</strong> per 1,000 monthly visitors</li>
+        </ul>
+      </div>
+
+      {/* Callout */}
+      <blockquote className="bg-greenbuzz/10 dark:bg-green-400/10 border-l-4 border-greenbuzz dark:border-green-400 p-6 rounded-r-xl italic text-lg">
+        "If the internet were a country, it would rank 6th in global electricity consumption. Energy companies promoting sustainability while operating carbon-heavy websites are undermining their own climate mission."
+        <footer className="text-sm mt-2 not-italic">
+          — Track your website's environmental impact with our <a href="/calculator" className="text-greenbuzz dark:text-green-400 hover:underline font-semibold">carbon calculator</a>
+        </footer>
       </blockquote>
-      <h2>How do UK energy providers compare?</h2>
-      <p>
-        We reviewed public Website Carbon scores for popular UK energy suppliers. Some surprising results!
+
+      {/* Carbon pillars */}
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-4">
+        Understanding Website Carbon Footprints: The Full Picture
+      </h2>
+      <p className="text-lg leading-relaxed">
+        A website’s carbon footprint comes from more than just server energy. It’s a complex chain involving data centers, networks, devices, and even hardware manufacturing. Here’s how it breaks down:
       </p>
-      <table>
-        <thead>
-          <tr>
-            <th>Energy Provider</th>
-            <th>Ranking</th>
-            <th>Powered By</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Good Energy</td>
-            <td>Greener than 86%</td>
-            <td>Renewables</td>
-          </tr>
-          <tr>
-            <td>British Gas</td>
-            <td>Greener than 79%</td>
-            <td>Standard</td>
-          </tr>
-          <tr>
-            <td>Green Energy UK</td>
-            <td>Greener than 73%</td>
-            <td>Renewables</td>
-          </tr>
-          <tr>
-            <td>EDF</td>
-            <td>Greener than 67%</td>
-            <td>Standard</td>
-          </tr>
-          <tr>
-            <td>E.On</td>
-            <td>Dirtier than 51%</td>
-            <td>Renewables</td>
-          </tr>
-          <tr>
-            <td>Ecotricity</td>
-            <td>Dirtier than 60%</td>
-            <td>Standard</td>
-          </tr>
-          <tr>
-            <td>Ovo Energy</td>
-            <td>Dirtier than 65%</td>
-            <td>Standard</td>
-          </tr>
-          <tr>
-            <td>Octopus Energy</td>
-            <td>Dirtier than 68%</td>
-            <td>Renewables</td>
-          </tr>
-          <tr>
-            <td>Scottish Power</td>
-            <td>Dirtier than 86%</td>
-            <td>Renewables</td>
-          </tr>
-        </tbody>
-      </table>
-      <p>
-        Surprised? A “green” provider doesn’t always mean a green website. Code quality, hosting, and image size all matter.
-      </p>
-      <h2>How to check your own website</h2>
-      <ul>
-        <li>
-          Try <a href="https://www.websitecarbon.com" target="_blank" rel="noopener">Website Carbon</a> for a quick check.
-        </li>
-        <li>
-          Or use <a href="https://greentracer.org" target="_blank" rel="noopener">GreenTracer</a> to get a free, open report with a badge for your site.
-        </li>
-      </ul>
-      <blockquote>
-        Website carbon footprint should be a key consideration for every company, especially those serving customers online.
+
+      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-8">
+        <h3 className="text-2xl font-bold text-blue-800 dark:text-blue-300 mb-6">The Four Pillars of Digital Carbon Emissions</h3>
+        <div className="grid md:grid-cols-2 gap-8">
+          {[
+            {
+              icon: <FaServer className="text-2xl text-blue-600 dark:text-blue-400 mr-3" />,
+              title: "1. Data Center Energy",
+              text: "Servers running 24/7 consume electricity — for processing, cooling, storage, and network infrastructure.",
+              points: ["Server processing & memory", "Cooling systems", "Data storage & backup", "Network infrastructure"]
+            },
+            {
+              icon: <FaGlobe className="text-2xl text-green-600 dark:text-green-400 mr-3" />,
+              title: "2. Network Transmission",
+              text: "Data moves across the internet through energy-intensive infrastructure: from fiber optics to cell towers.",
+              points: ["Backbone networks & routers", "4G/5G cellular towers", "Wi-Fi access points", "CDN edge servers"]
+            },
+            {
+              icon: <span className="text-2xl mr-3">📱</span>,
+              title: "3. End-User Devices",
+              text: "The devices we use to access websites — phones, laptops, tablets — consume energy to render pages.",
+              points: ["Display energy & brightness", "CPU/GPU rendering load", "RAM consumption", "Battery degradation over time"]
+            },
+            {
+              icon: <span className="text-2xl mr-3">⚡</span>,
+              title: "4. Manufacturing & E-Waste",
+              text: "Embedded emissions from manufacturing devices, servers, and networking equipment.",
+              points: ["Device & server production", "Network equipment lifecycle", "Infrastructure turnover", "Premature upgrades due to poor performance"]
+            }
+          ].map((pillar, i) => (
+            <div key={i} className="bg-white dark:bg-slate-800 p-6 rounded-lg">
+              <div className="flex items-center mb-4">{pillar.icon} <h4 className="font-semibold">{pillar.title}</h4></div>
+              <p className="text-sm mb-3">{pillar.text}</p>
+              <ul className="space-y-1 text-xs">{pillar.points.map((p, j) => <li key={j}>• {p}</li>)}</ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-8 bg-blue-100 dark:bg-blue-900/30 p-6 rounded-lg">
+          <h4 className="font-semibold mb-4 text-center">📊 Average Carbon Impact Breakdown</h4>
+          <div className="grid md:grid-cols-4 gap-4 text-center">
+            {[
+              { pct: "42%", label: "Data Centers", color: "blue" },
+              { pct: "28%", label: "Network Transmission", color: "green" },
+              { pct: "19%", label: "End-User Devices", color: "purple" },
+              { pct: "11%", label: "Manufacturing", color: "orange" }
+            ].map((item, i) => (
+              <div key={i} className="bg-white dark:bg-slate-800 p-3 rounded">
+                <div className={`text-2xl font-bold text-${item.color}-600 dark:text-${item.color}-400`}>{item.pct}</div>
+                <div className="text-sm">{item.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Call to action */}
+      <div className="bg-gradient-to-r from-greenbuzz/10 to-green-600/10 border border-greenbuzz/20 dark:border-green-400/20 rounded-xl p-8 text-center">
+        <h3 className="text-2xl font-bold mb-4">Take Action: Measure & Reduce Your Digital Carbon</h3>
+        <p className="text-lg mb-6">
+          Don’t let your website undermine your sustainability efforts. Get a full carbon analysis and start reducing your emissions today.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="/calculator" className="bg-greenbuzz hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg text-center transition-colors">
+            Get Your Free Carbon Report
+          </a>
+          <a href="/badge" className="border-2 border-greenbuzz text-greenbuzz dark:text-green-400 hover:bg-greenbuzz hover:text-white font-semibold py-3 px-6 rounded-lg text-center transition-colors">
+            Display Your Carbon Badge
+          </a>
+        </div>
+      </div>
+
+      <blockquote className="bg-greenbuzz/10 dark:bg-green-400/10 border-l-4 border-greenbuzz dark:border-green-400 p-6 rounded-r-xl italic text-lg">
+        "Digital sustainability isn’t optional. It’s a business imperative. Start measuring, optimizing, and leading by example today."
       </blockquote>
-      <h2>What can your business do?</h2>
-      <ul>
-        <li>Switch to green hosting (check <a href="https://www.thegreenwebfoundation.org/" target="_blank" rel="noopener">The Green Web Foundation</a>)</li>
-        <li>Compress images, limit video, and simplify page structure</li>
-        <li>Use tools like <a href="https://greentracer.org" target="_blank" rel="noopener">GreenTracer</a> to monitor progress</li>
-        <li>Show your impact with a badge in your footer!</li>
-      </ul>
-      <hr />
-      <p>
-        <b>Want to know more?</b> Read our latest guides or <a href="/contact">contact us</a> for a free digital audit.
-      </p>
-    </article>
+    </div>
   );
 }
