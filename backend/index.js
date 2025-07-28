@@ -17,7 +17,6 @@ const PORT = Number(process.env.PORT) || 8080;
 app.set('trust proxy', 1);
 
 // ─── Security & CORS ─────────────────────────────────────────────────────────
-// Only allow your frontend origins (dev + prod)
 const ALLOWED = [
   'http://localhost:5173',
   'https://greentracer.org',
@@ -81,10 +80,12 @@ const TTL = 24*60*60*1000;
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function slugify(site) {
   try {
-    const u = site.startsWith('http') ? site : `https://${site}`;
-    return new URL(u).hostname.replace(/[^a-z0-9]/gi,'-').toLowerCase();
+    // Always remove trailing slash for URLs
+    let u = site.startsWith('http') ? site : `https://${site}`;
+    u = u.replace(/\/+$/, ''); // Remove trailing slashes
+    return new URL(u).hostname.replace(/[^a-z0-9]/gi,'-').toLowerCase().replace(/-+$/, '');
   } catch {
-    return site.replace(/[^a-z0-9]/gi,'-').toLowerCase();
+    return site.replace(/[^a-z0-9]/gi,'-').toLowerCase().replace(/-+$/, '');
   }
 }
 function gradeFor(c) {
@@ -131,7 +132,8 @@ function calcCO2(mb, green) {
   return +(green ? base * 0.91 : base).toFixed(2);
 }
 
-// ─── Routes ────────────────────────────────────────────────────────────────────
+// ─── ROUTES ─────────────────────────────────────────────────────────────────
+
 // 1) Full carbon check
 app.post('/api/check-carbon', limiterCheck, async (req, res) => {
   const site = req.body.url;
@@ -148,7 +150,7 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
   const reductionPct = green ? 9 : 0;
   const slug         = slugify(site);
 
-  // ← **FIX**: 9 placeholders for 9 columns
+  // Insert or replace
   db.prepare(`
     INSERT OR REPLACE INTO results
       (slug, url, greenHost, sizeMB, carbonEstimate, percentile, reductionPct, grade, timestamp)
@@ -165,6 +167,10 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
     Date.now()
   );
 
+  // Debug: print all slugs
+  const allSlugs = db.prepare('SELECT slug FROM results').all();
+  console.log('Inserted slug:', slug, 'Known slugs now:', allSlugs.map(r => r.slug));
+
   res.json({ slug, url: site, greenHost: green, sizeMB, carbonEstimate: carbon, percentile: pct, reductionPct, grade });
 });
 
@@ -172,16 +178,36 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
 app.get('/api/trace', limiterBadge, (req, res) => {
   const site = req.query.site;
   if (!site) return res.status(400).json({ error:'Missing site.' });
-  const row = getCached(slugify(site));
-  if (!row) return res.status(404).json({ error:'No data—run a check first.' });
+  const slug = slugify(site);
+  const row = getCached(slug);
+  if (!row) {
+    console.log('[TRACE] No result for slug:', slug);
+    return res.status(404).json({ error:'No data—run a check first.' });
+  }
   res.json(row);
 });
 
 // 3) Lookup last result by slug
 app.get('/api/results/:slug', (req, res) => {
-  const row = getCached(req.params.slug);
-  if (!row) return res.status(404).json({ error:'Results not found.' });
+  const slug = req.params.slug;
+  console.log('[RESULTS] Fetching result for slug:', slug);
+  const row = getCached(slug);
+  if (!row) {
+    const all = db.prepare('SELECT slug FROM results').all();
+    console.log('404. Known slugs:', all.map(r => r.slug));
+    return res.status(404).json({ error: 'Results not found.' });
+  }
   res.json(row);
+});
+
+// 4) DEBUG ONLY: Clean DB (danger!)
+//    Call: GET /api/clean-db?secret=YOUR_SECRET_KEY
+//    Set YOUR_SECRET_KEY in your .env file for basic safety.
+app.get('/api/clean-db', (req, res) => {
+  const ok = process.env.CLEAN_DB_SECRET;
+  if (!ok || req.query.secret !== ok) return res.status(401).json({ error: 'Unauthorized.' });
+  db.exec('DELETE FROM results; VACUUM;');
+  res.json({ ok: true, message: 'Database wiped.' });
 });
 
 // 404 & error handlers
