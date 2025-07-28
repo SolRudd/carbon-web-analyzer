@@ -13,29 +13,29 @@ const Database  = require('better-sqlite3');
 const app  = express();
 const PORT = Number(process.env.PORT) || 8080;
 
-// ─── Trust Proxy ──────────────────────────────────────────────────────────────
+// ─── Trust Proxy ──────────────────────────────────────────────
 app.set('trust proxy', 1);
 
-// ─── Security & CORS ─────────────────────────────────────────────────────────
+// ─── Security & CORS ─────────────────────────────────────────
 
-// Collect all valid origins
+// Trusted frontend domains for sensitive POST requests:
 const ALLOWED = [
   'http://localhost:5173',
   'https://greentracer.org',
   'https://www.greentracer.org',
   'https://greentracer-frontend.vercel.app',
 ];
-
-// Allow ALL Vercel Preview deployments, e.g. https://greentracer-frontend-xyz123.vercel.app
+// Vercel preview deploys allowed as well.
 function dynamicCORS(origin, cb) {
   if (!origin) return cb(null, true);
   if (ALLOWED.includes(origin)) return cb(null, true);
-  // Match any Vercel preview deploy for your app
   if (/^https:\/\/greentracer-frontend-[\w-]+\.vercel\.app$/.test(origin)) return cb(null, true);
   cb(new Error(`Blocked CORS origin: ${origin}`));
 }
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+
+// Default CORS policy for most endpoints (LOCKED DOWN)
 app.use(cors({
   origin: dynamicCORS,
   methods: ['GET', 'POST'],
@@ -43,7 +43,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// ─── Rate Limiters ───────────────────────────────────────────────────────────
+// ─── Rate Limiters ───────────────────────────────────────────
 const limiterCheck = rateLimit({
   windowMs: 24*60*60*1000,
   max: 20,
@@ -55,20 +55,36 @@ const limiterBadge = rateLimit({
   message: { error: 'Too many badge loads.' }
 });
 
-// ─── Badge Script ────────────────────────────────────────────────────────────
-app.get('/greentrace-badge.js', limiterBadge, (req, res) => {
+// ─── Badge Endpoints: Allow All Origins ─────────────────────
+
+// Public CORS (open to all origins) for badge script and badge API only:
+const badgeCors = cors({ origin: '*', methods: ['GET'], allowedHeaders: ['Content-Type'] });
+
+app.get('/greentrace-badge.js', badgeCors, limiterBadge, (req, res) => {
   res.type('application/javascript');
-  res.set('Access-Control-Allow-Origin','*');
   res.set('Cross-Origin-Resource-Policy','cross-origin');
   res.set('Cache-Control','public,max-age=3600');
   res.sendFile(path.join(__dirname,'public','greentrace-badge.js'));
 });
 
-// ─── Static + Health ─────────────────────────────────────────────────────────
+// The badge fetch endpoint, also public:
+app.get('/api/trace', badgeCors, limiterBadge, (req, res) => {
+  const site = req.query.site;
+  if (!site) return res.status(400).json({ error:'Missing site.' });
+  const slug = slugify(site);
+  const row = getCached(slug);
+  if (!row) {
+    console.log('[TRACE] No result for slug:', slug);
+    return res.status(404).json({ error:'No data—run a check first.' });
+  }
+  res.json(row);
+});
+
+// ─── Static + Health ─────────────────────────────────────────
 app.use(express.static(path.join(__dirname,'public')));
 app.get('/healthz', (_req,res)=>res.send('OK'));
 
-// ─── SQLite & Cache ─────────────────────────────────────────────────────────
+// ─── SQLite & Cache ─────────────────────────────────────────
 const DB_FILE = process.env.RESULTS_DB_PATH || path.join(__dirname,'results.db');
 fs.mkdirSync(path.dirname(DB_FILE), { recursive:true });
 const db = new Database(DB_FILE);
@@ -85,9 +101,9 @@ db.exec(`
     timestamp       INTEGER
   );
 `);
-const TTL = 24*60*60*1000;
+const TTL = 24*60*60*1000; // 24 hours
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────
 function slugify(site) {
   try {
     // Always remove trailing slash for URLs
@@ -142,9 +158,9 @@ function calcCO2(mb, green) {
   return +(green ? base * 0.91 : base).toFixed(2);
 }
 
-// ─── ROUTES ─────────────────────────────────────────────────────────────────
+// ─── Main Routes ────────────────────────────────────────────
 
-// 1) Full carbon check
+// 1) Full carbon check (secure, locked down)
 app.post('/api/check-carbon', limiterCheck, async (req, res) => {
   const site = req.body.url;
   if (!site) return res.status(400).json({ error:'Missing URL.' });
@@ -184,20 +200,7 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
   res.json({ slug, url: site, greenHost: green, sizeMB, carbonEstimate: carbon, percentile: pct, reductionPct, grade });
 });
 
-// 2) Badge loader (cache‑only)
-app.get('/api/trace', limiterBadge, (req, res) => {
-  const site = req.query.site;
-  if (!site) return res.status(400).json({ error:'Missing site.' });
-  const slug = slugify(site);
-  const row = getCached(slug);
-  if (!row) {
-    console.log('[TRACE] No result for slug:', slug);
-    return res.status(404).json({ error:'No data—run a check first.' });
-  }
-  res.json(row);
-});
-
-// 3) Lookup last result by slug
+// 2) Lookup last result by slug (secure, locked down)
 app.get('/api/results/:slug', (req, res) => {
   const slug = req.params.slug;
   console.log('[RESULTS] Fetching result for slug:', slug);
@@ -210,9 +213,7 @@ app.get('/api/results/:slug', (req, res) => {
   res.json(row);
 });
 
-// 4) DEBUG ONLY: Clean DB (danger!)
-//    Call: GET /api/clean-db?secret=YOUR_SECRET_KEY
-//    Set YOUR_SECRET_KEY in your .env file for basic safety.
+// 3) DEBUG ONLY: Clean DB (secure, locked down)
 app.get('/api/clean-db', (req, res) => {
   const ok = process.env.CLEAN_DB_SECRET;
   if (!ok || req.query.secret !== ok) return res.status(401).json({ error: 'Unauthorized.' });
@@ -231,5 +232,4 @@ app.use((err, _, res, __) => {
 process.on('SIGTERM', ()=>{ db.close(); process.exit(0) });
 process.on('SIGINT',  ()=>{ db.close(); process.exit(0) });
 
-// Start
 app.listen(PORT, '0.0.0.0', () => console.log(`🚀 GreenTrace API listening on port ${PORT}`));

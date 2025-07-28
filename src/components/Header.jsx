@@ -9,6 +9,7 @@ const navLinks = [
   { to: "/", label: "Home" },
   { to: "/how-it-works", label: "How It Works" },
   { to: "/faq", label: "FAQ" },
+  { to: "/blog", label: "Blog" }, 
   { to: "/badge", label: "Get Badge" },
   { to: "/api-access", label: "API Access" },
 ];

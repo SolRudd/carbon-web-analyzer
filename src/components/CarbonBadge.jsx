@@ -47,7 +47,6 @@ export default function CarbonBadge({ url, data: preData }) {
   const pct = data.percentile;
   const slug = new URL(url).hostname.replace(/[^a-z0-9]/gi,'-').toLowerCase();
 
-  // Light/dark
   const isDark = document.documentElement.classList.contains('dark');
   const badgeBg = isDark ? '#18181b' : '#fff';
   const textColor = isDark ? '#e5e7eb' : '#0F172A';

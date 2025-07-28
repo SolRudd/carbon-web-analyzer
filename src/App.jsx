@@ -13,6 +13,9 @@ import Badge          from "./pages/Badge";
 import ResultPage     from "./pages/ResultPage";
 import RatingPage     from "./pages/RatingPage";
 import NotFoundPage   from "./pages/NotFoundPage";
+import Blog           from "./pages/Blog";           // Add this
+import BlogPostPage   from "./pages/BlogPostPage";   // Add this
+
 
 // Log once at startup so you can verify in the browser console:
 console.log("⚡️ API_BASE is:", API_BASE);
@@ -30,6 +33,10 @@ function App() {
             <Route path="/faq" element={<Faq />} />
             <Route path="/api-access" element={<ApiAccess />} />
             <Route path="/badge" element={<Badge />} />
+
+          {/* Blogl */}
+           <Route path="/blog" element={<Blog />} />
+           <Route path="/blog/:slug" element={<BlogPostPage />} />
 
             {/* Results detail */}
             <Route path="/result/:slug" element={<ResultPage />} />

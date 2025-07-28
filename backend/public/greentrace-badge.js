@@ -4,48 +4,33 @@
     : 'https://api.greentracer.org';
   const LOGO = `${API_BASE}/GreenTraceLogo.svg`;
 
-  // Consistent URL cleaner (must match backend slug logic!)
   function cleanUrl(url) {
     try {
       let u = url.trim();
       if (!/^https?:\/\//.test(u)) u = 'https://' + u;
       const parsed = new URL(u);
-      // Remove trailing slash from path
       let host = parsed.hostname.toLowerCase();
       let pathname = parsed.pathname.replace(/\/+$/, '');
-      let base = parsed.protocol + '//' + host + pathname;
-      return base;
+      return parsed.protocol + '//' + host + pathname;
     } catch {
       return url;
     }
   }
 
-  // Try to fetch, if not found, auto-trigger a scan
   function fetchOrCreateBadge(url, el) {
     fetch(`${API_BASE}/api/trace?site=${encodeURIComponent(url)}`)
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(data => renderBadge(data, el))
       .catch(() => {
-        // Try to run a check if not found
-        fetch(`${API_BASE}/api/check-carbon`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url })
-        })
-        .then(r => r.ok ? r.json() : Promise.reject())
-        .then(data => renderBadge(data, el))
-        .catch(() => {
-          el.innerHTML = `<div style="color:#dc2626;font-size:12px;">
-            Run a carbon check first at <a href="https://greentracer.org" target="_blank">greentracer.org</a>
-          </div>`;
-        });
+        el.innerHTML = `<div style="color:#dc2626;font-size:12px;">
+          Run a carbon check first at <a href="https://greentracer.org" target="_blank">greentracer.org</a>
+        </div>`;
       });
   }
 
   function renderBadge(d, el) {
     const co2 = d.carbonEstimate.toFixed(2);
     const pct = d.percentile;
-    // Dark mode?
     const dark = document.documentElement.classList.contains('dark');
     const badgeBg = dark ? '#18181b' : '#fff';
     const textColor = dark ? '#e5e7eb' : '#0F172A';
