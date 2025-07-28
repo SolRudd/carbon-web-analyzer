@@ -1,5 +1,5 @@
 import React from "react";
-import { FaLeaf, FaClock, FaUser, FaTag, FaShare, FaExternalLinkAlt } from "react-icons/fa";
+import { FaExternalLinkAlt, FaChartLine, FaServer, FaLeaf } from "react-icons/fa";
 import img from "../assets/blog/web-carbon-2025.jpg";
 
 export const meta = {
@@ -14,164 +14,156 @@ export const meta = {
 
 export default function Post() {
   return (
-    <article className="relative">
-      {/* Background Effects */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-glow-green blur-3xl opacity-20 animate-pulse" />
-        <div className="absolute top-1/2 -left-40 w-60 h-60 bg-blue-400/20 blur-2xl opacity-15 animate-pulse delay-1000" />
+    <div className="space-y-8">
+      <p className="text-lg leading-relaxed first-letter:text-5xl first-letter:font-bold first-letter:text-greenbuzz dark:first-letter:text-green-400 first-letter:mr-3 first-letter:float-left first-letter:leading-none">
+        As digital services expand rapidly across the globe, the carbon footprint of our online activities is becoming impossible to ignore. With over 5 billion internet users worldwide, every website request, image load, and video stream contributes to a growing environmental crisis that now rivals the aviation industry in CO₂ emissions.
+      </p>
+
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-greenbuzz dark:border-green-400 pl-4">
+        The Hidden Environmental Cost of the Internet
+      </h2>
+
+      <p className="text-lg leading-relaxed">
+        Most businesses today understand their physical carbon footprint—energy usage in offices, transportation, manufacturing. But digital emissions remain largely invisible, despite representing a massive and growing portion of global carbon output. The internet infrastructure powering our connected world consumes approximately <strong>4% of global electricity</strong>, and this figure is expected to double by 2030.
+      </p>
+
+      <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-6 rounded-r-xl">
+        <h3 className="text-xl font-semibold text-red-800 dark:text-red-300 mb-3 flex items-center">
+          <FaChartLine className="mr-2" />
+          Shocking Digital Carbon Statistics
+        </h3>
+        <ul className="space-y-3 text-slate-700 dark:text-slate-300">
+          <li>• The average website produces <strong className="text-red-600 dark:text-red-400">60kg of CO₂ annually</strong> — equivalent to driving 270 miles</li>
+          <li>• A single Google search generates approximately <strong>0.2g of CO₂</strong></li>
+          <li>• Streaming one hour of Netflix produces about <strong>36g of CO₂</strong></li>
+          <li>• Email usage accounts for <strong>1.6% of global emissions</strong></li>
+          <li>• Data centers consume more electricity than entire countries like Argentina</li>
+        </ul>
       </div>
 
-      {/* Hero Image */}
-      <div className="relative h-64 sm:h-80 lg:h-96 rounded-2xl overflow-hidden mb-8 shadow-2xl">
-        <img 
-          src={img} 
-          alt="Low-carbon web design illustration" 
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-      </div>
+      <blockquote className="bg-greenbuzz/10 dark:bg-green-400/10 border-l-4 border-greenbuzz dark:border-green-400 p-6 rounded-r-xl italic text-lg">
+        "If the internet was a country, it would rank as the world's 7th largest polluter, sitting between Germany and Iran in terms of annual emissions."
+        <footer className="text-sm mt-2 not-italic">
+          — <a 
+            href="https://www.websitecarbon.com/about/" 
+            target="_blank" 
+            rel="noopener"
+            className="text-greenbuzz dark:text-green-400 hover:underline inline-flex items-center"
+          >
+            Website Carbon Calculator <FaExternalLinkAlt className="ml-1 text-xs" />
+          </a>
+        </footer>
+      </blockquote>
 
-      {/* Article Header */}
-      <div className="relative bg-white/80 dark:bg-white/5 backdrop-blur-md border border-slate-300 dark:border-white/10 rounded-2xl p-6 sm:p-8 mb-8 shadow-xl">
-        {/* Metadata */}
-        <div className="flex flex-wrap items-center gap-4 mb-6 text-sm">
-          <div className="flex items-center text-greenbuzz dark:text-green-400">
-            <FaLeaf className="mr-2" />
-            <span className="font-medium">GreenTracer Blog</span>
-          </div>
-          <div className="w-1 h-1 bg-slate-400 rounded-full hidden sm:block"></div>
-          <div className="flex items-center text-slate-600 dark:text-slate-400">
-            <FaUser className="mr-2" />
-            {meta.author}
-          </div>
-          <div className="w-1 h-1 bg-slate-400 rounded-full hidden sm:block"></div>
-          <div className="flex items-center text-slate-600 dark:text-slate-400">
-            <FaClock className="mr-2" />
-            {new Date(meta.date).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
-          </div>
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-4">
+        Why Your Business Can't Ignore Digital Emissions
+      </h2>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl">
+          <h3 className="text-xl font-semibold mb-3 text-blue-800 dark:text-blue-300">🌍 Environmental Responsibility</h3>
+          <p>Climate-conscious consumers increasingly choose brands that demonstrate genuine environmental commitment. A green website shows you care about more than just profit.</p>
         </div>
-
-        {/* Title */}
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 bg-gradient-to-r from-slate-900 via-green-600 to-blue-600 dark:from-white dark:via-green-400 dark:to-blue-400 bg-clip-text text-transparent leading-tight">
-          {meta.title}
-        </h1>
-
-        {/* Excerpt */}
-        <p className="text-lg sm:text-xl text-slate-700 dark:text-slate-300 leading-relaxed mb-6">
-          {meta.excerpt}
-        </p>
-
-        {/* Tags */}
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          <FaTag className="text-slate-500 dark:text-slate-400" />
-          {meta.tags.map((tag, index) => (
-            <span 
-              key={index}
-              className="px-3 py-1 bg-greenbuzz/10 text-greenbuzz dark:bg-green-400/10 dark:text-green-400 rounded-full text-sm font-medium border border-greenbuzz/20 dark:border-green-400/20"
-            >
-              {tag}
-            </span>
-          ))}
+        <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-xl">
+          <h3 className="text-xl font-semibold mb-3 text-green-800 dark:text-green-300">💰 Cost Savings</h3>
+          <p>Optimized, low-carbon websites use less bandwidth, require fewer server resources, and deliver faster performance—directly reducing hosting costs.</p>
         </div>
-
-        {/* Share Button */}
-        <button 
-          onClick={() => {
-            try {
-              if (navigator.share) {
-                navigator.share({
-                  title: meta.title,
-                  text: meta.excerpt,
-                  url: window.location.href,
-                });
-              } else {
-                navigator.clipboard.writeText(window.location.href);
-                alert('Link copied to clipboard!');
-              }
-            } catch (error) {
-              console.log('Share failed:', error);
-            }
-          }}
-          className="inline-flex items-center px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full font-medium transition-all duration-300 border border-slate-300 dark:border-slate-600 hover:scale-105"
-        >
-          <FaShare className="mr-2 text-sm" />
-          Share Article
-        </button>
+        <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-xl">
+          <h3 className="text-xl font-semibold mb-3 text-purple-800 dark:text-purple-300">🚀 Performance Benefits</h3>
+          <p>Green websites are inherently faster, providing better user experience, higher conversion rates, and improved SEO rankings.</p>
+        </div>
+        <div className="bg-orange-50 dark:bg-orange-900/20 p-6 rounded-xl">
+          <h3 className="text-xl font-semibold mb-3 text-orange-800 dark:text-orange-300">📊 Competitive Advantage</h3>
+          <p>Be ahead of inevitable regulations. Many countries are implementing digital carbon reporting requirements for businesses.</p>
+        </div>
       </div>
 
-      {/* Article Content */}
-      <div className="relative bg-white/70 dark:bg-white/5 backdrop-blur-sm border border-slate-300 dark:border-white/10 rounded-2xl p-6 sm:p-8 lg:p-12 shadow-xl mb-8">
-        <div className="prose prose-lg max-w-none">
-          {/* Introduction */}
-          <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed mb-8 first-letter:text-4xl first-letter:font-bold first-letter:text-greenbuzz dark:first-letter:text-green-400 first-letter:mr-2 first-letter:float-left first-letter:leading-none first-letter:mt-2">
-            As digital services expand, the carbon footprint of our online activity is growing fast. With over 5 billion internet users, every website request, image, and video adds up — globally matching the aviation industry for CO₂ emissions.
-          </p>
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-purple-500 pl-4">
+        The Major Contributors to Website Carbon Emissions
+      </h2>
 
-          {/* Section: The true impact */}
-          <div className="mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-slate-900 dark:text-white flex items-center">
-              <div className="w-1 h-8 bg-gradient-to-b from-greenbuzz to-green-600 rounded-full mr-4"></div>
-              The true impact of web emissions
-            </h2>
-            
-            <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border border-red-200 dark:border-red-800/30 rounded-xl p-6 mb-6">
-              <ul className="space-y-3 text-slate-700 dark:text-slate-300">
-                <li className="flex items-start">
-                  <span className="flex-shrink-0 w-2 h-2 bg-red-500 rounded-full mt-2 mr-4"></span>
-                  <span>The average website produces <strong className="text-red-600 dark:text-red-400">60kg CO₂ a year</strong> — equal to a car driving 270 miles.</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="flex-shrink-0 w-2 h-2 bg-red-500 rounded-full mt-2 mr-4"></span>
-                  <span>Modern data centres can consume more electricity than small towns.</span>
-                </li>
-              </ul>
-            </div>
+      <div className="space-y-6">
+        <div className="flex items-start space-x-4">
+          <div className="flex-shrink-0 w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+            <FaServer className="text-red-600 dark:text-red-400" />
           </div>
-
-          {/* Quote Section */}
-          <div className="bg-gradient-to-r from-greenbuzz/10 to-green-600/10 border-l-4 border-greenbuzz dark:border-green-400 rounded-r-xl p-6 mb-8 relative">
-            <div className="absolute -left-2 top-4 w-4 h-4 bg-greenbuzz dark:bg-green-400 rounded-full"></div>
-            <blockquote className="text-lg italic text-slate-800 dark:text-slate-200 mb-3">
-              "If the internet was a country, it would be the world's 7th largest polluter."
-            </blockquote>
-            <cite className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-              — <a 
-                href="https://www.websitecarbon.com/about/" 
-                target="_blank" 
-                rel="noopener"
-                className="ml-1 text-greenbuzz dark:text-green-400 hover:underline flex items-center"
-              >
-                Website Carbon <FaExternalLinkAlt className="ml-1 text-xs" />
-              </a>
-            </cite>
-          </div>
-
-          {/* Call to Action */}
-          <div className="bg-gradient-to-r from-greenbuzz/10 to-green-600/10 border border-greenbuzz/20 dark:border-green-400/20 rounded-xl p-6 text-center">
-            <FaLeaf className="text-3xl text-greenbuzz dark:text-green-400 mx-auto mb-4" />
-            <p className="text-lg text-slate-700 dark:text-slate-300 mb-4">
-              Start measuring and reducing your site's emissions today — and show your results with a{" "}
-              <a 
-                href="/badge" 
-                className="text-greenbuzz dark:text-green-400 font-semibold hover:underline"
-              >
-                GreenTrace badge
-              </a>.
+          <div>
+            <h3 className="text-xl font-semibold mb-2">Data Center Energy Consumption</h3>
+            <p className="text-slate-600 dark:text-slate-400">
+              The servers hosting your website run 24/7, consuming massive amounts of electricity. Traditional hosting often relies on fossil fuels, making this the largest contributor to your site's carbon footprint. Learn more about <a href="/blog/carbon-footprints-energy-providers" className="text-greenbuzz dark:text-green-400 hover:underline">choosing green hosting providers</a>.
             </p>
-            <a 
-              href="/"
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-greenbuzz to-green-600 hover:from-greenbuzz-light hover:to-green-500 text-white rounded-full font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-            >
-              <FaLeaf className="mr-2" />
-              Calculate Your Impact
-            </a>
+          </div>
+        </div>
+
+        <div className="flex items-start space-x-4">
+          <div className="flex-shrink-0 w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
+            <span className="text-2xl">🌐</span>
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold mb-2">Data Transfer & CDN Usage</h3>
+            <p className="text-slate-600 dark:text-slate-400">
+              Every image, video, and piece of content transmitted across networks consumes energy. Large, unoptimized files significantly increase your carbon footprint through increased bandwidth usage.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-start space-x-4">
+          <div className="flex-shrink-0 w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+            <span className="text-2xl">💻</span>
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold mb-2">User Device Energy Consumption</h3>
+            <p className="text-slate-600 dark:text-slate-400">
+              Heavy websites drain visitor device batteries faster, requiring more frequent charging. This extends your environmental impact beyond your servers to every user who visits your site.
+            </p>
           </div>
         </div>
       </div>
-    </article>
+
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
+        Immediate Actions You Can Take Today
+      </h2>
+
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-6 rounded-xl">
+        <h3 className="text-xl font-semibold mb-4 flex items-center">
+          <FaLeaf className="mr-2 text-green-600 dark:text-green-400" />
+          Quick Wins for Carbon Reduction
+        </h3>
+        <ol className="space-y-3 list-decimal list-inside">
+          <li><strong>Optimize Images:</strong> Compress and convert to modern formats like WebP (can reduce emissions by 60%)</li>
+          <li><strong>Enable Compression:</strong> Use Gzip/Brotli to reduce file sizes by up to 80%</li>
+          <li><strong>Switch to Green Hosting:</strong> Choose providers powered by renewable energy</li>
+          <li><strong>Implement Caching:</strong> Reduce server requests with proper caching strategies</li>
+          <li><strong>Minimize JavaScript:</strong> Remove unused code and optimize bundle sizes</li>
+          <li><strong>Choose Sustainable Fonts:</strong> System fonts use zero additional energy</li>
+        </ol>
+      </div>
+
+      <p className="text-lg leading-relaxed">
+        For detailed implementation guides, check out our comprehensive article on <a href="/blog/reduce-website-emissions-tips" className="text-greenbuzz dark:text-green-400 hover:underline font-semibold">practical tips to reduce your website's carbon emissions</a>. You can also read our <a href="/blog/case-study-greening-website" className="text-greenbuzz dark:text-green-400 hover:underline font-semibold">case study on successfully greening a high-traffic website</a>.
+      </p>
+
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-yellow-500 pl-4">
+        The Future of Green Web Development
+      </h2>
+
+      <p className="text-lg leading-relaxed">
+        As we move deeper into 2025, environmental regulations are tightening globally. The European Union's <a href="https://environment.ec.europa.eu/strategy/circular-economy-action-plan_en" target="_blank" rel="noopener" className="text-greenbuzz dark:text-green-400 hover:underline inline-flex items-center">Circular Economy Action Plan <FaExternalLinkAlt className="ml-1 text-xs" /></a> now includes digital services, and similar legislation is emerging worldwide.
+      </p>
+
+      <p className="text-lg leading-relaxed">
+        Companies that proactively address their digital carbon footprint today will have significant competitive advantages tomorrow. Beyond compliance, green websites deliver measurable business benefits: improved performance, lower costs, and enhanced brand reputation.
+      </p>
+
+      <div className="bg-gradient-to-r from-greenbuzz/10 to-green-600/10 border border-greenbuzz/20 dark:border-green-400/20 rounded-xl p-8 text-center">
+        <h3 className="text-2xl font-bold mb-4">Start Your Carbon Reduction Journey</h3>
+        <p className="text-lg mb-6">
+          Understanding your current impact is the first step toward meaningful change. Use our free carbon calculator to baseline your website's emissions, then track improvements over time with a <a href="/badge" className="text-greenbuzz dark:text-green-400 font-semibold hover:underline">GreenTracer badge</a> on your site.
+        </p>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Join thousands of businesses already taking action. Learn more about <a href="/blog/save-energy-in-summer" className="text-greenbuzz dark:text-green-400 hover:underline">seasonal optimization strategies</a> and <a href="/blog/improve-air-quality" className="text-greenbuzz dark:text-green-400 hover:underline">broader environmental impact</a>.
+        </p>
+      </div>
+    </div>
   );
 }
