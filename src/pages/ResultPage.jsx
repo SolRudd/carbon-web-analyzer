@@ -7,6 +7,7 @@ import ImpactStats                 from '../components/ImpactStats';
 import ImpactSection               from '../components/ImpactSection';
 import BadgePromo                  from '../components/BadgePromo';
 import TestCTA                     from '../components/TestCTA';
+import { API_BASE }                from '../config'; // <-- ADD THIS LINE
 
 export default function ResultPage() {
   const { slug } = useParams();
@@ -17,7 +18,7 @@ export default function ResultPage() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch(`/api/results/${slug}`)
+    fetch(`${API_BASE}/api/results/${slug}`)    // <-- FIXED
       .then(r => {
         if (!r.ok) throw new Error(`Server ${r.status}`);
         return r.json();
@@ -32,7 +33,7 @@ export default function ResultPage() {
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch('/api/check-carbon', {
+      const r = await fetch(`${API_BASE}/api/check-carbon`, { // <-- FIXED
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ url: result.url })

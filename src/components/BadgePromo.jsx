@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from "react";
 import CarbonBadge from "./CarbonBadge";
 import { Link }    from "react-router-dom";
+import { API_BASE } from "../config"; // <-- Add this!
 
 export default function BadgePromo({ siteUrl }) {
+  // Use whatever siteUrl is passed in, fallback to your default (shouldn't hit fallback in real use!)
   const previewUrl = siteUrl || "https://buzzboost.co.uk";
   const [previewData, setPreviewData] = useState(null);
 
   useEffect(() => {
-    // don’t fetch on local dev
+    // Don’t fetch on local dev
     if (previewUrl.startsWith(window.location.origin)) return;
+
     const key = `carbon:${previewUrl}`;
     const cached = sessionStorage.getItem(key);
     if (cached) {
       setPreviewData(JSON.parse(cached));
     } else {
-      fetch(`/api/trace?site=${encodeURIComponent(previewUrl)}`)
+      // Use API_BASE!
+      fetch(`${API_BASE}/api/trace?site=${encodeURIComponent(previewUrl)}`)
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(d => {
           sessionStorage.setItem(key, JSON.stringify(d));
