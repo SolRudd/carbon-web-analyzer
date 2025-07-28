@@ -1,6 +1,6 @@
 // src/components/Header.jsx
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import logo from "../assets/GreenTraceLogo.svg";
 import { Menu, X, Sun, Moon } from "lucide-react";
 import useTheme from "../hooks/useTheme";
@@ -9,14 +9,13 @@ const navLinks = [
   { to: "/", label: "Home" },
   { to: "/how-it-works", label: "How It Works" },
   { to: "/faq", label: "FAQ" },
-  { to: "/blog", label: "Blog" }, 
-  { to: "/badge", label: "Get Badge" },
-  { to: "/api-access", label: "API Access" },
+  { to: "/blog", label: "Blog" },
 ];
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isDark, toggle } = useTheme();
+  const location = useLocation();
 
   return (
     <>
@@ -26,7 +25,6 @@ export default function Header() {
         px-2 py-1 text-sm
         md:px-4 md:py-2 md:text-base
       ">
-        {/* Mobile */}
         <span className="block md:hidden">
           New rating system — 
           <Link
@@ -36,7 +34,6 @@ export default function Header() {
             learn more
           </Link>
         </span>
-        {/* Desktop */}
         <span className="hidden md:block">
           We’ve added GreenTracer’s new rating system —{" "}
           <Link
@@ -56,18 +53,19 @@ export default function Header() {
                         px-4 py-3">
           {/* Mobile: logo on left */}
           <Link to="/" className="md:hidden flex-shrink-0">
-            <img src={logo} alt="GreenTrace Logo" className="h-12" />
+            <img src={logo} alt="GreenTrace Logo" className="h-[48px] w-auto" />
           </Link>
 
-          {/* Desktop: left nav */}
+          {/* Desktop: left nav (now shows ALL links) */}
           <nav className="hidden md:flex space-x-8 text-sm font-medium">
-            {navLinks.slice(0, 3).map(({ to, label }) => (
+            {navLinks.map(({ to, label }) => (
               <Link
                 key={to}
                 to={to}
-                className="text-slate-700 dark:text-slate-300
-                           hover:text-slate-900 dark:hover:text-white
-                           transition-colors duration-200"
+                className={`text-slate-700 dark:text-slate-300
+                            hover:text-slate-900 dark:hover:text-white
+                            transition-colors duration-200
+                            ${location.pathname === to ? "underline underline-offset-4" : ""}`}
               >
                 {label}
               </Link>
@@ -80,7 +78,7 @@ export default function Header() {
             className="hidden md:block absolute left-1/2 top-1/2 transform
                        -translate-x-1/2 -translate-y-1/2"
           >
-            <img src={logo} alt="GreenTrace Logo" className="h-12" />
+            <img src={logo} alt="GreenTrace Logo" className="h-[48px] w-auto" />
           </Link>
 
           {/* Right controls */}
@@ -148,7 +146,10 @@ export default function Header() {
                           border-t border-slate-200 dark:border-slate-800
                           shadow-lg rounded-b-lg">
             <div className="px-6 py-5 space-y-3">
-              {navLinks.map(({ to, label }) => (
+              {navLinks.concat(
+                { to: "/badge", label: "Get Badge" },
+                { to: "/api-access", label: "API Access" }
+              ).map(({ to, label }) => (
                 <Link
                   key={to}
                   to={to}
