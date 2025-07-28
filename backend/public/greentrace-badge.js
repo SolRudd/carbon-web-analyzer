@@ -4,9 +4,21 @@
     : 'https://api.greentracer.org';
   const LOGO = `${API_BASE}/GreenTraceLogo.svg`;
 
+  // Utility: always remove trailing slashes for consistent DB lookup
+  function cleanUrl(url) {
+    try {
+      let u = url || '';
+      u = u.replace(/\/+$/, ''); // remove ALL trailing slashes
+      // Optionally, lower-case the hostname only (if you want)
+      return u;
+    } catch {
+      return url;
+    }
+  }
+
   function initBadges() {
     document.querySelectorAll('.greentrace-badge').forEach(el => {
-      const pageURL = el.dataset.url || window.location.href;
+      const pageURL = cleanUrl(el.dataset.url || window.location.href);
       fetch(`${API_BASE}/api/trace?site=${encodeURIComponent(pageURL)}`)
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(d => {
