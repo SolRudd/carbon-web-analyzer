@@ -1,55 +1,16 @@
 import React from "react";
-import { Globe, Leaf, Zap, Heart, ScanLine, Server, Gauge, Lightbulb } from "lucide-react";
-import { motion } from "framer-motion";
-
-// This new array describes the analysis process, telling a story.
-const analysisFeatures = [
-  {
-    icon: <ScanLine className="w-8 h-8 text-blue-500" />,
-    title: "Comprehensive Analysis",
-    description: "We crawl your site to measure data transfer, network requests, and asset sizes."
-  },
-  {
-    icon: <Server className="w-8 h-8 text-green-500" />,
-    title: "Green Hosting Verification",
-    description: "Our system checks if your server runs on verifiably renewable energy sources."
-  },
-  {
-    icon: <Gauge className="w-8 h-8 text-purple-500" />,
-    title: "Accurate CO₂ Calculation",
-    description: "Using the latest models, we convert page weight into a precise CO₂ per-visit estimate."
-  },
-  {
-    icon: <Lightbulb className="w-8 h-8 text-yellow-500" />,
-    title: "Actionable Insights",
-    description: "Receive a tailored report with clear, practical steps to reduce your digital footprint."
-  }
-];
+import { Globe, Leaf, Zap, Heart } from "lucide-react"; // Removed unused icons
+import { motion } from "framer-motion"; // motion is still used for the main container or other elements if you keep animation
 
 export default function Hero() {
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        staggerChildren: 0.2,
-        duration: 0.5
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
-  };
+  // Removed containerVariants and itemVariants as they were only used for the sections being removed
 
   return (
     <section className="relative overflow-hidden bg-white dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
       {/* Background Effects (unchanged, they work well) */}
       <div className="absolute inset-0 pointer-events-none opacity-50 dark:opacity-100">
-        <div className="absolute top-0 left-0 w-[50rem] h-[50rem] bg-green-400/20 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-0 w-[50rem] h-[50rem] bg-blue-400/20 rounded-full translate-x-1/2 translate-y-1/2 blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-0 left-0 w-[50rem] h-[30rem] bg-green-400/20 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-[50rem] h-[30rem] bg-blue-400/20 rounded-full translate-x-1/2 translate-y-1/2 blur-3xl animate-pulse delay-1000" />
       </div>
 
       <div className="relative z-10 flex flex-col items-center text-center pt-20 pb-16 px-4">
@@ -111,72 +72,6 @@ export default function Hero() {
             </div>
           </div>
         </div>
-
-        {/* ============================================ */}
-        {/* === NEW & IMPROVED "ANALYSIS SHOWCASE" === */}
-        {/* ============================================ */}
-        <motion.div
-          className="w-full max-w-6xl mx-auto mt-20"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
-          variants={containerVariants}
-        >
-          <div className="p-8 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl shadow-slate-600/10">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-              {analysisFeatures.map((feature, idx) => (
-                <React.Fragment key={idx}>
-                  <motion.div className="flex flex-col items-center text-center gap-3" variants={itemVariants}>
-                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center border border-slate-200 dark:border-slate-700">
-                      {feature.icon}
-                    </div>
-                    <h3 className="text-md font-bold text-slate-900 dark:text-white mt-2">
-                      {feature.title}
-                    </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 max-w-[200px]">
-                      {feature.description}
-                    </p>
-                  </motion.div>
-                  {/* Render a connector line between items */}
-                  {idx < analysisFeatures.length - 1 && (
-                    <motion.div
-                      className="flex-1 h-px w-full md:w-auto md:h-auto bg-slate-200 dark:bg-slate-700"
-                      variants={itemVariants}
-                    />
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* ==================================== */}
-        {/* === UPGRADED "QUICK STATS" CARDS === */}
-        {/* ==================================== */}
-        <motion.div
-          className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto mt-16 text-left"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.5 }}
-          variants={containerVariants}
-        >
-          <motion.div className="bg-slate-100/50 dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800" variants={itemVariants}>
-            <div className="text-3xl font-bold text-green-600 dark:text-green-400">4%</div>
-            <div className="mt-1 font-semibold text-slate-700 dark:text-slate-300">Global Emissions</div>
-            <p className="text-xs text-slate-500 mt-2">The internet's carbon footprint rivals the entire aviation industry.</p>
-          </motion.div>
-          <motion.div className="bg-slate-100/50 dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800" variants={itemVariants}>
-            <div className="text-3xl font-bold text-green-600 dark:text-green-400">100% Free</div>
-            <div className="mt-1 font-semibold text-slate-700 dark:text-slate-300">Open Source</div>
-            <p className="text-xs text-slate-500 mt-2">Built for the community, by the community. No hidden fees.</p>
-          </motion.div>
-          <motion.div className="bg-slate-100/50 dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800" variants={itemVariants}>
-            <div className="text-3xl font-bold text-green-600 dark:text-green-400">5 Seconds</div>
-            <div className="mt-1 font-semibold text-slate-700 dark:text-slate-300">Instant Results</div>
-            <p className="text-xs text-slate-500 mt-2">Get your complete carbon report and actionable insights in seconds.</p>
-          </motion.div>
-        </motion.div>
-
       </div>
     </section>
   );

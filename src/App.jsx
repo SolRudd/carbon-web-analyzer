@@ -13,8 +13,10 @@ import Badge          from "./pages/Badge";
 import ResultPage     from "./pages/ResultPage";
 import RatingPage     from "./pages/RatingPage";
 import NotFoundPage   from "./pages/NotFoundPage";
-import Blog           from "./pages/Blog";           // Add this
-import BlogPostPage   from "./pages/BlogPostPage";   // Add this
+import Blog           from "./pages/Blog";
+import BlogPostPage   from "./pages/BlogPostPage";
+import PrivacyPolicy  from "./pages/PrivacyPolicy";       // Import the new PrivacyPolicy page
+import CookieConsentBanner from "./components/CookieConsentBanner"; // Import the new CookieConsentBanner
 
 
 // Log once at startup so you can verify in the browser console:
@@ -34,9 +36,12 @@ function App() {
             <Route path="/api-access" element={<ApiAccess />} />
             <Route path="/badge" element={<Badge />} />
 
-          {/* Blogl */}
-           <Route path="/blog" element={<Blog />} />
-           <Route path="/blog/:slug" element={<BlogPostPage />} />
+            {/* Blog Routes */}
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPostPage />} />
+
+            {/* Privacy Policy Route */}
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} /> {/* New route for Privacy Policy */}
 
             {/* Results detail */}
             <Route path="/result/:slug" element={<ResultPage />} />
@@ -50,6 +55,9 @@ function App() {
         </main>
 
         <Footer />
+
+        {/* Render the Cookie Consent Banner outside of <main> but within the main div */}
+        <CookieConsentBanner />
       </div>
     </Router>
   );
