@@ -15,16 +15,55 @@ export const meta = {
   excerpt: "A shocking investigation reveals renewable energy companies are failing at digital sustainability — and what this means for climate action."
 };
 
+// --- Table of Contents (for sidebar/TOC use) ---
+export const toc = [
+  {
+    id: "intro",
+    text: "Introduction",
+    level: 2
+  },
+  {
+    id: "hidden-climate-crisis",
+    text: "The Hidden Climate Crisis: Digital Emissions from Energy Companies",
+    level: 2
+  },
+  {
+    id: "carbon-stats",
+    text: "Shocking Digital Carbon Statistics",
+    level: 3
+  },
+  {
+    id: "website-carbon-footprint",
+    text: "Understanding Website Carbon Footprints: The Full Picture",
+    level: 2
+  },
+  {
+    id: "carbon-pillars",
+    text: "The Four Pillars of Digital Carbon Emissions",
+    level: 3
+  },
+  {
+    id: "carbon-impact-breakdown",
+    text: "Average Carbon Impact Breakdown",
+    level: 4
+  },
+  {
+    id: "action",
+    text: "Take Action: Measure & Reduce Your Digital Carbon",
+    level: 3
+  }
+];
+
 export default function Post() {
   return (
     <div className="space-y-10">
       {/* Intro */}
-      <p className="text-lg leading-relaxed first-letter:text-5xl first-letter:font-bold first-letter:text-greenbuzz dark:first-letter:text-green-400 first-letter:mr-3 first-letter:float-left first-letter:leading-none">
+      <p id="intro" className="text-lg leading-relaxed first-letter:text-5xl first-letter:font-bold first-letter:text-greenbuzz dark:first-letter:text-green-400 first-letter:mr-3 first-letter:float-left first-letter:leading-none">
         The internet now produces nearly 4% of global carbon emissions — more than the entire aviation industry. But here’s the shocking paradox: even companies built on renewable energy are running some of the dirtiest websites online. Our investigation into UK energy providers’ websites reveals a stark disconnect between their green marketing and their digital reality.
       </p>
 
       {/* Section: Digital emissions */}
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-red-500 pl-4">
+      <h2 id="hidden-climate-crisis" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-red-500 pl-4">
         The Hidden Climate Crisis: Digital Emissions from Energy Companies
       </h2>
       <p className="text-lg leading-relaxed">
@@ -33,7 +72,7 @@ export default function Post() {
 
       {/* Shocking Stats */}
       <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-6 rounded-r-xl">
-        <h3 className="text-xl font-semibold text-red-800 dark:text-red-300 mb-3 flex items-center">
+        <h3 id="carbon-stats" className="text-xl font-semibold text-red-800 dark:text-red-300 mb-3 flex items-center">
           <FaIndustry className="mr-2" />
           Shocking Digital Carbon Statistics
         </h3>
@@ -55,7 +94,7 @@ export default function Post() {
       </blockquote>
 
       {/* Carbon pillars */}
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-4">
+      <h2 id="website-carbon-footprint" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-4">
         Understanding Website Carbon Footprints: The Full Picture
       </h2>
       <p className="text-lg leading-relaxed">
@@ -63,7 +102,7 @@ export default function Post() {
       </p>
 
       <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-8">
-        <h3 className="text-2xl font-bold text-blue-800 dark:text-blue-300 mb-6">The Four Pillars of Digital Carbon Emissions</h3>
+        <h3 id="carbon-pillars" className="text-2xl font-bold text-blue-800 dark:text-blue-300 mb-6">The Four Pillars of Digital Carbon Emissions</h3>
         <div className="grid md:grid-cols-2 gap-8">
           {[
             {
@@ -100,7 +139,7 @@ export default function Post() {
         </div>
 
         <div className="mt-8 bg-blue-100 dark:bg-blue-900/30 p-6 rounded-lg">
-          <h4 className="font-semibold mb-4 text-center">📊 Average Carbon Impact Breakdown</h4>
+          <h4 id="carbon-impact-breakdown" className="font-semibold mb-4 text-center">📊 Average Carbon Impact Breakdown</h4>
           <div className="grid md:grid-cols-4 gap-4 text-center">
             {[
               { pct: "42%", label: "Data Centers", color: "blue" },
@@ -119,7 +158,7 @@ export default function Post() {
 
       {/* Call to action */}
       <div className="bg-gradient-to-r from-greenbuzz/10 to-green-600/10 border border-greenbuzz/20 dark:border-green-400/20 rounded-xl p-8 text-center">
-        <h3 className="text-2xl font-bold mb-4">Take Action: Measure & Reduce Your Digital Carbon</h3>
+        <h3 id="action" className="text-2xl font-bold mb-4">Take Action: Measure & Reduce Your Digital Carbon</h3>
         <p className="text-lg mb-6">
           Don’t let your website undermine your sustainability efforts. Get a full carbon analysis and start reducing your emissions today.
         </p>
