@@ -78,7 +78,7 @@ export default function Header() {
             className="hidden md:block absolute left-1/2 top-1/2 transform
                        -translate-x-1/2 -translate-y-1/2"
           >
-            <img src={logo} alt="GreenTrace Logo" className="h-[48px] w-auto" />
+            <img src={logo} alt="GreenTrace Logo" className="h-[60px] w-auto" />
           </Link>
 
           {/* Right controls */}

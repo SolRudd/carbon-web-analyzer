@@ -12,6 +12,21 @@ export const meta = {
   excerpt: "Breathe easier at home with these simple air quality tips that also reduce your carbon footprint."
 };
 
+// Add the new Table of Contents array here
+export const toc = [
+  { id: "hidden-connection", text: "The Hidden Connection: Air Quality and Carbon Emissions", level: 2 },
+  { id: "shocking-stats", text: "Shocking Indoor Air Quality Statistics", level: 3 },
+  { id: "powerful-strategies", text: "5 Powerful Strategies for Cleaner Air & Lower Carbon Emissions", level: 2 },
+  { id: "strategy-ventilation", text: "1. Master Natural Ventilation", level: 3 },
+  { id: "strategy-purifiers", text: "2. Deploy Natural Air Purifiers", level: 3 },
+  { id: "strategy-cleaning", text: "3. Switch to Natural Cleaning Products", level: 3 },
+  { id: "strategy-combustion", text: "4. Minimize Indoor Combustion Sources", level: 3 },
+  { id: "strategy-humidity", text: "5. Optimize Humidity & Prevent Mold", level: 3 },
+  { id: "health-environment-connection", text: "The Health-Environment Connection", level: 2 },
+  { id: "advanced-monitoring", text: "Advanced Air Quality Monitoring & Carbon Tracking", level: 2 },
+  { id: "action-plan", text: "Your 30-Day Air Quality Action Plan", level: 3 },
+];
+
 export default function Post() {
   return (
     <div className="space-y-8">
@@ -19,7 +34,7 @@ export default function Post() {
         Indoor air quality directly impacts both your health and your environmental footprint, yet most people spend 90% of their time breathing air that's 2-5 times more polluted than outdoor air. Poor indoor air quality doesn't just affect your respiratory health—it's often a sign of energy inefficiency and unnecessary carbon emissions from your home's heating, cooling, and ventilation systems.
       </p>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-red-500 pl-4">
+      <h2 id="hidden-connection" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-red-500 pl-4">
         The Hidden Connection: Air Quality and Carbon Emissions
       </h2>
 
@@ -27,7 +42,7 @@ export default function Post() {
         What many people don't realize is that poor indoor air quality and high carbon emissions often go hand in hand. Homes with bad air circulation typically waste massive amounts of energy through inefficient HVAC systems, air leaks, and the need for constant air purification. Improving air quality naturally reduces your home's carbon footprint while protecting your family's health.
       </p>
 
-      <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-6 rounded-r-xl">
+      <div id="shocking-stats" className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-6 rounded-r-xl">
         <h3 className="text-xl font-semibold text-red-800 dark:text-red-300 mb-3 flex items-center">
           <FaLungs className="mr-2" />
           Shocking Indoor Air Quality Statistics
@@ -48,13 +63,13 @@ export default function Post() {
         </footer>
       </blockquote>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
+      <h2 id="powerful-strategies" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
         5 Powerful Strategies for Cleaner Air & Lower Carbon Emissions
       </h2>
 
       <div className="space-y-12">
         {/* Strategy 1: Natural Ventilation */}
-        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-8">
+        <div id="strategy-ventilation" className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-8">
           <div className="flex items-center mb-6">
             <div className="flex-shrink-0 w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mr-4">
               <FaWind className="text-2xl text-blue-600 dark:text-blue-400" />
@@ -118,7 +133,7 @@ export default function Post() {
         </div>
 
         {/* Strategy 2: Air-Purifying Plants */}
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-8">
+        <div id="strategy-purifiers" className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-8">
           <div className="flex items-center mb-6">
             <div className="flex-shrink-0 w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mr-4">
               <FaLeaf className="text-2xl text-green-600 dark:text-green-400" />
@@ -185,7 +200,7 @@ export default function Post() {
         </div>
 
         {/* Strategy 3: Natural Cleaning Products */}
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl p-8">
+        <div id="strategy-cleaning" className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl p-8">
           <div className="flex items-center mb-6">
             <div className="flex-shrink-0 w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mr-4">
               <span className="text-2xl">🧽</span>
@@ -249,7 +264,7 @@ export default function Post() {
         </div>
 
         {/* Strategy 4: Reduce Indoor Combustion */}
-        <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-8">
+        <div id="strategy-combustion" className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-8">
           <div className="flex items-center mb-6">
             <div className="flex-shrink-0 w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mr-4">
               <span className="text-2xl">🕯️</span>
@@ -313,7 +328,7 @@ export default function Post() {
         </div>
 
         {/* Strategy 5: Humidity & Mold Control */}
-        <div className="bg-gradient-to-r from-teal-50 to-blue-50 dark:from-teal-900/20 dark:to-blue-900/20 rounded-xl p-8">
+        <div id="strategy-humidity" className="bg-gradient-to-r from-teal-50 to-blue-50 dark:from-teal-900/20 dark:to-blue-900/20 rounded-xl p-8">
           <div className="flex items-center mb-6">
             <div className="flex-shrink-0 w-16 h-16 bg-teal-100 dark:bg-teal-900/30 rounded-full flex items-center justify-center mr-4">
               <FaThermometerHalf className="text-2xl text-teal-600 dark:text-teal-400" />
@@ -377,7 +392,7 @@ export default function Post() {
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-orange-500 pl-4">
+      <h2 id="health-environment-connection" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-orange-500 pl-4">
         The Health-Environment Connection: Why Air Quality Matters for Climate Action
       </h2>
 
@@ -421,7 +436,7 @@ export default function Post() {
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-purple-500 pl-4">
+      <h2 id="advanced-monitoring" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-purple-500 pl-4">
         Advanced Air Quality Monitoring & Carbon Tracking
       </h2>
 
@@ -485,7 +500,7 @@ export default function Post() {
         </p>
       </div>
 
-      <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl">
+      <div id="action-plan" className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl">
         <h3 className="text-xl font-semibold mb-4 flex items-center">
           <FaHome className="mr-2 text-blue-600 dark:text-blue-400" />
           Your 30-Day Air Quality Action Plan
@@ -505,14 +520,10 @@ export default function Post() {
             <ol className="space-y-2 list-decimal list-inside text-sm">
               <li>Reduce indoor combustion sources</li>
               <li>Optimize humidity levels throughout home</li>
-              <li>Monitor energy consumption changes</li>
-              <li>Track health and comfort improvements</li>
+              <li>Monitor energy consump</li>
             </ol>
           </div>
         </div>
-        <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">
-          Use our carbon tracking tools to measure how air quality improvements affect your overall environmental footprint and energy consumption.
-        </p>
       </div>
     </div>
   );

@@ -2,9 +2,21 @@ import React from "react";
 import { FaExternalLinkAlt, FaIndustry, FaRecycle, FaGlobe, FaLeaf, FaChartLine, FaLaptop } from "react-icons/fa";
 import img from "../assets/blog/plastic-climate.jpg";
 
+// Table of Contents for parent layout/sidebar
+export const toc = [
+  { id: "intro", text: "Introduction", level: 2 },
+  { id: "scale-impact", text: "The Staggering Scale of Plastic's Climate Impact", level: 2 },
+  { id: "plastic-connection", text: "The Plastic-Climate Connection: From Oil Well to Landfill", level: 2 },
+  { id: "hidden-digital", text: "The Hidden Digital Connection: Plastic in Our Connected World", level: 2 },
+  { id: "single-use", text: "Single-Use Plastic: The Climate Emergency Accelerator", level: 2 },
+  { id: "practical", text: "Practical Solutions: Reducing Your Plastic Carbon Footprint", level: 2 },
+  { id: "future", text: "The Future: Policy, Innovation, and Personal Responsibility", level: 2 },
+  { id: "action-plan", text: "Your Plastic Reduction Action Plan", level: 2 },
+];
+
 export const meta = {
   title: "How is Plastic Linked to the Climate Crisis? The Hidden Carbon Impact",
-  author: "Good Energy",
+  author: "Rayyan Karim",
   date: "2025-07-01",
   tags: ["Climate Change", "Plastic", "Sustainability", "Carbon Tracking"],
   slug: "plastic-climate-crisis",
@@ -15,14 +27,30 @@ export const meta = {
 export default function Post() {
   return (
     <div className="space-y-8">
-      <p className="text-lg leading-relaxed first-letter:text-5xl first-letter:font-bold first-letter:text-greenbuzz dark:first-letter:text-green-400 first-letter:mr-3 first-letter:float-left first-letter:leading-none">
+      {/* Author & backlink */}
+      <div className="flex flex-col sm:flex-row items-center gap-3 mb-2 bg-white/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl px-5 py-3 shadow">
+        <span className="font-medium text-slate-700 dark:text-slate-300">
+          Written by <span className="text-greenbuzz dark:text-green-400 font-semibold">Rayyan Karim</span> — 
+          <a
+            href="https://rayyankarim.com"
+            target="_blank"
+            rel="noopener"
+            className="ml-1 underline text-blue-700 dark:text-blue-400 hover:text-greenbuzz dark:hover:text-greenbuzz transition"
+          >
+            rayyankarim.com
+          </a>
+        </span>
+      </div>
+
+      {/* --- INTRO --- */}
+      <p className="text-lg leading-relaxed first-letter:text-5xl first-letter:font-bold first-letter:text-greenbuzz dark:first-letter:text-green-400 first-letter:mr-3 first-letter:float-left first-letter:leading-none" id="intro">
         Every minute, one million plastic bottles are purchased globally, and each one carries a hidden carbon burden that extends far beyond its physical presence. While we see plastic pollution choking our oceans and landscapes, the invisible climate impact of plastic production, transportation, and disposal represents one of the most overlooked contributors to global greenhouse gas emissions—accounting for a staggering 3.4% of the world's total carbon output.
       </p>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-red-500 pl-4">
+      {/* --- SCALE IMPACT --- */}
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-red-500 pl-4" id="scale-impact">
         The Staggering Scale of Plastic's Climate Impact
       </h2>
-
       <p className="text-lg leading-relaxed">
         Most people think of plastic pollution in terms of visual waste—images of sea turtles with straws or massive floating garbage patches. But the climate crisis connection runs much deeper. The plastic industry's carbon footprint rivals that of entire countries, producing more CO₂ emissions annually than the aviation industry, yet it receives far less attention in climate discussions.
       </p>
@@ -49,11 +77,12 @@ export default function Post() {
         </footer>
       </blockquote>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-4">
+      {/* --- PLASTIC CONNECTION --- */}
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-4" id="plastic-connection">
         The Plastic-Climate Connection: From Oil Well to Landfill
       </h2>
-
       <div className="space-y-8">
+        {/* 1. Fossil Fuel Extraction */}
         <div className="flex items-start space-x-4">
           <div className="flex-shrink-0 w-12 h-12 bg-black/10 dark:bg-white/10 rounded-full flex items-center justify-center">
             <span className="text-2xl">🛢️</span>
@@ -73,7 +102,7 @@ export default function Post() {
             </div>
           </div>
         </div>
-
+        {/* 2. Manufacturing & Processing */}
         <div className="flex items-start space-x-4">
           <div className="flex-shrink-0 w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
             <FaIndustry className="text-orange-600 dark:text-orange-400" />
@@ -94,7 +123,7 @@ export default function Post() {
             </div>
           </div>
         </div>
-
+        {/* 3. Global Transportation */}
         <div className="flex items-start space-x-4">
           <div className="flex-shrink-0 w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
             <FaGlobe className="text-blue-600 dark:text-blue-400" />
@@ -115,7 +144,7 @@ export default function Post() {
             </div>
           </div>
         </div>
-
+        {/* 4. End-of-Life */}
         <div className="flex items-start space-x-4">
           <div className="flex-shrink-0 w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
             <span className="text-2xl">🗑️</span>
@@ -138,10 +167,10 @@ export default function Post() {
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-purple-500 pl-4">
+      {/* --- HIDDEN DIGITAL --- */}
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-purple-500 pl-4" id="hidden-digital">
         The Hidden Digital Connection: Plastic in Our Connected World
       </h2>
-
       <p className="text-lg leading-relaxed">
         There's a surprising connection between plastic pollution and digital carbon emissions that most people never consider. The devices we use to browse websites, stream videos, and engage with online content are manufactured using significant amounts of plastic, creating a hidden link between our digital habits and plastic consumption.
       </p>
@@ -194,14 +223,13 @@ export default function Post() {
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
+      {/* --- SINGLE-USE --- */}
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4" id="single-use">
         Single-Use Plastic: The Climate Emergency Accelerator
       </h2>
-
       <p className="text-lg leading-relaxed">
         The most devastating aspect of plastic's climate impact comes from single-use items that are used for minutes but persist in the environment for centuries. These products represent the worst possible carbon return on investment—maximum environmental cost for minimal utility.
       </p>
-
       <div className="space-y-6">
         <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 p-6 rounded-xl">
           <h3 className="text-xl font-semibold mb-4">The Single-Use Catastrophe</h3>
@@ -223,7 +251,6 @@ export default function Post() {
             </div>
           </div>
         </div>
-
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-6 rounded-r-xl">
           <h3 className="text-xl font-semibold text-yellow-800 dark:text-yellow-300 mb-3">
             The Carbon Cost of Convenience
@@ -244,14 +271,13 @@ export default function Post() {
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-teal-500 pl-4">
+      {/* --- PRACTICAL SOLUTIONS --- */}
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-teal-500 pl-4" id="practical">
         Practical Solutions: Reducing Your Plastic Carbon Footprint
       </h2>
-
       <div className="space-y-8">
         <div className="bg-gradient-to-r from-teal-50 to-green-50 dark:from-teal-900/20 dark:to-green-900/20 rounded-xl p-8">
           <h3 className="text-2xl font-bold mb-6 text-center">High-Impact Plastic Reduction Strategies</h3>
-          
           <div className="grid md:grid-cols-2 gap-8">
             <div>
               <h4 className="text-xl font-semibold mb-4 flex items-center">
@@ -289,7 +315,6 @@ export default function Post() {
                 </li>
               </ul>
             </div>
-
             <div>
               <h4 className="text-xl font-semibold mb-4 flex items-center">
                 <span className="text-2xl mr-2">🏢</span>
@@ -328,7 +353,6 @@ export default function Post() {
             </div>
           </div>
         </div>
-
         <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl">
           <h3 className="text-xl font-semibold mb-4 flex items-center">
             <FaChartLine className="mr-2 text-blue-600 dark:text-blue-400" />
@@ -354,14 +378,13 @@ export default function Post() {
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-orange-500 pl-4">
+      {/* --- FUTURE --- */}
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-orange-500 pl-4" id="future">
         The Future: Policy, Innovation, and Personal Responsibility
       </h2>
-
       <p className="text-lg leading-relaxed">
         Addressing plastic's climate impact requires systemic change, but individual actions create the demand for better alternatives and demonstrate the market viability of sustainable solutions. The same mindset that drives website optimization for carbon reduction applies to plastic consumption—small, measurable improvements that compound over time.
       </p>
-
       <div className="grid md:grid-cols-2 gap-6">
         <div className="bg-orange-50 dark:bg-orange-900/20 p-6 rounded-xl">
           <h3 className="text-xl font-semibold mb-3 text-orange-800 dark:text-orange-300">Policy Changes Coming</h3>
@@ -382,7 +405,6 @@ export default function Post() {
           </ul>
         </div>
       </div>
-
       <blockquote className="bg-greenbuzz/10 dark:bg-green-400/10 border-l-4 border-greenbuzz dark:border-green-400 p-6 rounded-r-xl italic text-lg">
         "The companies and individuals who start measuring and reducing their plastic carbon footprint today will be the leaders in tomorrow's sustainable economy. Every emission source matters—from websites to water bottles."
         <footer className="text-sm mt-2 not-italic">
@@ -415,6 +437,10 @@ export default function Post() {
         </p>
       </div>
 
+      {/* --- ACTION PLAN --- */}
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-teal-500 pl-4" id="action-plan">
+        Your Plastic Reduction Action Plan
+      </h2>
       <div className="bg-teal-50 dark:bg-teal-900/20 p-6 rounded-xl">
         <h3 className="text-xl font-semibold mb-4 flex items-center">
           <FaLeaf className="mr-2 text-green-600 dark:text-green-400" />

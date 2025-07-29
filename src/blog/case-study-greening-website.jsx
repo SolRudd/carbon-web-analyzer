@@ -2,6 +2,17 @@ import React from "react";
 import { FaExternalLinkAlt, FaLeaf, FaChartLine, FaCode, FaRocket, FaServer, FaImage, FaCompress } from "react-icons/fa";
 import img from "../assets/blog/case-study-greentrace.jpg";
 
+// Table of Contents array added to match your other blog post structure
+export const toc = [
+  { id: "hidden-crisis", text: "The Hidden Carbon Crisis", level: 2 },
+  { id: "carbon-baseline", text: "The Challenge: Carbon Baseline", level: 2 },
+  { id: "transformation-strategy", text: "The 30-Day Transformation Strategy", level: 2 },
+  { id: "final-results", text: "The Final Results & Success Story", level: 2 },
+  { id: "measuring-success", text: "Measuring Success with Tracking", level: 2 },
+  { id: "lessons-learned", text: "Lessons Learned & Replicating Success", level: 2 },
+  { id: "action-plan", text: "Your Carbon Reduction Action Plan", level: 2 },
+];
+
 export const meta = {
   title: "Case Study: How One Business Cut Website Carbon Emissions by 66% in 30 Days",
   author: "Sol Rudd",
@@ -19,7 +30,7 @@ export default function Post() {
         The internet produces more carbon emissions than the entire aviation industry, yet most businesses have no idea their website is contributing to climate change. When BuzzBoost Digital discovered their homepage was generating 0.38g of CO₂ per visitor—equivalent to driving 1 meter in a car—they knew something had to change. What followed was a 30-day transformation that not only cut their carbon footprint by 66% but also improved their site speed, search rankings, and user experience dramatically.
       </p>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-red-500 pl-4">
+      <h2 id="hidden-crisis" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-red-500 pl-4">
         The Hidden Carbon Crisis: Why Website Emissions Matter
       </h2>
 
@@ -48,7 +59,7 @@ export default function Post() {
         </footer>
       </blockquote>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-4">
+      <h2 id="carbon-baseline" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-4">
         The Challenge: BuzzBoost Digital's Carbon Baseline
       </h2>
 
@@ -131,7 +142,7 @@ export default function Post() {
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
+      <h2 id="transformation-strategy" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
         The 30-Day Green Transformation Strategy
       </h2>
 
@@ -446,7 +457,7 @@ export default function Post() {
                     <li>• <strong>Progressive disclosure:</strong> Content loaded as needed</li>
                     <li>• <strong>Form optimization:</strong> 60% faster completion</li>
                     <li>• <strong>Navigation efficiency:</strong> Reduced page views per session</li>
-                    <li>• <strong>Search functionality:</strong> Find content without browsing</li>
+                    <li>• <strong>Search functionality:</strong> Find content without Browse</li>
                   </ul>
                 </div>
               </div>
@@ -488,7 +499,7 @@ export default function Post() {
                       <span><span className="text-red-500">1.1g CO₂</span> → <span className="text-green-600">0.4g CO₂</span></span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span>Portfolio browsing:</span>
+                      <span>Portfolio Browse:</span>
                       <span><span className="text-red-500">2.3g CO₂</span> → <span className="text-green-600">0.8g CO₂</span></span>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -503,7 +514,7 @@ export default function Post() {
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
+      <h2 id="final-results" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
         The Final Results: A 66% Carbon Reduction Success Story
       </h2>
 
@@ -614,7 +625,7 @@ export default function Post() {
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-4">
+      <h2 id="measuring-success" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-4">
         Measuring Success: The Importance of Carbon Tracking
       </h2>
 
@@ -652,7 +663,7 @@ export default function Post() {
         </footer>
       </blockquote>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-purple-500 pl-4">
+      <h2 id="lessons-learned" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-purple-500 pl-4">
         Lessons Learned: Replicating This Success
       </h2>
 
@@ -710,7 +721,7 @@ export default function Post() {
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
+      <h2 id="action-plan" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
         Your Website Carbon Reduction Action Plan
       </h2>
 

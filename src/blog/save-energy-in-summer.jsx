@@ -1,10 +1,26 @@
 import React from "react";
-import { FaExternalLinkAlt, FaThermometerHalf, FaSun, FaLeaf, FaHome, FaLaptop, FaChartLine } from "react-icons/fa";
+import {
+  FaExternalLinkAlt, FaThermometerHalf, FaSun, FaLeaf, FaHome, FaLaptop, FaChartLine
+} from "react-icons/fa";
 import img from "../assets/blog/summer-energy.jpg";
+
+// --- Table of Contents for sidebar ---
+export const toc = [
+  { id: "intro", text: "Introduction", level: 2 },
+  { id: "hidden-crisis", text: "The Hidden Summer Energy Crisis", level: 2 },
+  { id: "digital-connection", text: "The Digital Connection", level: 2 },
+  { id: "track-impact", text: "Track Your Complete Carbon Impact", level: 2 },
+  { id: "essential-strategies", text: "Essential Summer Energy-Saving Strategies", level: 2 },
+  { id: "office-strategies", text: "Office and Remote Work Summer Strategies", level: 2 },
+  { id: "business-case", text: "The Business Case for Summer Energy Efficiency", level: 2 },
+  { id: "advanced-techniques", text: "Advanced Summer Carbon Reduction Techniques", level: 2 },
+  { id: "track-impact-2", text: "Track Your Impact", level: 2 },
+  { id: "action-plan", text: "Your Summer Action Plan", level: 2 },
+];
 
 export const meta = {
   title: "How to Save Energy in Summer: A Complete Guide to Reducing Your Carbon Footprint",
-  author: "Jamie-Leigh Hector",
+  author: "Jack Paradise",
   date: "2025-07-07",
   tags: ["Eco-friendly", "Energy", "Carbon Reduction", "Digital Emissions"],
   slug: "save-energy-in-summer",
@@ -15,11 +31,29 @@ export const meta = {
 export default function Post() {
   return (
     <div className="space-y-8">
-      <p className="text-lg leading-relaxed first-letter:text-5xl first-letter:font-bold first-letter:text-greenbuzz dark:first-letter:text-green-400 first-letter:mr-3 first-letter:float-left first-letter:leading-none">
+      {/* Author & backlink */}
+      <div className="flex flex-col sm:flex-row items-center gap-3 mb-2 bg-white/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl px-5 py-3 shadow">
+        <span className="font-medium text-slate-700 dark:text-slate-300">
+          Written by <span className="text-greenbuzz dark:text-green-400 font-semibold">Jack Paradise</span> — Founder of{" "}
+          <a
+            href="https://seoparadise.co.uk"
+            target="_blank"
+            rel="noopener"
+            className="underline text-blue-700 dark:text-blue-400 hover:text-greenbuzz dark:hover:text-greenbuzz transition"
+          >
+            SEO Paradise
+          </a>
+        </span>
+      </div>
+
+ 
+
+      {/* Content */}
+      <p className="text-lg leading-relaxed first-letter:text-5xl first-letter:font-bold first-letter:text-greenbuzz dark:first-letter:text-green-400 first-letter:mr-3 first-letter:float-left first-letter:leading-none" id="intro">
         Summer months bring soaring temperatures and skyrocketing energy bills, but they also present the perfect opportunity to dramatically reduce your carbon footprint. With global temperatures breaking records year after year, the decisions we make about energy consumption during peak summer months have never been more critical for both our wallets and our planet's future.
       </p>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-orange-500 pl-4">
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-orange-500 pl-4" id="hidden-crisis">
         The Hidden Summer Energy Crisis
       </h2>
 
@@ -55,7 +89,7 @@ export default function Post() {
         </footer>
       </blockquote>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-4">
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-4" id="digital-connection">
         The Digital Connection: How Summer Heat Affects Your Website's Carbon Footprint
       </h2>
 
@@ -80,7 +114,7 @@ export default function Post() {
         </div>
       </div>
 
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-6 rounded-xl">
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-6 rounded-xl" id="track-impact">
         <h3 className="text-xl font-semibold mb-4">Track Your Complete Carbon Impact</h3>
         <p className="mb-4">
           Understanding the connection between your physical and digital energy consumption is crucial. Our <a href="/calculator" className="text-greenbuzz dark:text-green-400 font-semibold hover:underline">carbon calculator</a> helps you measure both your website's emissions and track improvements from energy-saving initiatives.
@@ -90,7 +124,7 @@ export default function Post() {
         </p>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4" id="essential-strategies">
         Essential Summer Energy-Saving Strategies
       </h2>
 
@@ -150,7 +184,7 @@ export default function Post() {
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-purple-500 pl-4">
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-purple-500 pl-4" id="office-strategies">
         Office and Remote Work Summer Strategies
       </h2>
 
@@ -181,7 +215,7 @@ export default function Post() {
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-red-500 pl-4">
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-red-500 pl-4" id="business-case">
         The Business Case for Summer Energy Efficiency
       </h2>
 
@@ -209,7 +243,7 @@ export default function Post() {
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-yellow-500 pl-4">
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-yellow-500 pl-4" id="advanced-techniques">
         Advanced Summer Carbon Reduction Techniques
       </h2>
 
@@ -245,7 +279,7 @@ export default function Post() {
         "The most effective carbon reduction strategies address both physical and digital consumption. Summer energy savings at home directly complement efforts to reduce your website's carbon footprint."
         <footer className="text-sm mt-2 not-italic">
           — Learn more at <a 
-            href="https://energysavingtrust.org.uk/" 
+            href="https://energysavingtrust.org.uk/"
             target="_blank" 
             rel="noopener"
             className="text-greenbuzz dark:text-green-400 hover:underline inline-flex items-center"
@@ -255,7 +289,7 @@ export default function Post() {
         </footer>
       </blockquote>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-greenbuzz pl-4">
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-greenbuzz pl-4" id="track-impact-2">
         Track Your Impact: From Summer Savings to Year-Round Carbon Reduction
       </h2>
 
@@ -280,6 +314,10 @@ export default function Post() {
           Join thousands tracking both physical and digital emissions. Read our <a href="/blog/why-website-carbon-matters-2025" className="text-greenbuzz dark:text-green-400 hover:underline">complete guide to website carbon footprints</a> and discover <a href="/blog/reduce-website-emissions-tips" className="text-greenbuzz dark:text-green-400 hover:underline">practical tips for digital carbon reduction</a>.
         </p>
       </div>
+
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-4" id="action-plan">
+        Your Summer Action Plan
+      </h2>
 
       <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl">
         <h3 className="text-xl font-semibold mb-4 flex items-center">
