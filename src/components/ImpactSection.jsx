@@ -1,145 +1,112 @@
 // src/components/ImpactSection.jsx
 import React from "react";
-import { motion } from "framer-motion"; // Import motion for animations
+import { motion } from "framer-motion";
 import GreenWebLogo   from "../assets/greenweb.svg";
 import KrystalLogo    from "../assets/krystal.svg";
 import GitHubLogo     from "../assets/github.png";
 import WordPressLogo  from "../assets/wordpress.png";
-import { ArrowRightCircle } from "lucide-react"; // For a more modern arrow icon
+import { Handshake, ArrowRightCircle } from "lucide-react";
 
 const partners = [
   { src: GreenWebLogo,   alt: "The Green Web Foundation" },
-  { src: KrystalLogo,     alt: "Krystal Hosting" },
-  { src: GitHubLogo,      alt: "GitHub" },
-  { src: WordPressLogo,   alt: "WordPress" },
+  { src: KrystalLogo,    alt: "Krystal Hosting" },
+  { src: GitHubLogo,     alt: "GitHub" },
+  { src: WordPressLogo,  alt: "WordPress" },
 ];
 
 export default function ImpactSection() {
-  const containerVariants = {
-    hidden: { opacity: 0, y: 50 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        staggerChildren: 0.1,
-        duration: 0.6,
-        ease: "easeOut"
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0 }
-  };
-
   return (
     <section
       id="impact"
       className="
-        relative overflow-hidden // Added for background effects
+        relative overflow-hidden
         w-full
-        bg-white dark:bg-slate-950 // Main section background
+        bg-white dark:bg-gradient-to-br dark:from-slate-900 dark:to-slate-950
         text-slate-900 dark:text-white
-        py-20 px-4 md:px-8
+        py-16 px-4 md:px-8
         transition-colors duration-300
       "
     >
-      {/* Subtle Background Effects (similar to other sections for consistency) */}
-      <div className="absolute inset-0 pointer-events-none opacity-30 dark:opacity-10">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-green-400/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl animate-pulse delay-1000" />
+      {/* Subtle animated background */}
+      <div className="absolute inset-0 pointer-events-none opacity-20 dark:opacity-10">
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-[32rem] h-[32rem] bg-green-400/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-10 right-1/2 translate-x-1/2 w-[24rem] h-[24rem] bg-blue-400/10 rounded-full blur-3xl animate-pulse" />
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto text-center space-y-12">
-        {/* Heading */}
-        <motion.h2
-          className="text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-slate-900 via-green-600 to-blue-600 dark:from-white dark:via-green-400 dark:to-blue-400 bg-clip-text text-transparent"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.5 }}
-          variants={itemVariants}
-        >
-          Partnering for a Sustainable Digital Future
-        </motion.h2>
-
-        {/* Intro copy */}
-        <motion.p
-          className="text-lg md:text-xl max-w-3xl mx-auto leading-relaxed text-slate-700 dark:text-slate-300" // Ensure text color adapts
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.5 }}
-          variants={itemVariants}
-        >
-          Work with **BuzzBoost Digital**, on-demand web development experts in
-          sustainable design and performance optimization. Let’s achieve
-          your low-carbon goals and help contribute to a greener web.
-        </motion.p>
-
-        {/* Logo Grid */}
+      <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center text-center gap-8">
+        {/* Headline & icon */}
         <motion.div
-          className="grid grid-cols-2 sm:grid-cols-4 gap-6 mt-8"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.7 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="flex flex-col items-center gap-2"
+        >
+          <span className="inline-flex items-center gap-2 text-green-500 dark:text-green-400 text-3xl md:text-4xl font-extrabold mb-1">
+            <Handshake className="w-8 h-8 mr-1" />  
+            Partnered for Positive Impact
+          </span>
+          <h2 className="text-2xl md:text-4xl font-extrabold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+            Collaboration that Drives Greener Results
+          </h2>
+          <p className="mt-2 text-base md:text-lg text-slate-700 dark:text-slate-300 max-w-xl mx-auto leading-relaxed">
+            We’re not just a digital agency—we’re part of a movement. <span className="font-semibold text-green-600 dark:text-green-400">BuzzBoost Digital</span> works hand-in-hand with the best sustainable tech partners to help you achieve your low-carbon goals, prove your credentials, and contribute to a better internet.
+          </p>
+        </motion.div>
+
+        {/* Partner logos */}
+        <motion.div
+          className="w-full grid grid-cols-2 sm:grid-cols-4 gap-6 my-2"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
-          variants={containerVariants}
+          variants={{
+            hidden: { opacity: 0, y: 40 },
+            visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.09, duration: 0.6 } }
+          }}
         >
           {partners.map(({ src, alt }, i) => (
             <motion.div
               key={i}
               className="
-                bg-slate-100/50 dark:bg-slate-800/50 // Adapting background for cards
-                border border-gray-200 dark:border-slate-700
-                p-4 rounded-xl
+                bg-white dark:bg-slate-800
+                border border-slate-200 dark:border-slate-700
+                rounded-xl p-3
                 flex items-center justify-center
-                shadow-md hover:shadow-xl
-                transition-all duration-200 hover:scale-105 // Added scale on hover
+                shadow-md hover:shadow-xl transition-all duration-200 hover:scale-105
+                min-h-[60px]
               "
-              variants={itemVariants}
+              whileHover={{ scale: 1.08 }}
             >
               <img
                 src={src}
                 alt={alt}
-                className={`
-                  ${i === 0 ? "max-h-10" : "max-h-12"} w-auto
-                  transition-filter duration-300
-                  ${alt === "The Green Web Foundation" || alt === "Krystal Hosting" ? "" : "dark:filter dark:brightness-0 dark:invert"} // Only invert if the logo isn't already green/white
-                `}
+                className="max-h-10 w-auto dark:filter dark:brightness-0 dark:invert transition-all duration-300"
               />
             </motion.div>
           ))}
         </motion.div>
 
-        {/* Work-with-us CTA */}
+        {/* CTA */}
         <motion.div
-          className="mt-12 space-y-4"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.5 }}
-          variants={containerVariants}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.6 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="flex flex-col items-center gap-2 mt-6"
         >
-          <motion.h3
-            className="text-2xl font-semibold text-slate-800 dark:text-white" // Ensure text color adapts
-            variants={itemVariants}
-          >
-            Ready to make a real impact? Let’s connect!
-          </motion.h3>
-          <motion.a
+          <span className="text-base md:text-lg font-semibold mb-2">
+            Ready to make a real impact?
+          </span>
+          <a
             href="https://buzzboost.co.uk"
             target="_blank"
             rel="noopener noreferrer"
-            className="
-              inline-flex items-center justify-center
-              bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 // Dynamic gradient for CTA
-              text-white font-bold
-              px-8 py-4 rounded-full
-              transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-green-500/40 // Enhanced hover effects
-            "
-            variants={itemVariants}
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold shadow-lg transition-all duration-300 transform hover:scale-105"
           >
             Explore BuzzBoost Digital
-            <ArrowRightCircle className="ml-3 w-5 h-5" /> {/* Modern icon */}
-          </motion.a>
+            <ArrowRightCircle className="ml-2 w-5 h-5" />
+          </a>
         </motion.div>
       </div>
     </section>

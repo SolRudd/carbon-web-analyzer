@@ -5,6 +5,7 @@ import ResultCard                  from '../components/ResultCard';
 import ResultDetails               from '../components/ResultDetails';
 import ImpactStats                 from '../components/ImpactStats';
 import ImpactSection               from '../components/ImpactSection';
+import CompanyInfoSection from "../components/CompanyInfoSection"; // <--- CORRECTED PATH HERE!
 import BadgePromo                  from '../components/BadgePromo';
 import TestCTA                     from '../components/TestCTA';
 import { API_BASE }                from '../config'; // <-- ADD THIS LINE
@@ -58,21 +59,28 @@ export default function ResultPage() {
     );
 
   return (
-    <section className="py-16 px-4 min-h-screen bg-white dark:bg-slate-900">
-      <div className="mx-auto max-w-4xl space-y-12">
-        <ResultCard    result={result} onRetest={handleRetest} />
-        <ResultDetails
-          carbonEstimate={+result.carbonEstimate}
-          greenHost={!!result.greenHost}
-          reductionPct={+result.reductionPct}
-          grade={result.grade}
-          percentile={result.percentile}
-        />
-        <ImpactStats   carbonPerView={+result.carbonEstimate} siteUrl={result.url} grade={result.grade} />
-        <ImpactSection />
-        <BadgePromo    siteUrl={result.url} />
-        <TestCTA />
-      </div>
-    </section>
-  );
+  <section className="py-16 px-4 min-h-screen bg-white dark:bg-slate-900">
+    {/* Keep your central content boxed here */}
+    <div className="mx-auto max-w-4xl space-y-12">
+      <ResultCard    result={result} onRetest={handleRetest} />
+      <ResultDetails
+        carbonEstimate={+result.carbonEstimate}
+        greenHost={!!result.greenHost}
+        reductionPct={+result.reductionPct}
+        grade={result.grade}
+        percentile={result.percentile}
+      />
+      <ImpactStats   carbonPerView={+result.carbonEstimate} siteUrl={result.url} grade={result.grade} />
+      <ImpactSection />
+      <BadgePromo    siteUrl={result.url} />
+      <TestCTA />
+    </div>
+
+    {/* Place CompanyInfoSection OUTSIDE the max-w-4xl div */}
+    <div className="mt-24">
+      <CompanyInfoSection />
+    </div>
+  </section>
+);
+
 }

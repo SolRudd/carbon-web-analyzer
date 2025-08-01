@@ -1,165 +1,192 @@
-// src/components/ResultCard.jsx
 import React from "react";
 import { Link } from "react-router-dom";
-import GradeBadge from "./GradeBadge";
+import { ClipboardCopy, Info, CheckCircle2, AlertTriangle } from "lucide-react";
 import ScaleBar from "./ScaleBar";
 
 export default function ResultCard({ result, onRetest }) {
   if (!result) return null;
   const { url, grade, percentile = 0, timestamp, cached = false } = result;
-
-  // Format date
   const testedOn = new Date(timestamp).toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
+    day: "numeric", month: "long", year: "numeric"
   });
 
-  // Colour map for grade
+  // Visual and text maps
   const colourMap = {
-    "A+": "text-green-400",
-    A: "text-green-500",
-    B: "text-lime-400",
-    C: "text-yellow-400",
-    D: "text-orange-500",
-    E: "text-red-400",
-    F: "text-red-600",
+    "A+": "text-green-500",
+    A:    "text-green-600",
+    B:    "text-lime-500",
+    C:    "text-yellow-500",
+    D:    "text-orange-500",
+    E:    "text-red-500",
+    F:    "text-red-600",
   };
   const gradeClass = colourMap[grade] || "text-gray-600";
 
-  // Heading emoji & text per grade
-  const headingMap = {
-    "A+": { emoji: "🏆", text: "Outstanding!" },
-    A: { emoji: "🌟", text: "Excellent!" },
-    B: { emoji: "👍", text: "Great job!" },
-    C: { emoji: "👌", text: "Not bad!" },
-    D: { emoji: "⚠️", text: "Needs improvement!" },
-    E: { emoji: "⚠️", text: "Consider optimizing!" },
-    F: { emoji: "🚨", text: "Oops! Lots of work needed!" },
+  // Headline and advice per grade
+  const gradeCopy = {
+    "A+": {
+      emoji: "🏆", headline: "World-Class Sustainability",
+      summary: "Your page is among the cleanest on the internet. Amazing work—keep setting the standard!"
+    },
+    A: {
+      emoji: "🌟", headline: "Excellent Performance",
+      summary: "Your site is super efficient and well above global averages. A little fine-tuning could push you to the top."
+    },
+    B: {
+      emoji: "👍", headline: "Solid & Efficient",
+      summary: "Your carbon impact is lower than most sites. With a few tweaks, you could reach excellence."
+    },
+    C: {
+      emoji: "👌", headline: "Good—but Room to Grow",
+      summary: "You’re doing okay, but there’s clear opportunity to reduce your site’s footprint and outperform the web average."
+    },
+    D: {
+      emoji: "⚠️", headline: "Needs Improvement",
+      summary: "Your site’s emissions are higher than average. Review your images, code, and hosting for quick wins."
+    },
+    E: {
+      emoji: "🚨", headline: "High Impact: Action Needed",
+      summary: "This website generates significant carbon emissions. We recommend an audit and sustainable rebuild."
+    },
+    F: {
+      emoji: "🔥", headline: "Very High Impact",
+      summary: "Your page is among the least efficient. Immediate action is needed—consider a full redesign for sustainability."
+    }
   };
-  const { emoji, text: headingText } = headingMap[grade] || {
-    emoji: "🔍",
-    text: "Analysis",
+  const copy = gradeCopy[grade] || {
+    emoji: "🔍", headline: "No Grade",
+    summary: "We couldn't assign a grade. Please try again or contact support."
   };
 
-  // Always show "cleaner than X%"
   const displayPct = Math.round(percentile);
-
   const copyUrl = () => navigator.clipboard.writeText(window.location.href);
 
   return (
-    <section className="py-8 px-4">
-      <div
-        className="
-          mx-auto max-w-4xl
-          bg-white dark:bg-slate-900
-          p-8 sm:p-12
-          rounded-3xl
-          shadow-2xl
-          border border-slate-200 dark:border-slate-800
-          relative overflow-visible
-        "
-      >
-        {/* 1) Grade badge */}
-        <div
-          className="
-            mb-6
-            flex justify-center
-            sm:absolute sm:-top-0 sm:left-4
-          "
-        >
-          <GradeBadge grade={grade} />
-        </div>
+    <section className="relative py-8 px-2 md:px-4 overflow-hidden">
+      {/* Animated background blobs */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 left-1/3 w-[420px] h-[420px] bg-green-400/20 blur-3xl animate-pulse opacity-20" />
+        <div className="absolute bottom-1/4 right-1/4 w-[260px] h-[260px] bg-blue-400/20 blur-2xl animate-pulse opacity-20 delay-1000" />
+      </div>
 
-        {/* 2) Main content */}
-        <div className="ml-0 sm:ml-32">
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-            Carbon results for{" "}
+      <div className={`
+        relative mx-auto max-w-2xl md:max-w-4xl
+        bg-white dark:bg-slate-900
+        border border-slate-200 dark:border-slate-800
+        rounded-2xl shadow-xl md:shadow-2xl
+        p-4 sm:p-8 md:p-12
+        transition-shadow duration-300
+        flex flex-col
+        ${["A+", "A", "B"].includes(grade) ? "shadow-green-400/20 dark:shadow-green-400/40" : ""}
+      `}>
+
+        {/* Summary/info row */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
+          <div>
+            <p className="text-xs text-slate-600 dark:text-slate-400">Tested:</p>
+            <span className="font-medium text-slate-800 dark:text-slate-200">{testedOn}</span>
+            {cached && process.env.NODE_ENV === "production" ? (
+              <span className="ml-4 text-xs text-gray-400">(cached, auto retest in 7 days)</span>
+            ) : null}
+          </div>
+          <div className="text-xs sm:text-sm text-right">
             <a
               href={url}
               target="_blank"
               rel="noreferrer"
-              className="underline text-blue-600 dark:text-blue-400"
+              className="underline text-green-600 dark:text-green-400 break-all"
+              title={url}
             >
               {new URL(url).hostname}
             </a>
-            :
-          </p>
-
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white mb-2">
-            {emoji} {headingText} This page rates{" "}
-            <span className={gradeClass}>{grade}</span>
-          </h2>
-
-          <p className="text-md sm:text-lg text-slate-700 dark:text-slate-300 mb-6">
-            This page is{" "}
-            <span className={`font-semibold ${gradeClass}`}>
-              cleaner than {displayPct}%  
-            </span>{" "}
-            of all pages tested.
-          </p>
-
-          <ScaleBar grade={grade} />
-
-          <div className="mt-6">
-            <Link
-              to="/how-it-works"
-              className="underline text-blue-600 dark:text-blue-400"
-            >
-              Learn about our rating system
-            </Link>
-          </div>
-
-          <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-sm text-slate-600 dark:text-slate-400">
-            <span>Last tested on {testedOn}.</span>
-            {cached && process.env.NODE_ENV === "production" ? (
-              <button
-                disabled
-                className="mt-2 sm:mt-0 text-gray-400 dark:text-gray-600 underline cursor-not-allowed"
-              >
-                Next re-test in 7 days
-              </button>
-            ) : (
-              <button
-                onClick={onRetest}
-                className="mt-2 sm:mt-0 text-green-500 dark:text-green-400 underline hover:text-green-600"
-              >
-                Re-test
-              </button>
-            )}
           </div>
         </div>
 
-        {/* 3) Copy URL button */}
-        <button
-          onClick={copyUrl}
-          className="
-            flex justify-center
-            w-full mt-8
-            bg-green-500 hover:bg-green-400 text-white
-            px-6 py-3 rounded-full
-            transition
-            sm:absolute sm:bottom-8 sm:right-8 sm:w-auto sm:mt-0
-          "
-        >
-          <span>Copy URL</span>
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        {/* Main Result/Grade */}
+        <div className="flex flex-col items-center gap-2 mb-1">
+          <span className={`
+            inline-flex items-center gap-2 px-5 py-2 rounded-full border-2
+            border-slate-300 dark:border-slate-700
+            ${gradeClass} font-bold text-base md:text-lg bg-white/60 dark:bg-slate-900/50
+          `}>
+            {copy.emoji} Grade: {grade}
+          </span>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold my-2 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent text-center">
+            {copy.headline}
+          </h2>
+        </div>
+
+        {/* Advisory subline */}
+        <div className={`text-center mb-2`}>
+          <span className="block text-base sm:text-lg text-slate-700 dark:text-slate-300">{copy.summary}</span>
+        </div>
+
+        {/* Percentile Stat */}
+        <div className="flex flex-col md:flex-row justify-center items-center gap-2 md:gap-4 my-2">
+          {["A+", "A"].includes(grade) && (
+            <CheckCircle2 className="w-7 h-7 text-green-500 animate-bounce" />
+          )}
+          {["D", "E", "F"].includes(grade) && (
+            <AlertTriangle className="w-7 h-7 text-orange-400 animate-pulse" />
+          )}
+          <span className={`text-3xl sm:text-4xl font-bold ${gradeClass}`}>
+            {displayPct}%
+          </span>
+          <span className="ml-0 md:ml-2 text-base sm:text-lg text-slate-700 dark:text-slate-300 flex items-center gap-1">
+            cleaner than all pages tested
+            <Info className="w-5 h-5 text-slate-400" title="Percentile is based on all tested public pages." />
+          </span>
+        </div>
+
+        {/* Scale bar */}
+        <div className="my-6">
+          <ScaleBar grade={grade} />
+        </div>
+
+        {/* Retest & Info row */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6 text-sm">
+          <Link
+            to="/how-it-works"
+            className="underline text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M8 16h8M8 12h8m-5-8h.01M16 4h2a2 2 0 012 2v2
-                 m0 8v2a2 2 0 01-2 2h-2
-                 m-8 0H6a2 2 0 01-2-2v-2
-                 m0-8V6a2 2 0 012-2h2"
-            />
-          </svg>
-        </button>
+            What does this grade mean?
+          </Link>
+          {cached && process.env.NODE_ENV === "production" ? (
+            <button
+              disabled
+              className="underline text-gray-400 cursor-not-allowed"
+            >
+              Next re-test in 7 days
+            </button>
+          ) : (
+            <button
+              onClick={onRetest}
+              className="underline text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors"
+            >
+              Re-test this page
+            </button>
+          )}
+        </div>
+
+        {/* Copy link button */}
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={copyUrl}
+            className="
+              flex items-center gap-2
+              px-6 py-3
+              bg-gradient-to-r from-green-600 to-blue-600
+              hover:from-green-700 hover:to-blue-500
+              text-white font-semibold
+              rounded-full
+              transition-all duration-300 transform hover:scale-105 shadow-lg
+            "
+            title="Copy this results page link"
+          >
+            <ClipboardCopy className="w-5 h-5" />
+            Copy Page Link
+          </button>
+        </div>
       </div>
     </section>
   );
