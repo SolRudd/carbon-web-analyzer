@@ -1,41 +1,52 @@
+// src/components/CarbonBadge.jsx
 import React, { useState, useEffect } from "react";
 import { API_BASE } from "../config";
 
 export default function CarbonBadge({ url, data: preData }) {
-  const [data, setData] = useState(preData);
+  const [data, setData] = useState(preData || null);
   const [err,  setErr]  = useState(false);
 
+  // Don’t check localhost (PageSpeed can’t crawl it)
+  const target = (() => {
+    try {
+      const u = new URL(url);
+      if (u.hostname === "localhost" || u.hostname === "127.0.0.1") return null;
+      // normalise to proto + host + path (no trailing slash)
+      return u.protocol + "//" + u.hostname + u.pathname.replace(/\/+$/, "");
+    } catch { return null; }
+  })();
+
   useEffect(() => {
-    if (preData) return;
-    const key = `carbon:${url}`;
+    if (preData || !target) return;
+    const key = `carbon:${target}`;
     const cached = sessionStorage.getItem(key);
     if (cached) {
       setData(JSON.parse(cached));
       return;
     }
 
-    fetch(`${API_BASE}/api/trace?site=${encodeURIComponent(url)}`)
-      .then(r => { if (!r.ok) throw new Error(r.status); return r.json() })
+    // IMPORTANT: endpoint that auto-creates a record if missing
+    fetch(`${API_BASE}/api/trace-or-check?site=${encodeURIComponent(target)}`)
+      .then(r => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
       .then(d => {
         setData(d);
         sessionStorage.setItem(key, JSON.stringify(d));
       })
       .catch(() => setErr(true));
-  }, [url, preData]);
+  }, [target, preData]);
 
-  if (err)      return <div className="text-red-500 text-xs">Badge failed to load</div>;
-  if (!data)    return <div className="text-xs">Loading badge…</div>;
+  if (!target) return null;
+  if (err)    return <div className="text-red-500 text-xs">Badge failed to load</div>;
+  if (!data)  return <div className="text-xs">Loading badge…</div>;
 
-  const co2 = data.carbonEstimate.toFixed(2);
-  const pct = data.percentile;
-  const slug = (() => {
+  const co2  = Number(data.carbonEstimate || 0).toFixed(2);
+  const pct  = data.percentile ?? "--";
+  const slug = data.slug || (() => {
     try {
-      const u = new URL(url);
+      const u = new URL(target);
       const base = (u.hostname + u.pathname).replace(/\/$/, "");
       return base.replace(/[^a-z0-9]/gi, "-").toLowerCase();
-    } catch {
-      return "";
-    }
+    } catch { return ""; }
   })();
 
   return (
