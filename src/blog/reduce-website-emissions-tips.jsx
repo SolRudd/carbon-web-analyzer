@@ -1,13 +1,10 @@
-// src/blog/reduce-website-emissions-tips.jsx
-
 import React from "react";
 import { 
   FaExternalLinkAlt, FaRocket, FaServer, FaLeaf, FaImages, 
   FaCode, FaCloud
 } from "react-icons/fa";
-import img from "../assets/blog/reduce-website-emissions.jpg";
+// ✅ Image Optimization: Switched from .jpg to the lighter .webp format
 
-// TOC for sidebar
 export const toc = [
   { id: "intro", text: "Introduction", level: 2 },
   { id: "why-emissions-matter", text: "Why Website Emissions Matter", level: 2 },
@@ -31,14 +28,13 @@ export const meta = {
   date: "2025-07-25",
   tags: ["Green Web", "Performance", "Sustainability", "Carbon Reduction"],
   slug: "reduce-website-emissions-tips",
-  image: img,
+  image: "src/assets/blog/reduce-website-emissions.webp",
   excerpt: "Cut CO₂, boost SEO, and win more users: your essential guide to building a blazing-fast, low-carbon website—with GreenTracer as your secret weapon."
 };
 
 export default function Post() {
   return (
     <div className="space-y-8">
-      {/* Intro */}
       <h1 className="text-4xl font-bold text-slate-900 dark:text-white" id="intro">
         How to Reduce Website Emissions: 5 Practical Tips That Cut Carbon by 60%
       </h1>
@@ -51,6 +47,8 @@ export default function Post() {
       <blockquote className="bg-greenbuzz/10 dark:bg-green-400/10 border-l-4 border-greenbuzz dark:border-green-400 p-6 rounded-r-xl italic text-lg">
         "Every unnecessary file, every slow resource, every dirty server… it all adds up. But so do your wins. Start optimizing, and you don’t just go green—you go faster and get found."
       </blockquote>
+      
+
 
       {/* Why it matters */}
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white" id="why-emissions-matter">

@@ -3,7 +3,7 @@ import {
   FaExternalLinkAlt, FaBolt, FaLeaf, FaChartLine, FaIndustry, 
   FaGlobe, FaServer, FaLightbulb, FaCode, FaImage, FaRocket
 } from "react-icons/fa";
-import img from "../assets/blog/energy-carbon.jpg";
+
 
 export const meta = {
   title: "The Digital Carbon Paradox: Why Green Energy Companies Have the Dirtiest Websites",
@@ -11,7 +11,7 @@ export const meta = {
   date: "2025-07-29",
   tags: ["Eco-friendly", "Energy", "Web Sustainability", "Carbon Tracking"],
   slug: "carbon-footprints-energy-providers",
-  image: img,
+   image: "/src/assets/blog/energy-carbon.webp",
   excerpt: "An in-depth investigation reveals that leading renewable energy companies are failing at digital sustainability. We break down why and provide a complete action plan for change."
 };
 
@@ -30,12 +30,10 @@ export const toc = [
 export default function Post() {
   return (
     <div className="space-y-10">
-      {/* Intro */}
       <p id="intro" className="text-lg leading-relaxed first-letter:text-5xl first-letter:font-bold first-letter:text-greenbuzz dark:first-letter:text-green-400 first-letter:mr-3 first-letter:float-left first-letter:leading-none">
         In 2025, the internet’s carbon footprint nears 4% of global emissions—on par with the entire aviation industry. Yet, a shocking paradox lies at the heart of the climate movement: the very companies championing clean energy are often running the most polluting websites. In this deep dive, we audited the UK’s leading renewable providers and uncovered a widespread digital hypocrisy: glossy sustainability reports delivered via bloated, slow, carbon‑heavy web pages that undermine their core mission.
       </p>
 
-      {/* Section: The Paradox Unveiled */}
       <h2 id="paradox-unveiled" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-red-500 pl-4">
         The Paradox Unveiled: Auditing the Auditors
       </h2>
@@ -88,7 +86,6 @@ export default function Post() {
         </footer>
       </blockquote>
 
-      {/* Four Pillars */}
       <h2 id="four-pillars" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-4">
         The Four Pillars of Digital Carbon Emissions
       </h2>
@@ -97,7 +94,6 @@ export default function Post() {
       </p>
 
       <div className="space-y-12">
-        {/* Pillar 1: Hosting */}
         <div id="pillar-one-hosting" className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-8">
           <div className="flex items-center mb-6">
             <div className="flex-shrink-0 w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mr-4">
@@ -138,7 +134,6 @@ export default function Post() {
           </div>
         </div>
 
-        {/* Pillar 2: Code */}
         <div id="pillar-two-code" className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-8">
           <div className="flex items-center mb-6">
             <div className="flex-shrink-0 w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mr-4">
@@ -179,7 +174,6 @@ export default function Post() {
           </div>
         </div>
 
-        {/* Pillar 3: Assets */}
          <div id="pillar-three-assets" className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-8">
           <div className="flex items-center mb-6">
             <div className="flex-shrink-0 w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mr-4">
@@ -220,7 +214,6 @@ export default function Post() {
           </div>
         </div>
 
-        {/* Pillar 4: UX */}
          <div id="pillar-four-ux" className="bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 rounded-xl p-8">
           <div className="flex items-center mb-6">
             <div className="flex-shrink-0 w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mr-4">
@@ -262,7 +255,6 @@ export default function Post() {
         </div>
       </div>
 
-      {/* Action Plan */}
       <h2 id="action-plan" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
         The Green Energy Digital Action Plan
       </h2>
@@ -308,7 +300,6 @@ export default function Post() {
         </div>
       </div>
       
-      {/* Conclusion */}
       <h2 id="conclusion" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-purple-500 pl-4">
         Conclusion: A Call for Digital Integrity
       </h2>

@@ -1,6 +1,7 @@
 import React from "react";
 import { FaExternalLinkAlt, FaLeaf, FaHome, FaLungs, FaChartLine, FaThermometerHalf, FaWind } from "react-icons/fa";
-import img from "../assets/blog/air-quality.jpg";
+// ✅ Image Optimization: Switched from .jpg to the lighter .webp format
+
 
 export const meta = {
   title: "5 Ways to Improve Your Air Quality for a Healthier Home & Environment",
@@ -8,11 +9,10 @@ export const meta = {
   date: "2025-06-19",
   tags: ["Eco-friendly", "Home", "Air Quality", "Carbon Reduction"],
   slug: "improve-air-quality",
-  image: img,
+ image: "/src/assets/blog/air-quality.webp",
   excerpt: "Breathe easier at home with these simple air quality tips that also reduce your carbon footprint."
 };
 
-// Add the new Table of Contents array here
 export const toc = [
   { id: "hidden-connection", text: "The Hidden Connection: Air Quality and Carbon Emissions", level: 2 },
   { id: "shocking-stats", text: "Shocking Indoor Air Quality Statistics", level: 3 },
@@ -68,7 +68,6 @@ export default function Post() {
       </h2>
 
       <div className="space-y-12">
-        {/* Strategy 1: Natural Ventilation */}
         <div id="strategy-ventilation" className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-8">
           <div className="flex items-center mb-6">
             <div className="flex-shrink-0 w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mr-4">
@@ -79,11 +78,9 @@ export default function Post() {
               <p className="text-blue-600 dark:text-blue-400 font-semibold">Impact: 30-50% reduction in mechanical ventilation needs</p>
             </div>
           </div>
-          
           <p className="text-lg mb-6">
             Opening windows strategically isn't just about fresh air—it's about reducing your reliance on energy-intensive HVAC systems while dramatically improving indoor air quality. Proper natural ventilation can cut your home's energy consumption by up to 30%.
           </p>
-
           <div className="space-y-6">
             <div className="bg-white dark:bg-slate-800 p-6 rounded-lg">
               <h4 className="font-semibold mb-4">🌬️ Strategic Ventilation Techniques</h4>
@@ -108,25 +105,12 @@ export default function Post() {
                 </div>
               </div>
             </div>
-
             <div className="bg-blue-100 dark:bg-blue-900/30 p-4 rounded-lg">
               <h4 className="font-semibold mb-3">💡 Energy & Health Benefits</h4>
               <div className="grid md:grid-cols-3 gap-4 text-center">
-                <div className="bg-white dark:bg-slate-800 p-3 rounded">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">25%</div>
-                  <div className="text-sm">Less AC usage</div>
-                  <div className="text-xs text-slate-600 dark:text-slate-400">Average energy savings</div>
-                </div>
-                <div className="bg-white dark:bg-slate-800 p-3 rounded">
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">40%</div>
-                  <div className="text-sm">Pollution reduction</div>
-                  <div className="text-xs text-slate-600 dark:text-slate-400">Indoor vs outdoor</div>
-                </div>
-                <div className="bg-white dark:bg-slate-800 p-3 rounded">
-                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">60%</div>
-                  <div className="text-sm">Humidity control</div>
-                  <div className="text-xs text-slate-600 dark:text-slate-400">Mold prevention</div>
-                </div>
+                <div className="bg-white dark:bg-slate-800 p-3 rounded"><div className="text-2xl font-bold text-green-600 dark:text-green-400">25%</div><div className="text-sm">Less AC usage</div><div className="text-xs text-slate-600 dark:text-slate-400">Average energy savings</div></div>
+                <div className="bg-white dark:bg-slate-800 p-3 rounded"><div className="text-2xl font-bold text-blue-600 dark:text-blue-400">40%</div><div className="text-sm">Pollution reduction</div><div className="text-xs text-slate-600 dark:text-slate-400">Indoor vs outdoor</div></div>
+                <div className="bg-white dark:bg-slate-800 p-3 rounded"><div className="text-2xl font-bold text-purple-600 dark:text-purple-400">60%</div><div className="text-sm">Humidity control</div><div className="text-xs text-slate-600 dark:text-slate-400">Mold prevention</div></div>
               </div>
             </div>
           </div>

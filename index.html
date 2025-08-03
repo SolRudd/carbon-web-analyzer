@@ -2,8 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- 1) Immediately apply the saved theme -->
+    <title>GreenTracer | Website Carbon Emissions Calculator</title>
+
+    <meta
+      name="description"
+      content="How much carbon does your website produce? GreenTracer analyzes your site's emissions and gives you a score. Start building a greener web today."
+    />
+
+    <meta
+      property="og:title"
+      content="GreenTracer | Website Carbon Emissions Calculator"
+    />
+    <meta
+      property="og:description"
+      content="Analyze your website's carbon footprint and get your GreenTracer score."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.greentracer.org" />
+    <meta property="og:image" content="/world.png" />
+
     <script>
       (function () {
         const theme = localStorage.getItem("theme");
@@ -20,13 +39,15 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/src/index.css" />
-    <link rel="icon" type="image/svg+xml" href="/GreenFavi.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GreenTrace</title>
+    <link rel="icon" type="image/svg+xml" href="/GreenFavi.png" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-    <!-- greentrace badge loader -->
- <script async defer src="https://api.greentracer.org/greentrace-badge.js"></script>
+    <script
+      async
+      defer
+      src="https://api.greentracer.org/greentrace-badge.js"
+    ></script>
+  </body>
 </html>

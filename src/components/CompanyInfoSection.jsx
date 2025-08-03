@@ -3,7 +3,6 @@ import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Rocket, Code, Search, BarChart, Sparkles, ArrowRight } from "lucide-react";
 
-// Import tri-format logo assets (created by npm run img:all)
 import buzzboostPng from "../assets/buzzboost.png";
 import buzzboostWebp from "../assets/buzzboost.webp";
 import buzzboostAvif from "../assets/buzzboost.avif";
@@ -30,7 +29,7 @@ export default function CompanyInfoSection() {
   const prefersReduced = useReducedMotion();
 
   const containerVariants = prefersReduced
-    ? { hidden: { opacity: 1, y: 0 }, visible: { opacity: 1, y: 0 } }
+    ? { hidden: { opacity: 1 }, visible: { opacity: 1 } }
     : {
         hidden: { opacity: 0, y: 50 },
         visible: {
@@ -41,7 +40,7 @@ export default function CompanyInfoSection() {
       };
 
   const itemVariants = prefersReduced
-    ? { hidden: { opacity: 1, y: 0 }, visible: { opacity: 1, y: 0 } }
+    ? { hidden: { opacity: 1 }, visible: { opacity: 1 } }
     : { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } };
 
   return (
@@ -51,7 +50,6 @@ export default function CompanyInfoSection() {
       role="region"
       aria-labelledby="company-info-heading"
     >
-      {/* Decorative background (not announced) */}
       <div className="absolute inset-0 opacity-10 dark:opacity-15" aria-hidden="true">
         <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5" />
         {!prefersReduced && (
@@ -73,7 +71,6 @@ export default function CompanyInfoSection() {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-16">
-        {/* Left Side: Agency Introduction and CTA */}
         <motion.div
           className="lg:w-1/2 text-center lg:text-left space-y-8"
           initial="hidden"
@@ -81,13 +78,13 @@ export default function CompanyInfoSection() {
           viewport={{ once: true, amount: 0.4 }}
           variants={containerVariants}
         >
-          {/* Agency Logo (AVIF/WebP/PNG with lazy loading) */}
           <motion.div variants={itemVariants} className="flex justify-center lg:justify-start mb-6">
             <a
               href="https://buzzboost.co.uk"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block p-4 bg-slate-100/50 dark:bg-white/10 rounded-xl shadow-lg hover:scale-105 transition-transform duration-300"
+              // ✅ FIX: Removed the background color classes to fix the white box issue
+              className="inline-block p-4 rounded-xl hover:scale-105 transition-transform duration-300"
             >
               <picture>
                 <source type="image/avif" srcSet={buzzboostAvif} />
@@ -141,7 +138,6 @@ export default function CompanyInfoSection() {
           </motion.div>
         </motion.div>
 
-        {/* Right Side: Service Highlights / Pillars */}
         <motion.div
           className="lg:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-8 p-8 rounded-3xl bg-white/50 dark:bg-white/10 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-xl"
           initial="hidden"
@@ -167,7 +163,6 @@ export default function CompanyInfoSection() {
             </motion.div>
           ))}
 
-          {/* Dedicated callout */}
           <motion.div
             className="flex flex-col items-start text-left bg-white dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-md transform hover:-translate-y-2 transition-transform duration-300"
             variants={itemVariants}

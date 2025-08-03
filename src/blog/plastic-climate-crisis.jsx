@@ -1,8 +1,7 @@
 import React from "react";
 import { FaExternalLinkAlt, FaIndustry, FaRecycle, FaGlobe, FaLeaf, FaChartLine, FaLaptop } from "react-icons/fa";
-import img from "../assets/blog/plastic-climate.jpg";
+// ✅ Image Optimization: Switched from .jpg to the lighter .webp format
 
-// Table of Contents for parent layout/sidebar
 export const toc = [
   { id: "intro", text: "Introduction", level: 2 },
   { id: "scale-impact", text: "The Staggering Scale of Plastic's Climate Impact", level: 2 },
@@ -20,14 +19,13 @@ export const meta = {
   date: "2025-07-01",
   tags: ["Climate Change", "Plastic", "Sustainability", "Carbon Tracking"],
   slug: "plastic-climate-crisis",
-  image: img,
+ image: "/src/assets/blog/plastic-climate.webp",
   excerpt: "Discover the shocking carbon footprint of plastic and learn how to track and reduce your complete environmental impact."
 };
 
 export default function Post() {
   return (
     <div className="space-y-8">
-      {/* Author & backlink */}
       <div className="flex flex-col sm:flex-row items-center gap-3 mb-2 bg-white/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl px-5 py-3 shadow">
         <span className="font-medium text-slate-700 dark:text-slate-300">
           Written by <span className="text-greenbuzz dark:text-green-400 font-semibold">Rayyan Karim</span> — 
@@ -42,12 +40,10 @@ export default function Post() {
         </span>
       </div>
 
-      {/* --- INTRO --- */}
       <p className="text-lg leading-relaxed first-letter:text-5xl first-letter:font-bold first-letter:text-greenbuzz dark:first-letter:text-green-400 first-letter:mr-3 first-letter:float-left first-letter:leading-none" id="intro">
         Every minute, one million plastic bottles are purchased globally, and each one carries a hidden carbon burden that extends far beyond its physical presence. While we see plastic pollution choking our oceans and landscapes, the invisible climate impact of plastic production, transportation, and disposal represents one of the most overlooked contributors to global greenhouse gas emissions—accounting for a staggering 3.4% of the world's total carbon output.
       </p>
 
-      {/* --- SCALE IMPACT --- */}
       <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-red-500 pl-4" id="scale-impact">
         The Staggering Scale of Plastic's Climate Impact
       </h2>
@@ -69,6 +65,7 @@ export default function Post() {
           <li>• Microplastics in our digital devices contribute to <strong>e-waste carbon emissions</strong></li>
         </ul>
       </div>
+      
 
       <blockquote className="bg-greenbuzz/10 dark:bg-green-400/10 border-l-4 border-greenbuzz dark:border-green-400 p-6 rounded-r-xl italic text-lg">
         "Understanding plastic's climate impact is crucial for comprehensive carbon tracking. Just as we measure the emissions from our websites and digital activities, we need to account for the physical materials that enable our connected world."

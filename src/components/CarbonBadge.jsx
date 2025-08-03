@@ -52,18 +52,24 @@ export default function CarbonBadge({ url, data: preData }) {
   return (
     <div className="inline-flex flex-col items-center text-center">
       <a
-        href={`/result/${slug}`}
+        href={`/result/${slug}`}  // keep as-is to avoid breaking routes
         className="inline-flex overflow-hidden rounded-md shadow-lg transform transition hover:scale-105"
       >
         <div className="px-4 py-2 bg-white dark:bg-slate-800 border border-greenbuzz text-sm font-semibold text-slate-900 dark:text-slate-200 rounded-l-md">
           {co2}g CO₂/view
         </div>
         <div className="flex items-center px-4 py-2 bg-greenbuzz rounded-r-md">
-          <img
-            src="/GreenTraceLogo.svg"
-            alt="GreenTrace"
-            className="h-6 w-auto filter brightness-0 invert"
-          />
+          <picture>
+            <source type="image/avif" srcSet="/GreenTraceLogo.avif" />
+            <source type="image/webp" srcSet="/GreenTraceLogo.webp" />
+            <img
+              src="/GreenTraceLogo.png"
+              alt="GreenTrace"
+              className="h-6 w-auto filter brightness-0 invert"
+              loading="lazy"
+              decoding="async"
+            />
+          </picture>
         </div>
       </a>
       <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">

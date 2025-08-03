@@ -3,7 +3,7 @@ import {
   FaExternalLinkAlt, FaChartLine, FaServer, FaLeaf, FaShoppingCart, 
   FaLaptopCode, FaNewspaper, FaImage, FaCode, FaRocket 
 } from "react-icons/fa";
-import img from "../assets/blog/web-carbon-2025.jpg";
+// ✅ Image Optimization: Switched from .jpg to the lighter .webp format
 
 export const toc = [
   { id: "intro", text: "Why Your Digital Footprint Matters", level: 2 },
@@ -23,19 +23,17 @@ export const meta = {
   date: "2025-07-27",
   tags: ["Web Sustainability", "Digital Carbon", "Green Hosting", "Web Performance"],
   slug: "why-website-carbon-matters-2025",
-  image: img,
+  image: "src/assets/blog/web-carbon-2025.webp",
   excerpt: "In 2025, a green website is no longer optional. This guide breaks down why digital emissions are critical for every business and provides a complete action plan for reduction."
 };
 
 export default function Post() {
   return (
     <div className="space-y-8">
-      {/* --- Intro --- */}
       <p id="intro" className="text-lg leading-relaxed first-letter:text-5xl first-letter:font-bold first-letter:text-greenbuzz dark:first-letter:text-green-400 first-letter:mr-3 first-letter:float-left first-letter:leading-none">
         As digital services expand rapidly across the globe, the carbon footprint of our online activities is becoming impossible to ignore. With over 5 billion internet users worldwide, every website request, image load, and video stream contributes to a growing environmental crisis that now rivals the aviation industry in CO₂ emissions. For businesses, this is no longer a footnote in a sustainability report; it's a core operational and reputational metric.
       </p>
 
-      {/* --- Hidden Environmental Cost --- */}
       <h2 id="hidden-cost" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-greenbuzz dark:border-green-400 pl-4">
         The Invisible Environmental Cost of the Internet
       </h2>

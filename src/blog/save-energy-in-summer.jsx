@@ -2,9 +2,9 @@ import React from "react";
 import {
   FaExternalLinkAlt, FaThermometerHalf, FaSun, FaLeaf, FaHome, FaLaptop, FaChartLine
 } from "react-icons/fa";
-import img from "../assets/blog/summer-energy.jpg";
+// ✅ Image Optimization: Switched from .jpg to the lighter .webp format
 
-// --- Table of Contents for sidebar ---
+
 export const toc = [
   { id: "intro", text: "Introduction", level: 2 },
   { id: "hidden-crisis", text: "The Hidden Summer Energy Crisis", level: 2 },
@@ -24,14 +24,13 @@ export const meta = {
   date: "2025-07-07",
   tags: ["Eco-friendly", "Energy", "Carbon Reduction", "Digital Emissions"],
   slug: "save-energy-in-summer",
-  image: img,
+  image: "src/assets/blog/summer-energy.webp",
   excerpt: "Cut costs and emissions with comprehensive summer energy-saving strategies that reduce both your home and digital carbon footprint."
 };
 
 export default function Post() {
   return (
     <div className="space-y-8">
-      {/* Author & backlink */}
       <div className="flex flex-col sm:flex-row items-center gap-3 mb-2 bg-white/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl px-5 py-3 shadow">
         <span className="font-medium text-slate-700 dark:text-slate-300">
           Written by <span className="text-greenbuzz dark:text-green-400 font-semibold">Jack Paradise</span> — Founder of{" "}
@@ -46,9 +45,6 @@ export default function Post() {
         </span>
       </div>
 
- 
-
-      {/* Content */}
       <p className="text-lg leading-relaxed first-letter:text-5xl first-letter:font-bold first-letter:text-greenbuzz dark:first-letter:text-green-400 first-letter:mr-3 first-letter:float-left first-letter:leading-none" id="intro">
         Summer months bring soaring temperatures and skyrocketing energy bills, but they also present the perfect opportunity to dramatically reduce your carbon footprint. With global temperatures breaking records year after year, the decisions we make about energy consumption during peak summer months have never been more critical for both our wallets and our planet's future.
       </p>

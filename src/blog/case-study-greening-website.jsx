@@ -1,8 +1,7 @@
 import React from "react";
 import { FaExternalLinkAlt, FaLeaf, FaChartLine, FaCode, FaRocket, FaServer, FaImage, FaCompress } from "react-icons/fa";
-import img from "../assets/blog/case-study-greentrace.jpg";
+// ✅ Image Optimization: Switched from .jpg to the lighter .webp format
 
-// Table of Contents array added to match your other blog post structure
 export const toc = [
   { id: "hidden-crisis", text: "The Hidden Carbon Crisis", level: 2 },
   { id: "carbon-baseline", text: "The Challenge: Carbon Baseline", level: 2 },
@@ -19,7 +18,7 @@ export const meta = {
   date: "2025-07-20",
   tags: ["Case Study", "Eco Web", "Carbon Badge", "Web Performance"],
   slug: "case-study-greening-website",
-  image: img,
+   image: "/src/assets/blog/case-study-greentrace.webp",
   excerpt: "A complete breakdown of how BuzzBoost Digital transformed their website from a carbon-heavy 1.2MB monster to a lean 0.4MB powerhouse—and why this matters for every business."
 };
 
@@ -69,54 +68,27 @@ export default function Post() {
 
       <div className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900/20 dark:to-gray-900/20 rounded-xl p-8">
         <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-300 mb-6">Initial Carbon Audit Results</h3>
-        
         <div className="grid md:grid-cols-2 gap-8">
           <div className="space-y-6">
             <div className="bg-white dark:bg-slate-800 p-6 rounded-lg">
               <h4 className="font-semibold mb-4 text-red-600 dark:text-red-400">Performance Metrics (Before)</h4>
               <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span>Page Size:</span>
-                  <span className="font-bold text-red-600 dark:text-red-400">1.2MB</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Load Time:</span>
-                  <span className="font-bold text-red-600 dark:text-red-400">4.3 seconds</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>HTTP Requests:</span>
-                  <span className="font-bold text-red-600 dark:text-red-400">67</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Image Size:</span>
-                  <span className="font-bold text-red-600 dark:text-red-400">850KB</span>
-                </div>
+                <div className="flex justify-between items-center"><span>Page Size:</span><span className="font-bold text-red-600 dark:text-red-400">1.2MB</span></div>
+                <div className="flex justify-between items-center"><span>Load Time:</span><span className="font-bold text-red-600 dark:text-red-400">4.3 seconds</span></div>
+                <div className="flex justify-between items-center"><span>HTTP Requests:</span><span className="font-bold text-red-600 dark:text-red-400">67</span></div>
+                <div className="flex justify-between items-center"><span>Image Size:</span><span className="font-bold text-red-600 dark:text-red-400">850KB</span></div>
               </div>
             </div>
-
             <div className="bg-white dark:bg-slate-800 p-6 rounded-lg">
               <h4 className="font-semibold mb-4 text-red-600 dark:text-red-400">Carbon Impact (Before)</h4>
               <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span>CO₂ per visit:</span>
-                  <span className="font-bold text-red-600 dark:text-red-400">0.38g</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Monthly emissions:</span>
-                  <span className="font-bold text-red-600 dark:text-red-400">46.2kg CO₂</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Annual projection:</span>
-                  <span className="font-bold text-red-600 dark:text-red-400">554kg CO₂</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Carbon Grade:</span>
-                  <span className="font-bold text-red-600 dark:text-red-400">F</span>
-                </div>
+                <div className="flex justify-between items-center"><span>CO₂ per visit:</span><span className="font-bold text-red-600 dark:text-red-400">0.38g</span></div>
+                <div className="flex justify-between items-center"><span>Monthly emissions:</span><span className="font-bold text-red-600 dark:text-red-400">46.2kg CO₂</span></div>
+                <div className="flex justify-between items-center"><span>Annual projection:</span><span className="font-bold text-red-600 dark:text-red-400">554kg CO₂</span></div>
+                <div className="flex justify-between items-center"><span>Carbon Grade:</span><span className="font-bold text-red-600 dark:text-red-400">F</span></div>
               </div>
             </div>
           </div>
-
           <div className="space-y-6">
             <div className="bg-white dark:bg-slate-800 p-6 rounded-lg">
               <h4 className="font-semibold mb-4">Environmental Context</h4>
@@ -128,7 +100,6 @@ export default function Post() {
                 <li>• <strong>277 pounds</strong> of coal burned for energy</li>
               </ul>
             </div>
-
             <div className="bg-orange-100 dark:bg-orange-900/30 p-6 rounded-lg">
               <h4 className="font-semibold mb-3 text-orange-800 dark:text-orange-300">Business Impact</h4>
               <ul className="space-y-2 text-sm">
@@ -142,10 +113,7 @@ export default function Post() {
         </div>
       </div>
 
-      <h2 id="transformation-strategy" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
-        The 30-Day Green Transformation Strategy
-      </h2>
-
+      <h2 id="transformation-strategy" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">The 30-Day Green Transformation Strategy</h2>
       <p className="text-lg leading-relaxed">
         Rather than making superficial changes, we implemented a comprehensive strategy targeting the four main sources of website carbon emissions: hosting infrastructure, code efficiency, asset optimization, and user experience design. Each phase was measured and tracked using carbon monitoring tools to ensure real impact.
       </p>
