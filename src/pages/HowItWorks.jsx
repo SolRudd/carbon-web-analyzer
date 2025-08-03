@@ -33,7 +33,7 @@ const steps = [
   },
   {
     title: "Green Hosting Verification",
-    description: "We check the Green Web Foundation database to verify if your site runs on renewable energy. Green hosts receive a 9% emissions reduction credit.",
+    description: "We check the Green Web Foundation to verify renewable-energy hosting. Green hosts receive an overall ~8% reduction by applying a 25% improvement to the data-centre portion only.",
     icon: <FaLeaf className="text-2xl" />,
     color: "from-green-500 to-emerald-500",
     bgColor: "bg-green-50 dark:bg-green-900/20",
@@ -41,55 +41,55 @@ const steps = [
     details: [
       "Real-time Green Web Foundation API call",
       "Renewable energy certification check",
-      "9% carbon reduction for green hosts",
+      "25% cleaner data-centre → ~8% overall reduction",
       "Global hosting provider database"
     ]
   },
   {
     title: "Page Weight Analysis",
-    description: "Using Google's PageSpeed Insights API, we measure your total page weight including all resources: images, CSS, JavaScript, fonts, and third-party content.",
+    description: "Using Google's PageSpeed Insights API, we measure total page weight across all resources: images, CSS, JavaScript, fonts, and third-party content.",
     icon: <FaRuler className="text-2xl" />,
     color: "from-orange-500 to-red-500",
     bgColor: "bg-orange-50 dark:bg-orange-900/20",
     borderColor: "border-orange-200 dark:border-orange-700",
     details: [
       "Google PageSpeed Insights integration",
-      "Total byte weight calculation",
+      "Takes the larger of desktop & mobile",
       "All resource types included",
-      "Real browser loading simulation"
+      "HTML-only fallback estimator if PSI is unavailable"
     ]
   },
   {
     title: "Energy Consumption Calculation",
-    description: "We convert your page size to energy consumption using the industry-standard 0.81 kWh per GB, covering both data center processing and network transmission.",
+    description: "We convert page size to energy using the SWDM split: total 0.197 kWh/GB made up of data-centre, network, and user-device portions.",
     icon: <FaBolt className="text-2xl" />,
     color: "from-yellow-500 to-orange-500",
     bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
     borderColor: "border-yellow-200 dark:border-yellow-700",
     details: [
-      "0.81 kWh/GB energy intensity factor",
-      "Data center + network energy included",
-      "Megabytes to kilowatt-hours conversion",
-      "Industry-standard calculations"
+      "SWDM total: 0.197 kWh/GB",
+      "Breakdown: 0.060 DC, 0.014 Network, 0.123 User",
+      "Megabytes → kilowatt-hours conversion",
+      "Green-host saving applied to DC portion only"
     ]
   },
   {
     title: "CO₂ Emissions Estimation",
-    description: "Energy consumption is multiplied by the global electricity carbon intensity (442g CO₂/kWh) to calculate grams of CO₂ produced per page view.",
+    description: "Energy consumption is multiplied by the global electricity carbon intensity (442 g CO₂/kWh) to calculate grams of CO₂ per page view.",
     icon: <FaSmog className="text-2xl" />,
     color: "from-purple-500 to-pink-500",
     bgColor: "bg-purple-50 dark:bg-purple-900/20",
     borderColor: "border-purple-200 dark:border-purple-700",
     details: [
-      "442g CO₂/kWh global average intensity",
+      "442 g CO₂/kWh global average intensity",
       "Per-page-view carbon calculation",
-      "Green hosting discount applied",
-      "Precise to 2 decimal places"
+      "Green hosting reflected in DC share",
+      "Rounded to 2 decimals for readability"
     ]
   },
   {
     title: "Performance Grading & Benchmarking",
-    description: "Your CO₂ result is assigned a grade (A+ to F) and compared against our database to show how you rank against other websites tested.",
+    description: "Your CO₂ result is assigned a grade (A+ to F) and compared against our dataset to show how you rank versus other websites tested.",
     icon: <FaTrophy className="text-2xl" />,
     color: "from-indigo-500 to-purple-500",
     bgColor: "bg-indigo-50 dark:bg-indigo-900/20",
@@ -97,22 +97,22 @@ const steps = [
     details: [
       "A+ to F grade assignment",
       "Percentile ranking calculation",
-      "Comparison with global database",
-      "Performance improvement suggestions"
+      "Comparison with global results",
+      "Actionable performance suggestions"
     ]
   },
   {
     title: "Persistent Data Storage",
-    description: "Results are permanently stored in our PostgreSQL database, enabling badge generation, historical tracking, and API access for your carbon data.",
+    description: "Results are stored in PostgreSQL (Supabase) with a 24-hour cache window for re-checks, enabling badge generation, historical views, and API access for your carbon data.",
     icon: <FaDatabase className="text-2xl" />,
     color: "from-teal-500 to-green-500",
     bgColor: "bg-teal-50 dark:bg-teal-900/20",
     borderColor: "border-teal-200 dark:border-teal-700",
     details: [
-      "PostgreSQL permanent storage",
-      "24-hour data caching",
-      "Historical trend tracking",
-      "Badge API integration"
+      "PostgreSQL (Supabase) persistent storage",
+      "24-hour caching to avoid noisy re-tests",
+      "Historical trend tracking (roadmap)",
+      "Badge & public API integration"
     ]
   }
 ];
@@ -120,23 +120,23 @@ const steps = [
 const techSpecs = [
   { 
     label: "Energy Intensity", 
-    value: "0.81 kWh/GB", 
-    description: "Industry standard for data transfer energy" 
+    value: "0.197 kWh/GB (SWDM)", 
+    description: "0.060 DC • 0.014 Network • 0.123 User" 
   },
   { 
     label: "Carbon Intensity", 
-    value: "442g CO₂/kWh", 
+    value: "442 g CO₂/kWh", 
     description: "Global average electricity carbon intensity" 
   },
   { 
-    label: "Green Host Discount", 
-    value: "9% Reduction", 
-    description: "Carbon savings for renewable energy hosting" 
+    label: "Green Host Effect", 
+    value: "~8% Overall", 
+    description: "25% cleaner data-centre portion → ~8% overall" 
   },
   { 
     label: "Data Retention", 
     value: "24 Hours", 
-    description: "Fresh data cache duration" 
+    description: "Cache window before fresh re-check" 
   }
 ];
 
@@ -179,7 +179,7 @@ export default function HowItWorks() {
             </div>
             <div className="flex items-center gap-2 bg-white/70 dark:bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-slate-200 dark:border-white/20">
               <FaDatabase className="text-greenbuzz dark:text-green-400" />
-              <span className="text-sm font-medium">PostgreSQL Storage</span>
+              <span className="text-sm font-medium">PostgreSQL (Supabase)</span>
             </div>
           </div>
         </div>
@@ -307,7 +307,7 @@ export default function HowItWorks() {
               <FaCog className="text-3xl text-greenbuzz mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">Processing Engine</h3>
               <p className="text-slate-600 dark:text-slate-400 text-sm">
-                Our Node.js backend calculates carbon footprint using scientific formulas
+                Node.js backend using SWDM (0.197 kWh/GB) and 442 g CO₂/kWh; green-host effect applied to the DC share
               </p>
             </div>
             
@@ -315,7 +315,7 @@ export default function HowItWorks() {
               <FaDatabase className="text-3xl text-purple-500 mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">Data Storage</h3>
               <p className="text-slate-600 dark:text-slate-400 text-sm">
-                PostgreSQL ensures your results are permanently stored and accessible
+                PostgreSQL (Supabase) with a 24-hour cache; powers public badges and result pages
               </p>
             </div>
           </div>

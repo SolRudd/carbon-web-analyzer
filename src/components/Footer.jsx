@@ -1,43 +1,106 @@
+// src/components/Footer.jsx
 import React from "react";
 import CarbonBadge from "./CarbonBadge";
+import { Link } from "react-router-dom";
+
+// import your optimized assets (generated earlier)
+import logoPng from "../assets/GreenTraceLogo.png";
+import logoWebp from "../assets/GreenTraceLogo.webp";
+import logoAvif from "../assets/GreenTraceLogo.avif";
 
 export default function Footer() {
   const year = new Date().getFullYear();
-  // will use whatever domain the user is on:
-  const siteUrl = window.location.origin;
+
+  // Safe in SSR/prerender too:
+  const siteUrl =
+    typeof window !== "undefined" && window.location
+      ? window.location.origin
+      : "";
 
   return (
-    <footer className="w-full bg-white dark:bg-slate-950 border-t border-greenbuzz/20 text-slate-700 dark:text-slate-300 py-8 transition-colors duration-300">
-      <div className="max-w-[1400px] mx-auto px-4">
-        <div className="flex flex-col items-center md:flex-row md:justify-between md:items-center gap-6">
-          {/* Address & Branding */}
-          <div className="space-y-1 text-sm leading-snug text-center md:text-left">
-            <p>BuzzBoost Digital, 26 Northview Drive</p>
-            <p>Westcliff-on-Sea, Essex, SS0 9NG</p>
-            <p>Company No: 15960977</p>
+    <footer
+      className="w-full bg-slate-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 py-12 transition-colors duration-300"
+      role="contentinfo"
+    >
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Top section with brand and badge */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          {/* Brand logo (linked to home) */}
+          <Link
+            to="/"
+            aria-label="Go to homepage"
+            className="justify-center md:justify-start inline-flex items-center"
+          >
+            <picture>
+              <source srcSet={logoAvif} type="image/avif" />
+              <source srcSet={logoWebp} type="image/webp" />
+              <img
+                src={logoPng}
+                alt="GreenTrace"
+                className="h-10 md:h-12 w-auto"
+                loading="lazy"
+                decoding="async"
+                fetchPriority="low"
+              />
+            </picture>
+          </Link>
+
+          <div className="min-h-[38px] flex items-center justify-center md:justify-end">
+            <CarbonBadge url={siteUrl} />
           </div>
-          {/* Website Carbon Badge */}
-          <CarbonBadge url={siteUrl} />
         </div>
 
-        <nav className="flex justify-center md:justify-start gap-6 text-sm mt-8">
-          <a
-            href="/how-it-works"
-            className="text-greenbuzz hover:text-greenbuzz-light transition-colors"
-          >
-            How it works?
-          </a>
-          <a
-            href="/privacy-policy"
-            className="text-greenbuzz hover:text-greenbuzz-light transition-colors"
-          >
-            Privacy Policy
-          </a>
-        </nav>
+        {/* Divider */}
+        <hr className="my-10 border-green-700/20 dark:border-green-400/20" />
 
-        <p className="text-center text-sm text-slate-500 mt-6">
-          © {year} BuzzBoost Digital
-        </p>
+        {/* Footer navigation and copyright */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+          <nav
+            aria-label="Footer navigation"
+            className="grid grid-cols-2 sm:grid-cols-3 md:flex gap-6 text-sm"
+          >
+            <Link
+              to="/how-it-works"
+              className="hover:underline text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 transition-colors"
+            >
+              How It Works
+            </Link>
+            <Link
+              to="/api-access"
+              className="hover:underline text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 transition-colors"
+            >
+              API
+            </Link>
+            <Link
+              to="/blog"
+              className="hover:underline text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 transition-colors"
+            >
+              Blog
+            </Link>
+            <Link
+              to="/faq"
+              className="hover:underline text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 transition-colors"
+            >
+              FAQ
+            </Link>
+            <Link
+              to="/privacy-policy"
+              className="hover:underline text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 transition-colors"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              to="/badge"
+              className="hover:underline text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 transition-colors"
+            >
+              Badge
+            </Link>
+          </nav>
+
+          <p className="text-center md:text-right text-xs text-gray-400 dark:text-gray-500">
+            &copy; {year} GreenTrace. All rights reserved.
+          </p>
+        </div>
       </div>
     </footer>
   );
