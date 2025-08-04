@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { API_BASE } from "../config";
 
 // ✅ If your route is /results/:slug, change here once
-const RESULTS_PATH = "/results"; // was "/result"
+const RESULTS_PATH = "/result"; // was "/result"
 
 export default function CarbonBadge({ url, data: preData }) {
   const [data, setData] = useState(preData || null);
