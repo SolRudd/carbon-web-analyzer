@@ -29,8 +29,8 @@ export default defineConfig(async () => {
       react(),
       // Add the Prerenderer plugin. This runs after the build is complete.
       new Prerenderer({
-        // The directory Vite builds to. We'll use 'build' to match your old config.
-        staticDir: path.join(process.cwd(), 'build'),
+        // ✅ FIX: Point to the 'dist' directory, which is Vite's default.
+        staticDir: path.join(process.cwd(), 'dist'),
         
         // The renderer to use. Puppeteer is a headless browser that runs your JS.
         renderer: '@prerenderer/renderer-puppeteer',
@@ -66,10 +66,8 @@ export default defineConfig(async () => {
 
     // Updated build configuration.
     build: {
-      // The output directory.
-      outDir: 'build',
-      // Minification is enabled by default in production.
-      // No need to set target; Vite handles modern browser compatibility.
+      // ✅ FIX: Change the output directory to 'dist'.
+      outDir: 'dist',
       sourcemap: false,
       chunkSizeWarningLimit: 600,
     },
