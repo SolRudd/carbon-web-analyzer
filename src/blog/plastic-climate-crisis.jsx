@@ -19,7 +19,8 @@ export const meta = {
   date: "2025-07-01",
   tags: ["Climate Change", "Plastic", "Sustainability", "Carbon Tracking"],
   slug: "plastic-climate-crisis",
- image: "/src/assets/blog/plastic-climate.webp",
+ image: "/assets/blog/plastic-climate.webp",
+  imageAvif: "/assets/blog/plastic-climate.avif",
   excerpt: "Discover the shocking carbon footprint of plastic and learn how to track and reduce your complete environmental impact."
 };
 

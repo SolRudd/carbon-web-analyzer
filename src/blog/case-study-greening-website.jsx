@@ -18,7 +18,8 @@ export const meta = {
   date: "2025-07-20",
   tags: ["Case Study", "Eco Web", "Carbon Badge", "Web Performance"],
   slug: "case-study-greening-website",
-   image: "/src/assets/blog/case-study-greentrace.webp",
+   image: "/assets/blog/case-study-greentrace.webp",
+     imageAvif: "/assets/blog/ase-study-greentrace.avif",
   excerpt: "A complete breakdown of how BuzzBoost Digital transformed their website from a carbon-heavy 1.2MB monster to a lean 0.4MB powerhouse—and why this matters for every business."
 };
 

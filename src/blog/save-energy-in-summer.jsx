@@ -24,7 +24,8 @@ export const meta = {
   date: "2025-07-07",
   tags: ["Eco-friendly", "Energy", "Carbon Reduction", "Digital Emissions"],
   slug: "save-energy-in-summer",
-  image: "src/assets/blog/summer-energy.webp",
+  image: "/assets/blog/summer-energy.webp",
+  imageAvif: "/assets/blog/summer-energy.avif",
   excerpt: "Cut costs and emissions with comprehensive summer energy-saving strategies that reduce both your home and digital carbon footprint."
 };
 

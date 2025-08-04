@@ -9,7 +9,8 @@ export const meta = {
   date: "2025-06-19",
   tags: ["Eco-friendly", "Home", "Air Quality", "Carbon Reduction"],
   slug: "improve-air-quality",
- image: "/src/assets/blog/air-quality.webp",
+ image: "/assets/blog/air-quality.webp",
+  imageAvif: "/assets/blog/air-quality.avif",
   excerpt: "Breathe easier at home with these simple air quality tips that also reduce your carbon footprint."
 };
 
