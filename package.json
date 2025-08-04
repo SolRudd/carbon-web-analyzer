@@ -8,23 +8,11 @@
     "sitemap": "tsx scripts/generate-sitemap.mjs",
     "minify-badge": "node scripts/minify-badge.js",
     "build": "npm run sitemap && npm run minify-badge && vite build",
-    "postbuild": "react-snap",
     "lint": "eslint .",
     "preview": "vite preview",
     "img:webp": "node scripts/convert-images.mjs webp",
     "img:avif": "node scripts/convert-images.mjs avif",
     "img:all": "npm run img:webp && npm run img:avif"
-  },
-  "reactSnap": {
-    "include": [
-      "/",
-      "/how-it-works",
-      "/badge",
-      "/blog/carbon-footprints-energy-providers",
-      "/blog/case-study-greening-website",
-      "/result/*"
-    ],
-    "puppeteerArgs": ["--no-sandbox", "--disable-setuid-sandbox"]
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -40,6 +28,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
+    "@prerenderer/renderer-puppeteer": "^1.2.4",
     "@tailwindcss/postcss": "^4.1.4",
     "@types/react": "18.3.5",
     "@types/react-dom": "18.3.0",
@@ -52,13 +41,13 @@
     "fast-glob": "^3.3.3",
     "globals": "^15.15.0",
     "postcss": "^8.5.3",
-    "react-snap": "^1.23.0",
     "sharp": "^0.34.3",
     "sharp-cli": "^5.2.0",
     "tailwindcss": "^3.4.3",
     "terser": "^5.39.2",
     "tsx": "^4.20.3",
     "vite": "^6.2.0",
+    "vite-plugin-prerenderer": "^1.0.1",
     "vite-plugin-svgr": "^4.3.0"
   }
 }

@@ -126,14 +126,14 @@ export default function RatingPage() {
         <meta property="og:url" content="https://www.greentracer.org/rating-system" />
         <meta property="og:title" content="Carbon Rating System | GreenTracer" />
         <meta property="og:description" content="Understand how we grade your website's environmental impact from A+ to F and get optimization tips." />
-        <meta property="og:image" content="https://www.greentracer.org/your-social-share-image-for-rating.jpg" />
+        <meta property="og:image" content="https://www.greentracer.org/GreenFavi.png" />
 
         {/* -- Twitter -- */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://www.greentracer.org/rating-system" />
         <meta property="twitter:title" content="Carbon Rating System | GreenTracer" />
         <meta property="twitter:description" content="Understand how we grade your website's environmental impact from A+ to F and get optimization tips." />
-        <meta property="twitter:image" content="https://www.greentracer.org/your-social-share-image-for-rating.jpg" />
+        <meta property="twitter:image" content="https://www.greentracer.org/GreenFavi.png" />
 
         {/* -- Schema.org Markup -- */}
         <script type="application/ld+json">

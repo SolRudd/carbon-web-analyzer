@@ -36,8 +36,8 @@ export default function InputForm() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // ❌ Removed: no master keys in the frontend
-          // 'X-API-Key': import.meta.env.VITE_MASTER_API_KEY
+          // ✅ THIS LINE IS NOW UNCOMMENTED AND WILL USE YOUR .env VARIABLE
+          'X-API-Key': import.meta.env.VITE_MASTER_API_KEY,
         },
         body: JSON.stringify({ url: site }),
       });

@@ -1,25 +1,15 @@
 import fs from 'fs/promises';
+import path from 'path';
 import 'dotenv/config';
+import glob from 'fast-glob';
 
-// Static config
+// --- CONFIGURATION ---
 const SITE_URL = process.env.SITE_URL?.replace(/\/+$/, '') || 'https://www.greentracer.org';
 const INCLUDE_RESULTS = String(process.env.INCLUDE_RESULTS).toLowerCase() === 'true';
-const API_BASE = process.env.VITE_API_BASE?.replace(/\/+$/, ''); // must include protocol
+const API_BASE = process.env.VITE_API_BASE?.replace(/\/+$/, '');
 
-// Import blog post modules (must export `meta = { slug, date }`)
-import * as post1 from '../src/blog/carbon-footprints-energy-providers.jsx';
-import * as post2 from '../src/blog/why-website-carbon-matters-2025.jsx';
-import * as post3 from '../src/blog/reduce-website-emissions-tips.jsx';
-import * as post4 from '../src/blog/case-study-greening-website.jsx';
-import * as post5 from '../src/blog/save-energy-in-summer.jsx';
-import * as post6 from '../src/blog/plastic-climate-crisis.jsx';
-import * as post7 from '../src/blog/improve-air-quality.jsx';
-
-const posts = [post1, post2, post3, post4, post5, post6, post7];
-
-// Helpers
+// --- HELPERS ---
 const today = new Date().toISOString().split('T')[0];
-const staticPages = ['/', '/how-it-works', '/rating-system', '/blog', '/badge', '/faq', '/api', '/privacy'];
 
 function urlTag(loc, lastmod, changefreq, priority) {
   return `  <url>
@@ -30,22 +20,42 @@ function urlTag(loc, lastmod, changefreq, priority) {
   </url>`;
 }
 
-async function fetchResultSlugs() {
-  if (!INCLUDE_RESULTS) return [];
-  if (!API_BASE) {
-    console.warn('ℹ️ INCLUDE_RESULTS=true but VITE_API_BASE is not set. Skipping results.');
-    return [];
-  }
-  let apiURL;
-  try {
-    apiURL = new URL('/api/results/all-slugs', API_BASE).toString();
-  } catch {
-    console.warn(`ℹ️ Invalid VITE_API_BASE "${API_BASE}". Skipping results.`);
-    return [];
-  }
+// --- DYNAMIC CONTENT FETCHING ---
 
-  console.log('Fetching result slugs from live API…', apiURL);
+/**
+ * Dynamically imports all blog posts from the src/blog directory
+ * and extracts their metadata.
+ */
+async function getBlogPosts() {
+  const posts = [];
+  const blogDir = path.join(process.cwd(), 'src', 'blog');
+  const files = await glob('*.jsx', { cwd: blogDir });
+
+  for (const file of files) {
+    const filePath = path.join(blogDir, file);
+    // Use a dynamic import to load the module
+    const postModule = await import(path.resolve(filePath));
+    if (postModule.meta) {
+      posts.push(postModule.meta);
+    }
+  }
+  return posts;
+}
+
+/**
+ * Fetches all result slugs from the live API if configured to do so.
+ */
+async function fetchResultSlugs() {
+  if (!INCLUDE_RESULTS || !API_BASE) {
+    if (INCLUDE_RESULTS) {
+      console.warn('ℹ️ INCLUDE_RESULTS=true but VITE_API_BASE is not set. Skipping results.');
+    }
+    return [];
+  }
+  
   try {
+    const apiURL = new URL('/api/results/all-slugs', API_BASE).toString();
+    console.log('Fetching result slugs from live API:', apiURL);
     const res = await fetch(apiURL, { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
@@ -58,26 +68,32 @@ async function fetchResultSlugs() {
   }
 }
 
+// --- SITEMAP GENERATION ---
+
 async function generateSitemap() {
+  // 1. Static Pages
+  const staticPages = ['/', '/how-it-works', '/rating-system', '/blog', '/badge', '/faq', '/api', '/privacy'];
   const staticXml = staticPages
     .map(p => urlTag(`${SITE_URL}${p}`, today, 'monthly', p === '/' ? '1.0' : '0.8'))
     .join('\n');
 
-  const blogXml = posts
-    .map(p => {
-      const slug = p?.meta?.slug;
-      const date = p?.meta?.date || today;
-      if (!slug) return '';
-      return urlTag(`${SITE_URL}/blog/${slug}`, date, 'yearly', '0.9');
+  // 2. Blog Posts (Now fully automatic)
+  const blogPosts = await getBlogPosts();
+  const blogXml = blogPosts
+    .map(meta => {
+      if (!meta.slug) return '';
+      return urlTag(`${SITE_URL}/blog/${meta.slug}`, meta.date || today, 'yearly', '0.9');
     })
     .filter(Boolean)
     .join('\n');
 
+  // 3. API Results
   const resultSlugs = await fetchResultSlugs();
   const resultsXml = resultSlugs
     .map(slug => urlTag(`${SITE_URL}/results/${slug}`, today, 'weekly', '0.6'))
     .join('\n');
 
+  // 4. Combine and Write File
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${staticXml}
@@ -88,18 +104,21 @@ ${resultsXml}
 
   await fs.mkdir('public', { recursive: true });
   await fs.writeFile('public/sitemap.xml', xml, 'utf8');
-  console.log('✅ Sitemap generated at public/sitemap.xml');
+  console.log('✅ Sitemap generated automatically at public/sitemap.xml');
 }
+
+// --- EXECUTION ---
 
 generateSitemap().catch(err => {
   console.error('❌ Unexpected error generating sitemap:', err);
-  const fallback = `<?xml version="1.0" encoding="UTF-8"?>
+  // Fallback logic remains the same
+  const fallbackPages = ['/', '/how-it-works', '/rating-system', '/blog', '/badge', '/faq', '/api', '/privacy'];
+  const fallbackXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${['/', '/how-it-works', '/rating-system', '/blog', '/badge', '/faq', '/api', '/privacy']
-  .map(p => urlTag(`${SITE_URL}${p}`, today, 'monthly', p === '/' ? '1.0' : '0.8')).join('\n')}
+${fallbackPages.map(p => urlTag(`${SITE_URL}${p}`, today, 'monthly', p === '/' ? '1.0' : '0.8')).join('\n')}
 </urlset>`;
   fs.mkdir('public', { recursive: true })
-    .then(() => fs.writeFile('public/sitemap.xml', fallback, 'utf8'))
+    .then(() => fs.writeFile('public/sitemap.xml', fallbackXml, 'utf8'))
     .then(() => console.log('✅ Wrote fallback sitemap'))
     .catch(e => console.error('❌ Failed to write fallback sitemap:', e));
 });

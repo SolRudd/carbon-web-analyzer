@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /results/
+Allow: /
+
+Sitemap: https://www.greentracer.org/sitemap.xml

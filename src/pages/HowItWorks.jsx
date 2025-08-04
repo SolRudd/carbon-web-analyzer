@@ -19,7 +19,7 @@ import {
 } from "react-icons/fa";
 
 const steps = [
-  // ... (Your steps array is perfect, no changes needed)
+  // ... (Steps array is perfect, no changes needed)
   {
     title: "URL Parsing & Domain Extraction",
     description: "We intelligently parse your URL, clean trailing slashes, and extract the hostname for precise analysis. Our system handles all URL formats automatically.",
@@ -174,14 +174,14 @@ export default function HowItWorks() {
         <meta property="og:url" content="https://www.greentracer.org/how-it-works" />
         <meta property="og:title" content="How It Works | GreenTracer's Methodology" />
         <meta property="og:description" content="A transparent look at our 7-step scientific process for measuring website carbon emissions." />
-        <meta property="og:image" content="https://www.greentracer.org/your-social-share-image.jpg" />
+        <meta property="og:image" content="https://www.greentracer.org/GreenFavi.png" />
 
         {/* -- Twitter -- */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://www.greentracer.org/how-it-works" />
         <meta property="twitter:title" content="How It Works | GreenTracer's Methodology" />
         <meta property="twitter:description" content="A transparent look at our 7-step scientific process for measuring website carbon emissions." />
-        <meta property="twitter:image" content="https://www.greentracer.org/your-social-share-image.jpg" />
+        <meta property="twitter:image" content="https://www.greentracer.org/GreenFavi.png" />
 
         {/* -- Schema.org Markup -- */}
         <script type="application/ld+json">
@@ -382,7 +382,7 @@ export default function HowItWorks() {
                 </Link>{" "}
                 or view our{" "}
                 <a 
-                  href="https://github.com/yourusername/greentracer" 
+                  href="https://github.com/solrudd/greentracer" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-greenbuzz dark:text-green-400 hover:underline font-semibold inline-flex items-center"

@@ -1,6 +1,5 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Helmet } from 'react-helmet-async'; // ✅ Import Helmet
 import { 
   FaShieldAlt, 
   FaCookieBite, 
@@ -12,28 +11,13 @@ import {
   FaLock
 } from "react-icons/fa";
 import { motion } from "framer-motion";
+import SEO from '../components/SEO'; // ✅ 1. Import our new SEO component
 
 export default function PrivacyPolicy() {
-  const contentRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-
-  // ✅ SEO: Create the WebPage schema for this informational page
-  const webPageSchema = {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    "name": "Privacy Policy | GreenTracer",
-    "description": "This policy explains how GreenTracer collects, uses, and protects your personal data and information in accordance with privacy regulations.",
-    "url": "https://www.greentracer.org/privacy",
-    "inLanguage": "en-US",
-    "isPartOf": {
-      "@type": "WebSite",
-      "url": "https://www.greentracer.org",
-      "name": "GreenTracer"
-    }
-  };
 
   const sectionVariants = {
     hidden: { opacity: 0, y: 50 },
@@ -49,32 +33,12 @@ export default function PrivacyPolicy() {
 
   return (
     <>
-      {/* ✅ SEO: Full advanced Helmet setup for the Privacy Policy page */}
-      <Helmet>
-        {/* -- Primary Meta Tags -- */}
-        <title>Privacy Policy | GreenTracer</title>
-        <meta name="description" content="Your trust is important. This policy explains how GreenTracer collects, uses, and protects your personal data and information in accordance with privacy regulations." />
-        <link rel="canonical" href="https://www.greentracer.org/privacy" />
-
-        {/* -- Open Graph / Facebook -- */}
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://www.greentracer.org/privacy" />
-        <meta property="og:title" content="Privacy Policy | GreenTracer" />
-        <meta property="og:description" content="This policy explains how we collect, use, and protect your personal data." />
-        <meta property="og:image" content="https://www.greentracer.org/your-social-share-image.jpg" />
-
-        {/* -- Twitter -- */}
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content="https://www.greentracer.org/privacy" />
-        <meta property="twitter:title" content="Privacy Policy | GreenTracer" />
-        <meta property="twitter:description" content="This policy explains how we collect, use, and protect your personal data." />
-        <meta property="twitter:image" content="https://www.greentracer.org/your-social-share-image.jpg" />
-
-        {/* -- Schema.org Markup -- */}
-        <script type="application/ld+json">
-          {JSON.stringify(webPageSchema)}
-        </script>
-      </Helmet>
+      {/* ✅ 2. Use the SEO component. It's much cleaner! */}
+      <SEO
+        title="Privacy Policy"
+        description="Your trust is important. This policy explains how GreenTracer collects, uses, and protects your personal data and information in accordance with privacy regulations."
+        imageUrl="https://www.greentracer.org/GreenFavi.png" 
+      />
 
       <div 
         className="bg-white dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300 min-h-screen flex flex-col"
@@ -109,7 +73,7 @@ export default function PrivacyPolicy() {
           </div>
         </section>
 
-        {/* ...The rest of your JSX component is perfect, no changes needed... */}
+        {/* The rest of your component content is perfect and doesn't need to change. */}
         <main className="flex-grow py-16 px-4">
           <div className="max-w-4xl mx-auto space-y-12">
             <motion.section 

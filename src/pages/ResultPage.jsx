@@ -118,13 +118,13 @@ export default function ResultPage() {
         <meta property="og:url" content={canonical} />
         <meta property="og:title" content={`Carbon Report for ${result.url} | GreenTracer`} />
         <meta property="og:description" content={`Scored ${result.carbonEstimate}g CO₂e per page view with a grade of ${result.grade}.`} />
-        <meta property="og:image" content="https://www.greentracer.org/your-social-share-image-for-results.jpg" />
+        <meta property="og:image" content="https://www.greentracer.org/GreenFavi.png" />
 
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content={canonical} />
         <meta property="twitter:title" content={`Carbon Report for ${result.url} | GreenTracer`} />
         <meta property="twitter:description" content={`Scored ${result.carbonEstimate}g CO₂e per page view with a grade of ${result.grade}.`} />
-        <meta property="twitter:image" content="https://www.greentracer.org/your-social-share-image-for-results.jpg" />
+        <meta property="twitter:image" content="https://www.greentracer.org/GreenFavi.png" />
 
         {reportSchema && (
           <script type="application/ld+json">
