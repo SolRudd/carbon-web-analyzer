@@ -6,11 +6,15 @@
     (document.currentScript && document.currentScript.src) ||
     (function () { var s=document.getElementsByTagName('script'); return s[s.length-1].src })();
   var BASE     = me.replace(/\/[^/]+$/, '');
-  var API_BASE = BASE; // e.g. https://api.greentracer.org
-  // New logo variants (same folder as before)
+  var API_BASE = BASE; // e.g. https://www.greentracer.org (when hosted there)
+
+  // Logo variants (place these files next to this script)
   var LOGO_AVIF = BASE + '/GreenTraceLogo.avif';
   var LOGO_WEBP = BASE + '/GreenTraceLogo.webp';
   var LOGO_PNG  = BASE + '/GreenTraceLogo.png';
+
+  // Where result pages live
+  var RESULTS_BASE = 'https://www.greentracer.org/results';
 
   function cleanUrl(url) {
     try {
@@ -18,7 +22,19 @@
       if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
       var p = new URL(u);
       return p.protocol + '//' + p.hostname.toLowerCase() + p.pathname.replace(/\/+$/,'');
-    } catch { return url; }
+    } catch (e) {
+      return url;
+    }
+  }
+
+  function slugifyFromUrl(url) {
+    try {
+      var u = new URL(url);
+      var base = (u.hostname + u.pathname).replace(/\/$/, '');
+      return base.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    } catch (e) {
+      return '';
+    }
   }
 
   function getTheme(el) {
@@ -49,57 +65,62 @@
   function fetchOrCreateBadge(url, el) {
     fetch(API_BASE + '/api/trace?site=' + encodeURIComponent(url), { mode:'cors', credentials:'omit' })
       .then(function (r) { if (!r.ok) throw new Error('status '+r.status); return r.json(); })
-      .then(function (d) { renderBadge(d, el); })
+      .then(function (d) { renderBadge(d, url, el); })
       .catch(function () {
         el.innerHTML =
           '<div style="color:#dc2626;font-size:12px;">' +
           'Run a carbon check first at ' +
-          '<a href="https://greentracer.org" target="_blank" rel="noopener">greentracer.org</a>' +
+          '<a href="https://www.greentracer.org" target="_blank" rel="noopener noreferrer">greentracer.org</a>' +
           '</div>';
       });
   }
 
-  function renderBadge(d, el) {
+  function renderBadge(d, pageUrl, el) {
     var t   = getTheme(el);
     var co2 = ((+d.carbonEstimate) || 0).toFixed(2);
     var pct = (d.percentile != null) ? d.percentile : '--';
+    var slug = (d.slug && String(d.slug).trim()) || slugifyFromUrl(pageUrl);
+    var href = RESULTS_BASE + '/' + encodeURIComponent(slug);
 
     var padY = 10, padX = 16, radius = 12, fontSize = 18;
 
     el.innerHTML =
-      '<div style="' +
-        'display:inline-flex;align-items:center;overflow:hidden;' +
-        'border:1.5px solid ' + t.border + ';border-radius:' + radius + 'px;' +
-        'box-shadow:0 8px 24px rgba(2,6,23,.06);' +
-        'font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;' +
-        'background:#ffffff00;' +
-      '">' +
-
+      '<a href="'+href+'" target="_blank" rel="noopener noreferrer" ' +
+        'style="text-decoration:none;display:inline-block">' +
         '<div style="' +
-          'background:' + t.leftBg + ';color:' + t.leftText + ';' +
-          'padding:' + padY + 'px ' + padX + 'px;' +
-          'font-size:' + fontSize + 'px;font-weight:800;line-height:1.1;' +
-          'display:flex;align-items:center;white-space:nowrap;' +
-          'border-right:1px solid ' + t.divider + ';' +
+          'display:inline-flex;align-items:center;overflow:hidden;' +
+          'border:1.5px solid ' + t.border + ';border-radius:' + radius + 'px;' +
+          'box-shadow:0 8px 24px rgba(2,6,23,.06);' +
+          'font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;' +
+          'background:#ffffff00;' +
+          'transform:translateZ(0);' +
         '">' +
-          co2 + 'g&nbsp;CO₂/view' +
-        '</div>' +
 
-        // Right pill — green with <picture> logo
-        '<div style="' +
-          'background:' + t.rightBg + ';padding:' + (padY-1) + 'px ' + padX + 'px;' +
-          'display:flex;align-items:center;justify-content:center;' +
-        '">' +
-          '<picture>' +
-            '<source type="image/avif" srcset="' + LOGO_AVIF + '">' +
-            '<source type="image/webp" srcset="' + LOGO_WEBP + '">' +
-            '<img src="' + LOGO_PNG + '" alt="GreenTrace" ' +
-              'style="height:20px;display:block;filter:brightness(0) invert(1);" ' +
-              'loading="lazy" decoding="async">' +
-          '</picture>' +
-        '</div>' +
+          '<div style="' +
+            'background:' + t.leftBg + ';color:' + t.leftText + ';' +
+            'padding:' + padY + 'px ' + padX + 'px;' +
+            'font-size:' + fontSize + 'px;font-weight:800;line-height:1.1;' +
+            'display:flex;align-items:center;white-space:nowrap;' +
+            'border-right:1px solid ' + t.divider + ';' +
+          '">' +
+            co2 + 'g&nbsp;CO₂/view' +
+          '</div>' +
 
-      '</div>' +
+          '<div style="' +
+            'background:' + t.rightBg + ';padding:' + (padY-1) + 'px ' + padX + 'px;' +
+            'display:flex;align-items:center;justify-content:center;' +
+          '">' +
+            '<picture>' +
+              '<source type="image/avif" srcset="' + LOGO_AVIF + '">' +
+              '<source type="image/webp" srcset="' + LOGO_WEBP + '">' +
+              '<img src="' + LOGO_PNG + '" alt="GreenTrace" ' +
+                'style="height:20px;display:block;filter:brightness(0) invert(1);" ' +
+                'loading="lazy" decoding="async">' +
+            '</picture>' +
+          '</div>' +
+
+        '</div>' +
+      '</a>' +
       '<div style="margin-top:10px;font-size:16px;color:' + t.subText + ';text-align:center;">' +
         'Cleaner than ' + pct + '% of pages tested' +
       '</div>';
@@ -107,7 +128,7 @@
 
   function initBadges() {
     var list = document.querySelectorAll('.greentrace-badge');
-    for (var i=0;i<list;i++) {
+    for (var i=0;i<list.length;i++) {
       var el = list[i];
       var pageURL = cleanUrl(el.getAttribute('data-url') || window.location.href);
       fetchOrCreateBadge(pageURL, el);

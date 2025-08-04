@@ -2,6 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { API_BASE } from "../config";
 
+// ✅ If your route is /results/:slug, change here once
+const RESULTS_PATH = "/results"; // was "/result"
+
 export default function CarbonBadge({ url, data: preData }) {
   const [data, setData] = useState(preData || null);
   const [err,  setErr]  = useState(false);
@@ -25,7 +28,7 @@ export default function CarbonBadge({ url, data: preData }) {
       return;
     }
 
-    // IMPORTANT: endpoint that auto-creates a record if missing
+    // ✅ endpoint that auto-creates a record if missing
     fetch(`${API_BASE}/api/trace-or-check?site=${encodeURIComponent(target)}`)
       .then(r => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
       .then(d => {
@@ -49,10 +52,13 @@ export default function CarbonBadge({ url, data: preData }) {
     } catch { return ""; }
   })();
 
+  // ✅ Build a proper results href
+  const href = `${RESULTS_PATH}/${encodeURIComponent(slug)}`;
+
   return (
     <div className="inline-flex flex-col items-center text-center">
       <a
-        href={`/result/${slug}`}  // keep as-is to avoid breaking routes
+        href={href}
         className="inline-flex overflow-hidden rounded-md shadow-lg transform transition hover:scale-105"
       >
         <div className="px-4 py-2 bg-white dark:bg-slate-800 border border-greenbuzz text-sm font-semibold text-slate-900 dark:text-slate-200 rounded-l-md">
@@ -65,7 +71,7 @@ export default function CarbonBadge({ url, data: preData }) {
             <img
               src="/GreenTraceLogo.png"
               alt="GreenTrace"
-              className="h-6 w-auto filter brightness-0 invert"
+              className="h-6 w-auto filter brightness-0 invert"  // looks good on green
               loading="lazy"
               decoding="async"
             />

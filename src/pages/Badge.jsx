@@ -58,17 +58,19 @@ const badgeTypes = [
   }
 ];
 
+// ✅ Use your production origin + the new badge script we built
 const codeSnippets = {
-  // ... (Your codeSnippets object is perfect, no changes needed)
-  auto: `<div class="greentrace-badge" data-url="https://YOURDOMAIN.com"></div>
-<script src="https://api.greentracer.org/greentrace-badge.js" defer></script>`,
-  "svg-light": `<a href="https://greentracer.org?ref=badge" target="_blank" rel="noopener noreferrer">
-  <img src="https://api.greentracer.org/badge.svg?url=https://YOURDOMAIN.com" 
-       alt="GreenTracer Badge" width="120" />
+  auto: `<div class="greentrace-badge" data-url="https://YOURDOMAIN.com" data-theme="auto"></div>
+<script src="https://www.greentracer.org/greentrace-badge.min.js" defer></script>`,
+
+  "svg-light": `<a href="https://www.greentracer.org?ref=badge" target="_blank" rel="noopener noreferrer">
+  <img src="https://www.greentracer.org/api/badge.svg?theme=light&url=https://YOURDOMAIN.com"
+       alt="GreenTracer Badge (Light)" width="160" />
 </a>`,
-  "svg-dark": `<a href="https://greentracer.org?ref=badge" target="_blank" rel="noopener noreferrer">
-  <img src="https://api.greentracer.org/badge.svg?theme=dark&url=https://YOURDOMAIN.com" 
-       alt="GreenTracer Badge (Dark)" width="120" />
+
+  "svg-dark": `<a href="https://www.greentracer.org?ref=badge" target="_blank" rel="noopener noreferrer">
+  <img src="https://www.greentracer.org/api/badge.svg?theme=dark&url=https://YOURDOMAIN.com"
+       alt="GreenTracer Badge (Dark)" width="160" />
 </a>`
 };
 
@@ -114,6 +116,7 @@ export default function Badge() {
   };
 
   const getCurrentCode = () => {
+    // Keep your replacement logic as-is so users can paste any URL
     return codeSnippets[selectedBadge].replace(/YOURDOMAIN\.com/g, websiteUrl.replace(/^https?:\/\//, ''));
   };
 
