@@ -14,7 +14,7 @@
   var LOGO_PNG  = BASE + '/GreenTraceLogo.png';
 
   // Where result pages live
-  var RESULTS_BASE = 'https://www.greentracer.org/results';
+  var RESULTS_BASE = 'https://www.greentracer.org/result';
 
   function cleanUrl(url) {
     try {
