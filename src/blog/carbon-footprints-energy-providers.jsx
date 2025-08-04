@@ -11,7 +11,8 @@ export const meta = {
   date: "2025-07-29",
   tags: ["Eco-friendly", "Energy", "Web Sustainability", "Carbon Tracking"],
   slug: "carbon-footprints-energy-providers",
-   image: "/src/assets/blog/energy-carbon.webp",
+    image: "/assets/blog/energy-carbon.webp",
+  imageAvif: "/assets/blog/energy-carbon.avif",
   excerpt: "An in-depth investigation reveals that leading renewable energy companies are failing at digital sustainability. We break down why and provide a complete action plan for change."
 };
 
