@@ -1,4 +1,3 @@
-// src/components/InputForm.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LoadingOverlay from "./LoadingOverlay";
@@ -18,7 +17,6 @@ export default function InputForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     let site = url.trim();
     if (!site) {
       alert("Please enter a valid URL.");
@@ -27,7 +25,6 @@ export default function InputForm() {
     if (!/^https?:\/\//i.test(site)) {
       site = `https://${site}`;
     }
-
     setLoading(true);
     setError(null);
 
@@ -36,13 +33,11 @@ export default function InputForm() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // ✅ THIS LINE IS NOW UNCOMMENTED AND WILL USE YOUR .env VARIABLE
-          'X-API-Key': import.meta.env.VITE_MASTER_API_KEY,
+          // ✅ FIX: The X-API-Key header has been removed to match the secure backend
         },
         body: JSON.stringify({ url: site }),
       });
 
-      // Keep your user-visible minimum wait time
       const [res] = await Promise.all([
         apiPromise,
         new Promise((resolve) => setTimeout(resolve, 15000)),
@@ -56,7 +51,6 @@ export default function InputForm() {
         throw new Error(data.error || `Server returned ${res.status} status.`);
       }
 
-      // Your app routes to /result/:slug (singular) — keep as-is
       navigate(`/result/${data.slug}`);
     } catch (err) {
       console.error("❌ Error fetching carbon data:", err);

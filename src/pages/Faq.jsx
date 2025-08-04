@@ -451,7 +451,7 @@ export default function Faq() {
                 Still Need Help?
               </h2>
               <p className="text-lg text-slate-600 dark:text-slate-300 mb-8">
-                Can't find the answer you're looking for? Our team is here to help you optimize 
+                Can't find the answer you're looking for? Our team is here to help you optimise 
                 your website's carbon footprint and implement sustainable practices.
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
