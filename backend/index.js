@@ -19,14 +19,6 @@ app.set('trust proxy', 1);
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(express.json());
 
-const requireApiKey = (req, res, next) => {
-    const apiKey = req.get('X-API-Key');
-    if (!apiKey || apiKey !== process.env.MASTER_API_KEY) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    next();
-};
-
 // --- RATE LIMITS ---
 const limiterCheck = rateLimit({ windowMs: 24 * 60 * 60 * 1000, max: 20, message: { error: 'Daily check limit reached.' } });
 const limiterBadge = rateLimit({ windowMs: 60 * 1000, max: 60, message: { error: 'Too many badge loads.' } });
@@ -55,26 +47,37 @@ function slugify(site) {
     const u = new URL(site.startsWith('http') ? site : `https://${site}`);
     const originAndPath = u.origin + u.pathname.replace(/\/+$/, '');
     const out = new URL(originAndPath);
-    return (out.hostname + out.pathname).replace(/[^a-z0-9]/gi,'-').toLowerCase().replace(/-+$/,'');
+    return (out.hostname + out.pathname)
+      .replace(/[^a-z0-9]/gi, '-')
+      .toLowerCase()
+      .replace(/-+$/, '');
   } catch {
-    return String(site).toLowerCase().replace(/[^a-z0-9]/gi,'-').replace(/-+$/,'');
+    return String(site)
+      .toLowerCase()
+      .replace(/[^a-z0-9]/gi, '-')
+      .replace(/-+$/, '');
   }
 }
 function gradeFor(c) {
-  if (c <= 0.095) return 'A+'; if (c <= 0.186) return 'A'; if (c <= 0.341) return 'B';
-  if (c <= 0.493) return 'C'; if (c <= 0.656) return 'D'; if (c <= 0.846) return 'E';
+  if (c <= 0.095) return 'A+';
+  if (c <= 0.186) return 'A';
+  if (c <= 0.341) return 'B';
+  if (c <= 0.493) return 'C';
+  if (c <= 0.656) return 'D';
+  if (c <= 0.846) return 'E';
   return 'F';
 }
 function percentileFromCarbon(carbon) {
   const max = 0.846;
-  return Math.round(Math.max(0, Math.min(100, (max - Math.min(carbon, max)) / max * 100)));
+  return Math.round(
+    Math.max(0, Math.min(100, (max - Math.min(carbon, max)) / max * 100))
+  );
 }
 function totalGreenReductionPct() {
   const KWH_PER_GB_DATACENTER = 0.060, KWH_PER_GB_NETWORK = 0.014, KWH_PER_GB_USER = 0.123;
   const total = KWH_PER_GB_DATACENTER + KWH_PER_GB_NETWORK + KWH_PER_GB_USER;
   const dcShare = KWH_PER_GB_DATACENTER / total;
-  const overall = 0.25 * dcShare;
-  return Math.round(overall * 100);
+  return Math.round(0.25 * dcShare * 100);
 }
 function calcCO2(sizeMB, isGreenDC) {
   const KWH_PER_GB_DATACENTER = 0.060, KWH_PER_GB_NETWORK = 0.014, KWH_PER_GB_USER = 0.123;
@@ -82,45 +85,48 @@ function calcCO2(sizeMB, isGreenDC) {
   const sizeGB = sizeMB / 1024;
   let dc = sizeGB * KWH_PER_GB_DATACENTER;
   if (isGreenDC) dc *= 0.75;
-  const kWh = dc + (sizeGB * KWH_PER_GB_NETWORK) + (sizeGB * KWH_PER_GB_USER);
+  const kWh = dc + sizeGB * KWH_PER_GB_NETWORK + sizeGB * KWH_PER_GB_USER;
   const grams = kWh * GRID_INTENSITY;
-  return grams < 0.01 ? +grams.toPrecision(2) : grams < 1 ? +grams.toFixed(3) : +grams.toFixed(2);
+  if (grams < 0.01) return +grams.toPrecision(2);
+  if (grams < 1) return +grams.toFixed(3);
+  return +grams.toFixed(2);
 }
 async function runPSI(url, strategy, apiKey) {
-  const api = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}&category=performance&key=${apiKey}`;
+  const api =
+    `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(
+      url
+    )}&strategy=${strategy}&category=performance&key=${apiKey}`;
   const r = await axios.get(api, { timeout: 30000 });
   const lr = r.data.lighthouseResult;
-  const bytesAudit = lr?.audits?.['total-byte-weight']?.numericValue ?? 0;
+  const bytesAudit = lr?.audits?.['total-byte-weight']?.numericValue || 0;
   const items = lr?.audits?.['resource-summary']?.details?.items || [];
   const sumTransfers = items.reduce((s, it) => s + (it.transferSize || 0), 0);
   const totalBytes = Math.max(bytesAudit, sumTransfers);
-  const finalUrl = lr?.finalDisplayedUrl || lr?.finalUrl || lr?.requestedUrl || url;
+  const finalUrl = lr.finalDisplayedUrl || lr.finalUrl || lr.requestedUrl || url;
   console.log(`[fetchSize] ${strategy} OK: ${totalBytes} bytes | final=${finalUrl}`);
   return { bytes: totalBytes, finalUrl };
-}
-async function htmlOnlyEstimateMB(url) {
-  try {
-    const r = await axios.get(url, { timeout: 12000, headers: { 'User-Agent': 'Mozilla/5.0 (GreenTrace Estimator)' } });
-    const htmlBytes = Buffer.byteLength(r.data || '', 'utf8');
-    const estimatedTotal = Math.max(htmlBytes * 7, htmlBytes + 80 * 1024);
-    return estimatedTotal / (1024 * 1024);
-  } catch { return 1.7; }
 }
 async function fetchSize(url) {
   const apiKey = process.env.PAGESPEED_API_KEY;
   if (!apiKey) {
-    console.error('[ERROR] PAGESPEED_API_KEY not set; using fallback 1.7 MB.');
+    console.error(
+      '[ERROR] PAGESPEED_API_KEY not set; using fallback 1.7 MB.'
+    );
     return { bytes: 1.7 * 1024 * 1024, finalUrl: url };
   }
   try {
-    const [desk, mobi] = await Promise.allSettled([runPSI(url, 'desktop', apiKey), runPSI(url, 'mobile', apiKey)]);
-    let best = null;
-    if (desk.status === 'fulfilled') best = desk.value;
-    if (mobi.status === 'fulfilled' && (!best || mobi.value.bytes > best.bytes)) best = mobi.value;
+    const [desk, mobi] = await Promise.allSettled([
+      runPSI(url, 'desktop', apiKey),
+      runPSI(url, 'mobile', apiKey),
+    ]);
+    let best = desk.status === 'fulfilled' ? desk.value : null;
+    if (mobi.status === 'fulfilled' && (!best || mobi.value.bytes > best.bytes)) {
+      best = mobi.value;
+    }
     if (best) return best;
     throw new Error('Both PSI strategies failed');
   } catch (err) {
-    console.error('[fetchSize] PSI FAILED for', url, '-', err.response?.data?.error?.message || err.message);
+    console.error('[fetchSize] PSI FAILED for', url, '-', err.message);
     const estMB = await htmlOnlyEstimateMB(url);
     console.warn(`[fetchSize] using HTML-only estimate: ${estMB.toFixed(3)} MB`);
     return { bytes: estMB * 1024 * 1024, finalUrl: url };
@@ -128,79 +134,112 @@ async function fetchSize(url) {
 }
 async function checkGreen(host) {
   try {
-    const { data } = await axios.get(`https://api.thegreenwebfoundation.org/greencheck/${host}`, { timeout: 8000 });
+    const { data } = await axios.get(
+      `https://api.thegreenwebfoundation.org/greencheck/${host}`
+    );
     return !!data.green;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 // DATABASE FUNCTIONS
 async function getCached(slug) {
-  const s = String(slug || '').toLowerCase().replace(/-+$/,'');
-  const { data: row, error } = await supabase.from('results').select('*').eq('slug', s).single();
+  const s = slug.toLowerCase().replace(/-+$/, '');
+  const { data: row, error } = await supabase
+    .from('results')
+    .select('*')
+    .eq('slug', s)
+    .single();
   if (error || !row) return null;
-  if (TTL !== 0 && Date.now() - new Date(row.created_at).getTime() > TTL) return null;
+  if (TTL !== 0 && Date.now() - new Date(row.created_at) > TTL) return null;
   return { ...row, greenHost: !!row.green_host };
 }
 async function performCarbonCheck(url) {
-    const norm = url.startsWith('http') ? url : `https://${url}`;
-    const host = new URL(norm).hostname;
-    const [green, sizeInfo] = await Promise.all([checkGreen(host), fetchSize(norm)]);
-    const sizeMB = (sizeInfo.bytes || 0) / (1024 * 1024);
-    const measuredUrl = sizeInfo.finalUrl || norm;
-    console.log(`[check-carbon] green=${green} sizeMB=${sizeMB.toFixed(3)} url=${measuredUrl}`);
-    const carbon = calcCO2(sizeMB, green);
-    const pct = percentileFromCarbon(carbon);
-    const reductionPct = green ? totalGreenReductionPct() : 0;
-    const slug = slugify(measuredUrl);
-    const grade = gradeFor(carbon);
-    const { data, error } = await supabase.from('results').upsert({
-        slug: slug, url: measuredUrl, green_host: green, carbon_estimate: carbon, grade: grade,
-        percentile: pct, reduction_pct: reductionPct, result_data: { sizeInfo }
-    }, { onConflict: 'slug' }).select().single();
-    if (error) throw error;
-    return { ...data, greenHost: !!data.green_host };
+  const norm = url.startsWith('http') ? url : `https://${url}`;
+  const host = new URL(norm).hostname;
+  const [green, sizeInfo] = await Promise.all([
+    checkGreen(host),
+    fetchSize(norm),
+  ]);
+  const sizeMB = sizeInfo.bytes / (1024 * 1024);
+  const measuredUrl = sizeInfo.finalUrl || norm;
+  console.log(
+    `[check-carbon] green=${green} sizeMB=${sizeMB.toFixed(3)} url=${measuredUrl}`
+  );
+  const carbon = calcCO2(sizeMB, green);
+  const pct = percentileFromCarbon(carbon);
+  const reductionPct = green ? totalGreenReductionPct() : 0;
+  const slug = slugify(measuredUrl);
+  const grade = gradeFor(carbon);
+  const { data, error } = await supabase
+    .from('results')
+    .upsert(
+      {
+        slug: slug,
+        url: measuredUrl,
+        green_host: green,
+        carbon_estimate: carbon,
+        grade: grade,
+        percentile: pct,
+        reduction_pct: reductionPct,
+        result_data: { sizeInfo },
+      },
+      { onConflict: 'slug' }
+    )
+    .select()
+    .single();
+  if (error) throw error;
+  return { ...data, greenHost: !!data.green_host };
 }
 
 // --- Badge and Public API Routes ---
-app.use('/greentrace-badge.js', badgeCors, limiterBadge, express.static(path.join(__dirname, 'public', 'greentrace-badge.js')));
+app.use(
+  '/greentrace-badge.js',
+  badgeCors,
+  limiterBadge,
+  express.static(path.join(__dirname, 'public', 'greentrace-badge.js'))
+);
 
-app.get('/api/trace', badgeCors, limiterBadge, async (req, res) => {
-  const site = req.query.site;
-  if (!site) return res.status(400).json({ error: 'Missing site.' });
-  const row = await getCached(slugify(site));
-  if (!row) return res.status(404).json({ error: 'No data—run a check first.' });
-  res.json(row);
-});
-
-app.get('/api/trace-or-check', badgeCors, limiterTraceOrCheck, async (req, res) => {
-  const site = req.query.site;
-  if (!site) return res.status(400).json({ error: 'Missing site.' });
-  try {
-    const cached = await getCached(slugify(site));
-    if (cached) return res.json(cached);
-    const freshResult = await performCarbonCheck(site);
-    res.json(freshResult);
-  } catch (e) {
-    console.error('[trace-or-check] failed:', e.message);
-    res.status(500).json({ error: 'Trace failed' });
+app.get(
+  '/api/trace-or-check',
+  badgeCors,
+  limiterTraceOrCheck,
+  async (req, res) => {
+    const site = req.query.site;
+    if (!site) return res.status(400).json({ error: 'Missing site.' });
+    try {
+      const cached = await getCached(slugify(site));
+      if (cached) return res.json(cached);
+      const freshResult = await performCarbonCheck(site);
+      res.json(freshResult);
+    } catch (e) {
+      console.error('[trace-or-check] failed:', e.message);
+      res.status(500).json({ error: 'Trace failed' });
+    }
   }
-});
+);
 
-// --- Main App Routes (with global CORS and API Key) ---
-app.use(cors({ origin: dynamicCORS, methods: ['GET', 'POST'], allowedHeaders: ['Content-Type', 'X-API-Key'] }));
+// --- Main App Routes (with global CORS) ---
+app.use(
+  cors({ origin: dynamicCORS, methods: ['GET', 'POST'], allowedHeaders: ['Content-Type', 'X-API-Key'] })
+);
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/healthz', (_req, res) => res.send('OK'));
 
-app.use(express.static(path.join(__dirname,'public')));
-app.get('/healthz', (_req,res)=>res.send('OK'));
-
-app.post('/api/check-carbon', requireApiKey, limiterCheck, async (req, res) => {
-  try {
-    const result = await performCarbonCheck(req.body.url);
-    res.json(result);
-  } catch (err) {
-    console.error('[/api/check-carbon] failed:', err.message);
-    res.status(500).json({ error: 'Failed to perform carbon check.' });
+app.post(
+  '/api/check-carbon',
+  limiterCheck,
+  async (req, res) => {
+    try {
+      const result = await performCarbonCheck(req.body.url);
+      res.json(result);
+    } catch (err) {
+      console.error('[/api/check-carbon] failed:', err.message);
+      res.status(500).json({ error: 'Failed to perform carbon check.' });
+    }
   }
-});
+);
 
 app.get('/api/results/:slug', async (req, res) => {
   const row = await getCached(req.params.slug);
@@ -210,7 +249,7 @@ app.get('/api/results/:slug', async (req, res) => {
 
 // --- 404 & Global Error Handler ---
 app.use((_, res) => res.status(404).json({ error: 'Endpoint not found' }));
-app.use((err, _, res, __) => {
+app.use((err, _, res) => {
   console.error(err);
   res.status(500).json({ error: 'Server error' });
 });

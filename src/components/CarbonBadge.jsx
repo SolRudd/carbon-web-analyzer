@@ -13,12 +13,7 @@ export default function CarbonBadge({ url, data: preData }) {
   const target = (() => {
     try {
       const u = new URL(url);
-      return (
-        u.protocol +
-        "//" +
-        u.hostname +
-        u.pathname.replace(/\/+$/, "")
-      );
+      return u.protocol + "//" + u.hostname + u.pathname.replace(/\/+$/, "");
     } catch {
       return null;
     }
@@ -36,9 +31,10 @@ export default function CarbonBadge({ url, data: preData }) {
     }
 
     console.log("⚡️ CarbonBadge: fetching slug for", target);
-    fetch(`${API_BASE}/api/trace?site=${encodeURIComponent(target)}`, {
-      mode: "cors",
-    })
+    fetch(
+      `${API_BASE}/api/trace-or-check?site=${encodeURIComponent(target)}`,
+      { mode: "cors" }
+    )
       .then((r) => {
         console.log("⚡️ CarbonBadge: response status", r.status);
         if (!r.ok) throw new Error(r.status);
@@ -63,10 +59,9 @@ export default function CarbonBadge({ url, data: preData }) {
   const co2 = Number(data.carbonEstimate || 0).toFixed(2);
   const pct = data.percentile ?? "--";
   const slug = data.slug; // must be non-empty
-
   const href = `${RESULTS_BASE}${RESULTS_PATH}/${encodeURIComponent(slug)}`;
-  console.log("⚡️ CarbonBadge: badge link →", href);
 
+  console.log("⚡️ CarbonBadge: badge link →", href);
   return (
     <div className="inline-flex flex-col items-center text-center">
       <a
