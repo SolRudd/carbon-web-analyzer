@@ -1,22 +1,28 @@
-// src/components/CarbonBadge.jsx
 import React, { useState, useEffect } from "react";
-import { API_BASE } from "../config";
+import { API_BASE, RESULTS_BASE } from "../config";
 
-// ✅ If your route is /results/:slug, change here once
-const RESULTS_PATH = "/result"; // was "/result"
+// NOTE: plural "/results"
+const RESULTS_PATH = "/results";
 
 export default function CarbonBadge({ url, data: preData }) {
   const [data, setData] = useState(preData || null);
-  const [err,  setErr]  = useState(false);
+  const [err, setErr] = useState(false);
 
-  // Don’t check localhost (PageSpeed can’t crawl it)
+  // Normalize and skip localhost
   const target = (() => {
     try {
       const u = new URL(url);
-      if (u.hostname === "localhost" || u.hostname === "127.0.0.1") return null;
-      // normalise to proto + host + path (no trailing slash)
-      return u.protocol + "//" + u.hostname + u.pathname.replace(/\/+$/, "");
-    } catch { return null; }
+      if (u.hostname === "localhost" || u.hostname === "127.0.0.1")
+        return null;
+      return (
+        u.protocol +
+        "//" +
+        u.hostname +
+        u.pathname.replace(/\/+$/, "")
+      );
+    } catch {
+      return null;
+    }
   })();
 
   useEffect(() => {
@@ -28,10 +34,13 @@ export default function CarbonBadge({ url, data: preData }) {
       return;
     }
 
-    // ✅ endpoint that auto-creates a record if missing
-    fetch(`${API_BASE}/api/trace-or-check?site=${encodeURIComponent(target)}`)
-      .then(r => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
-      .then(d => {
+    // use /api/trace to ensure a slug is generated
+    fetch(`${API_BASE}/api/trace?site=${encodeURIComponent(target)}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(r.status);
+        return r.json();
+      })
+      .then((d) => {
         setData(d);
         sessionStorage.setItem(key, JSON.stringify(d));
       })
@@ -39,29 +48,37 @@ export default function CarbonBadge({ url, data: preData }) {
   }, [target, preData]);
 
   if (!target) return null;
-  if (err)    return <div className="text-red-500 text-xs">Badge failed to load</div>;
-  if (!data)  return <div className="text-xs">Loading badge…</div>;
+  if (err)
+    return (
+      <div className="text-red-500 text-xs">
+        Badge failed to load
+      </div>
+    );
+  if (!data) return <div className="text-xs">Loading badge…</div>;
 
-  const co2  = Number(data.carbonEstimate || 0).toFixed(2);
-  const pct  = data.percentile ?? "--";
-  const slug = data.slug || (() => {
-    try {
-      const u = new URL(target);
-      const base = (u.hostname + u.pathname).replace(/\/$/, "");
-      return base.replace(/[^a-z0-9]/gi, "-").toLowerCase();
-    } catch { return ""; }
-  })();
+  const co2 = Number(data.carbonEstimate || 0).toFixed(2);
+  const pct = data.percentile ?? "--";
+  const slug = data.slug; // guaranteed from /api/trace
 
-  // ✅ Build a proper results href
-  const href = `${RESULTS_PATH}/${encodeURIComponent(slug)}`;
+  // Build the **frontend** URL
+  const href = `${RESULTS_BASE}${RESULTS_PATH}/${encodeURIComponent(
+    slug
+  )}`;
 
   return (
     <div className="inline-flex flex-col items-center text-center">
       <a
         href={href}
-        className="inline-flex overflow-hidden rounded-md shadow-lg transform transition hover:scale-105"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex overflow-hidden rounded-md shadow-lg
+                   transform transition hover:scale-105"
       >
-        <div className="px-4 py-2 bg-white dark:bg-slate-800 border border-greenbuzz text-sm font-semibold text-slate-900 dark:text-slate-200 rounded-l-md">
+        <div
+          className="px-4 py-2 bg-white dark:bg-slate-800 border
+                     border-greenbuzz text-sm font-semibold text-slate-900
+                     dark:text-slate-200 rounded-l-md"
+        >
           {co2}g CO₂/view
         </div>
         <div className="flex items-center px-4 py-2 bg-greenbuzz rounded-r-md">
@@ -71,7 +88,7 @@ export default function CarbonBadge({ url, data: preData }) {
             <img
               src="/GreenTraceLogo.png"
               alt="GreenTrace"
-              className="h-6 w-auto filter brightness-0 invert"  // looks good on green
+              className="h-6 w-auto filter brightness-0 invert"
               loading="lazy"
               decoding="async"
             />
