@@ -1,20 +1,29 @@
-# render.yaml
-
 services:
   - type: web
     name: greentracer-backend
-    env: docker # ← force Docker build
+    env: docker
     region: frankfurt
     branch: main
     dockerfilePath: backend/Dockerfile
-    buildContext: backend # ← tell Docker to use the backend/ folder
+    buildContext: backend
     healthCheckPath: /healthz
     autoDeploy: true
     envVars:
       - key: NODE_ENV
-        value: "production"
+        value: production
       - key: RESULTS_DB_PATH
-        value: "/app/data/results.db"
+        value: /app/data/results.db
+
+      # ← Add these:
+      - key: SUPABASE_URL
+        from: SECRET_SUPABASE_URL
+      - key: SUPABASE_SERVICE_KEY
+        from: SECRET_SUPABASE_SERVICE_KEY
+      - key: MASTER_API_KEY
+        from: SECRET_MASTER_API_KEY
+      - key: PAGESPEED_API_KEY
+        from: SECRET_PAGESPEED_API_KEY
+
     disks:
       - name: results-data
         mountPath: /app/data
