@@ -34,6 +34,7 @@ const badgeCors = cors({ origin: '*', methods: ['GET'] });
 const ALLOWED = [
   'http://localhost:5173',
   'https://greentracer.org',
+  'https://www.greentracer.org',
   /^https?:\/\/.*\.vercel\.app$/,
   'https://buzzboost.co.uk'
 ];
