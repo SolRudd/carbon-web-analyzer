@@ -6,8 +6,8 @@ const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const axios = require('axios');
-const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
+const path = require('path');
 
 // --- INITIALIZATION ---
 const app  = express();
@@ -48,7 +48,7 @@ function dynamicCORS(origin, cb) {
 // --- TTL FOR CACHE ---
 const TTL = process.env.DEBUG_TTL_ZERO ? 0 : 24 * 60 * 60 * 1000;
 
-// --- HELPER FUNCTIONS (Preserved from your original file) ---
+// --- HELPER FUNCTIONS (Restored from your original file) ---
 function slugify(site) {
   try {
     const u = new URL(site.startsWith('http') ? site : `https://${site}`);
@@ -86,29 +86,6 @@ function calcCO2(sizeMB, isGreenDC) {
   return grams < 0.01 ? +grams.toPrecision(2) : grams < 1 ? +grams.toFixed(3) : +grams.toFixed(2);
 }
 
-// --- DB HELPER (Converted to Supabase) ---
-async function getCached(slug) {
-  const s = String(slug || '').toLowerCase().replace(/-+$/,'');
-  const { data: row, error } = await supabase.from('results').select('*').eq('slug', s).single();
-
-  if (error || !row) return null;
-  if (TTL !== 0 && Date.now() - new Date(row.created_at).getTime() > TTL) return null;
-  
-  // Format data to match frontend's expected camelCase format
-  return {
-    slug: row.slug,
-    url: row.url,
-    greenHost: !!row.green_host,
-    sizeMB: +row.size_mb,
-    carbonEstimate: +row.carbon_estimate,
-    percentile: +row.percentile,
-    reductionPct: +row.reduction_pct,
-    grade: row.grade,
-    timestamp: new Date(row.created_at).getTime()
-  };
-}
-
-// --- EXTERNAL API HELPERS (Preserved from your original file) ---
 async function runPSI(url, strategy, apiKey) {
   const api = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}&category=performance&key=${apiKey}`;
   const r = await axios.get(api, { timeout: 30000 });
@@ -156,7 +133,15 @@ async function checkGreen(host) {
   } catch { return false; }
 }
 
-async function performAndSaveCheck(url) {
+async function getCached(slug) {
+  const s = String(slug || '').toLowerCase().replace(/-+$/,'');
+  const { data: row, error } = await supabase.from('results').select('*').eq('slug', s).single();
+  if (error || !row) return null;
+  if (TTL !== 0 && Date.now() - new Date(row.created_at).getTime() > TTL) return null;
+  return { ...row, greenHost: !!row.green_host }; // Reformat to match frontend expectations
+}
+
+async function performCarbonCheck(url) {
     const norm = url.startsWith('http') ? url : `https://${url}`;
     const host = new URL(norm).hostname;
 
@@ -171,72 +156,62 @@ async function performAndSaveCheck(url) {
     const reductionPct = green ? totalGreenReductionPct() : 0;
     const slug = slugify(measuredUrl);
     const grade = gradeFor(carbon);
-    
-    // Use Supabase upsert. Column names are snake_case to match the SQL table.
+
     const { data, error } = await supabase.from('results').upsert({
-        slug: slug, url: measuredUrl, green_host: green, carbon_estimate: carbon, 
-        grade: grade, percentile: pct, reduction_pct: reductionPct, 
-        result_data: { sizeInfo, green, carbon, pct, reductionPct, grade }
+        slug: slug, url: measuredUrl, green_host: green, carbon_estimate: carbon, grade: grade, 
+        percentile: pct, reduction_pct: reductionPct, result_data: { sizeInfo }
     }, { onConflict: 'slug' }).select().single();
 
     if (error) throw error;
-    
-    // Return data formatted for the frontend (camelCase)
-    return { slug, url: measuredUrl, greenHost: green, sizeMB, carbonEstimate: carbon, percentile: pct, reductionPct, grade };
+    return data;
 }
 
-// --- ROUTES ---
+// --- Badge and Public API Routes ---
+app.use('/greentrace-badge.js', badgeCors, limiterBadge, express.static(path.join(__dirname, 'public', 'greentrace-badge.js')));
 
-// Badge endpoints with open CORS
-app.get('/greentrace-badge.js', badgeCors, limiterBadge, (req, res) => {
-  res.type('application/javascript');
-  res.set('Cross-Origin-Resource-Policy','cross-origin');
-  res.set('Cache-Control','public,max-age=3600');
-  res.sendFile(path.join(__dirname,'public','greentrace-badge.js'));
-});
 app.get('/api/trace', badgeCors, limiterBadge, async (req, res) => {
   const site = req.query.site;
-  if (!site) return res.status(400).json({ error:'Missing site.' });
+  if (!site) return res.status(400).json({ error: 'Missing site.' });
   const row = await getCached(slugify(site));
-  if (!row) return res.status(404).json({ error:'No data—run a check first.' });
+  if (!row) return res.status(404).json({ error: 'No data—run a check first.' });
   res.json(row);
 });
+
 app.get('/api/trace-or-check', badgeCors, limiterTraceOrCheck, async (req, res) => {
   const site = req.query.site;
   if (!site) return res.status(400).json({ error: 'Missing site.' });
   try {
     const cached = await getCached(slugify(site));
     if (cached) return res.json(cached);
-    const freshResult = await performAndSaveCheck(site);
+    const freshResult = await performCarbonCheck(site);
     res.json(freshResult);
   } catch (e) {
     console.error('[trace-or-check] failed:', e.message);
-    return res.status(500).json({ error:'Trace failed' });
+    return res.status(500).json({ error: 'Trace failed' });
   }
 });
 
-// Main app endpoints with global CORS
+// --- Main App Routes (with global CORS and API Key) ---
 app.use(cors({ origin: dynamicCORS, methods: ['GET', 'POST'], allowedHeaders: ['Content-Type', 'X-API-Key'] }));
+
 app.use(express.static(path.join(__dirname,'public')));
 app.get('/healthz', (_req,res)=>res.send('OK'));
 
 app.post('/api/check-carbon', requireApiKey, limiterCheck, async (req, res) => {
   try {
-    const result = await performAndSaveCheck(req.body.url);
+    const result = await performCarbonCheck(req.body.url);
     res.json(result);
   } catch (err) {
-    console.error(`[check-carbon] FAILED for ${req.body.url}:`, err.message);
     res.status(500).json({ error: 'Failed to perform carbon check.' });
   }
 });
 
 app.get('/api/results/:slug', async (req, res) => {
   const row = await getCached(req.params.slug);
-  if (!row) return res.status(404).json({ error:'Results not found' });
+  if (!row) return res.status(404).json({ error: 'Results not found' });
   res.json(row);
 });
 
-// Sitemap endpoint
 app.get('/api/results/all-slugs', async (req, res) => {
   try {
     const { data, error } = await supabase.from('results').select('slug');
@@ -245,22 +220,19 @@ app.get('/api/results/all-slugs', async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Internal Server Error' }); }
 });
 
-// Debug endpoints
 app.get('/api/clean-db', requireApiKey, async (req, res) => {
-  if (!process.env.CLEAN_DB_SECRET || req.query.secret !== process.env.CLEAN_DB_SECRET) {
-    return res.status(401).json({ error:'Unauthorized.' });
-  }
-  const { error } = await supabase.from('results').delete().neq('id', 0); // Deletes all rows
+  if (req.query.secret !== process.env.CLEAN_DB_SECRET) return res.status(401).json({ error:'Unauthorized.' });
+  const { error } = await supabase.from('results').delete().neq('slug', 'this-is-a-placeholder-for-safety');
   if (error) return res.status(500).json({ error: 'Failed to wipe database.' });
   res.json({ ok: true, message: 'Database wiped.' });
 });
+
 app.get('/api/debug-pagesize', requireApiKey, async (req, res) => {
   const url = req.query.url;
   if (!url) return res.status(400).json({ error: 'url query required' });
   const { bytes, finalUrl } = await fetchSize(url);
   res.json({ requested: url, finalUrl, bytes, sizeMB: +(bytes / (1024 * 1024)).toFixed(6) });
 });
-
 
 // --- 404 & Global Error Handler ---
 app.use((_, res) => res.status(404).json({ error: 'Endpoint not found' }));
