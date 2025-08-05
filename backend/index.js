@@ -111,11 +111,11 @@ async function runPSI(url, strat, key) {
   return { bytes: total, finalUrl: lr.finalDisplayedUrl || url };
 }
 
-// FIX #1: This function is now "bulletproof" and will NEVER return null.
-// This prevents the server from crashing.
+// This function is "bulletproof" and will NEVER return null. This prevents crashes.
 async function fetchSize(url) {
   const key = process.env.PAGESPEED_API_KEY;
   if (!key) {
+    console.warn('PAGESPEED_API_KEY is missing, falling back to HTML-only estimate.');
     const estimatedBytes = await htmlOnlyEstimateMB(url) * 1024 * 1024;
     return { bytes: estimatedBytes, finalUrl: url };
   }
@@ -175,15 +175,13 @@ async function getCached(slug) {
   };
 }
 
-// FIX #2: This function now safely handles the result from fetchSize.
-// This is the second part of the crash prevention.
+// This function now safely handles the result from fetchSize to prevent crashes.
 async function performCarbonCheck(url) {
   const norm = url.startsWith('http') ? url : `https://${url}`;
   const host = new URL(norm).hostname;
   
-  const sizeResult = await fetchSize(norm); // Get the result from our bulletproof function
+  const sizeResult = await fetchSize(norm);
   
-  // This check prevents a crash if something unexpected happens
   if (!sizeResult || typeof sizeResult.bytes === 'undefined') {
       throw new Error('Failed to determine page size.');
   }
@@ -195,10 +193,13 @@ async function performCarbonCheck(url) {
   const red = green ? totalGreenReductionPct() : 0;
   const slug = slugify(sizeResult.finalUrl || norm);
   const grade = gradeFor(co2);
-  const { data: row } = await supabase.from('results').upsert(
+  const { data: row, error } = await supabase.from('results').upsert(
     { slug, url: sizeResult.finalUrl || norm, green_host: green, carbon_estimate: co2, grade, percentile: pct, reduction_pct: red, result_data: { size: sizeResult } },
     { onConflict: 'slug' }
   ).select().single();
+
+  if (error) throw new Error(`Supabase error: ${error.message}`);
+  
   return {
     slug: row.slug,
     url: row.url,
@@ -238,6 +239,7 @@ app.get('/api/results/:slug', async (req, res) => {
   }
 });
 
+// THIS IS THE "SMART" ENDPOINT FOR YOUR UI
 app.get('/api/trace-or-check', badgeCors, limiterTraceOrCheck, async (req, res) => {
   const site = req.query.site;
   if (!site) return res.status(400).json({ error: 'Missing site.' });

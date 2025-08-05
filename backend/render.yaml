@@ -11,19 +11,15 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: RESULTS_DB_PATH
-        value: /app/data/results.db
-
-      # ← Add these:
+      # THE FOLLOWING ARE CORRECT FOR YOUR SUPABASE BACKEND
       - key: SUPABASE_URL
-        from: SECRET_SUPABASE_URL
+        fromEnvironmentVar: SECRET_SUPABASE_URL # Use fromEnvironmentVar for secrets
       - key: SUPABASE_SERVICE_KEY
-        from: SECRET_SUPABASE_SERVICE_KEY
-      - key: MASTER_API_KEY
-        from: SECRET_MASTER_API_KEY
+        fromEnvironmentVar: SECRET_SUPABASE_SERVICE_KEY
       - key: PAGESPEED_API_KEY
-        from: SECRET_PAGESPEED_API_KEY
+        fromEnvironmentVar: SECRET_PAGESPEED_API_KEY
+      # NOTE: The old RESULTS_DB_PATH key has been removed as it is not needed.
+      # NOTE: The old MASTER_API_KEY has been removed as it is not used in the code.
 
-    disks:
-      - name: results-data
-        mountPath: /app/data
+    # NOTE: The 'disks' section has been removed as it is only for file databases
+    # and is not needed for Supabase.

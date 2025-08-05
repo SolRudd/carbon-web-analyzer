@@ -24,7 +24,7 @@ function ErrorDisplay({ message }) {
       <h1 className="text-2xl font-bold mb-4 text-red-600 dark:text-red-500">Error</h1>
       <p className="text-slate-600 dark:text-slate-300">{message}</p>
       <Link to="/" className="underline text-green-600 dark:text-green-400 mt-6 inline-block">
-        &larr; Back Home
+        &larr; Back to Homepage
       </Link>
     </div>
   );
@@ -38,12 +38,11 @@ export default function ResultPage() {
   const [error, setError] = useState(null);
 
   const fetchData = () => {
+    if (!slug) return;
     setLoading(true);
     setError(null);
 
-    // --- THIS IS THE FIX ---
-    // THE WRONG QUESTION WAS: fetch(`${API_BASE}/api/results/${slug}`)
-    // THE RIGHT QUESTION IS:
+    // THIS IS THE FIX: This asks the "smart" question to the server.
     fetch(`${API_BASE}/api/trace-or-check?site=${slug}`)
       .then(res => {
         if (!res.ok) {
@@ -64,19 +63,16 @@ export default function ResultPage() {
   };
 
   useEffect(() => {
-    if (slug) {
-      fetchData();
-    }
+    fetchData();
   }, [slug]);
 
-  // The re-test button will now correctly re-run the smart fetch function
   const handleRetest = () => {
     fetchData();
   };
 
   if (loading) return <LoadingOverlay />;
   if (error) return <ErrorDisplay message={error} />;
-  if (!result) return <ErrorDisplay message="Result data could not be loaded." />;
+  if (!result) return <ErrorDisplay message="Result data is unavailable." />;
 
   const shouldIndex = INDEX_RESULTS_FLAG;
   const canonical = `https://www.greentracer.org${location.pathname}`;
@@ -86,7 +82,7 @@ export default function ResultPage() {
   const reportSchema = shouldIndex ? {
     "@context": "https://schema.org",
     "@type": "Report",
-    "name": pageTitle,
+    "name": `Website Carbon Report for ${result.url}`,
     "description": pageDescription,
     "url": canonical,
     "author": { "@type": "Organization", "name": "GreenTracer" },
@@ -105,7 +101,12 @@ export default function ResultPage() {
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={pageDescription} />
         <meta property="og:url" content={canonical} />
-        {/* Add other meta tags */}
+        <meta property="og:image" content="https://www.greentracer.org/GreenFavi.png" />
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content={canonical} />
+        <meta property="twitter:title" content={pageTitle} />
+        <meta property="twitter:description" content={pageDescription} />
+        <meta property="twitter:image" content="https://www.greentracer.org/GreenFavi.png" />
         {reportSchema && (
           <script type="application/ld+json">
             {JSON.stringify(reportSchema)}
@@ -120,11 +121,13 @@ export default function ResultPage() {
             carbonEstimate={result.carbonEstimate}
             greenHost={result.greenHost}
             reductionPct={result.reductionPct}
-            breakdown={result.result_data}
+            grade={result.grade}
+            percentile={result.percentile}
           />
           <ImpactStats 
             carbonPerView={result.carbonEstimate} 
             siteUrl={result.url} 
+            grade={result.grade} 
           />
           <ImpactSection />
           <BadgePromo siteUrl={result.url} />
