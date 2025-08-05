@@ -11,15 +11,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # THE FOLLOWING ARE CORRECT FOR YOUR SUPABASE BACKEND
+      # These are the correct variables for your Supabase backend
       - key: SUPABASE_URL
-        fromEnvironmentVar: SECRET_SUPABASE_URL # Use fromEnvironmentVar for secrets
+        fromEnvironmentVar: SECRET_SUPABASE_URL
       - key: SUPABASE_SERVICE_KEY
         fromEnvironmentVar: SECRET_SUPABASE_SERVICE_KEY
       - key: PAGESPEED_API_KEY
         fromEnvironmentVar: SECRET_PAGESPEED_API_KEY
-      # NOTE: The old RESULTS_DB_PATH key has been removed as it is not needed.
-      # NOTE: The old MASTER_API_KEY has been removed as it is not used in the code.
-
-    # NOTE: The 'disks' section has been removed as it is only for file databases
-    # and is not needed for Supabase.
