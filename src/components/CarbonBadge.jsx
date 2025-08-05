@@ -1,19 +1,18 @@
+// src/components/CarbonBadge.jsx
 import React, { useState, useEffect } from "react";
 import { API_BASE, RESULTS_BASE } from "../config";
 
-// NOTE: plural "/results"
+// NOTE: singular "/result"
 const RESULTS_PATH = "/result";
 
 export default function CarbonBadge({ url, data: preData }) {
   const [data, setData] = useState(preData || null);
   const [err, setErr] = useState(false);
 
-  // Normalize and skip localhost
+  // Normalize URL
   const target = (() => {
     try {
       const u = new URL(url);
-      if (u.hostname === "localhost" || u.hostname === "127.0.0.1")
-        return null;
       return (
         u.protocol +
         "//" +
@@ -27,43 +26,46 @@ export default function CarbonBadge({ url, data: preData }) {
 
   useEffect(() => {
     if (preData || !target) return;
+
     const key = `carbon:${target}`;
     const cached = sessionStorage.getItem(key);
     if (cached) {
+      console.log("⚡️ CarbonBadge: using cache for", target);
       setData(JSON.parse(cached));
       return;
     }
 
-    // use /api/trace to ensure a slug is generated
-    fetch(`${API_BASE}/api/trace?site=${encodeURIComponent(target)}`)
+    console.log("⚡️ CarbonBadge: fetching slug for", target);
+    fetch(`${API_BASE}/api/trace?site=${encodeURIComponent(target)}`, {
+      mode: "cors",
+    })
       .then((r) => {
+        console.log("⚡️ CarbonBadge: response status", r.status);
         if (!r.ok) throw new Error(r.status);
         return r.json();
       })
       .then((d) => {
+        console.log("⚡️ CarbonBadge: got data", d);
         setData(d);
         sessionStorage.setItem(key, JSON.stringify(d));
       })
-      .catch(() => setErr(true));
+      .catch((e) => {
+        console.error("⚡️ CarbonBadge: fetch error", e);
+        setErr(true);
+      });
   }, [target, preData]);
 
   if (!target) return null;
   if (err)
-    return (
-      <div className="text-red-500 text-xs">
-        Badge failed to load
-      </div>
-    );
+    return <div className="text-red-500 text-xs">Badge failed to load</div>;
   if (!data) return <div className="text-xs">Loading badge…</div>;
 
   const co2 = Number(data.carbonEstimate || 0).toFixed(2);
   const pct = data.percentile ?? "--";
-  const slug = data.slug; // guaranteed from /api/trace
+  const slug = data.slug; // must be non-empty
 
-  // Build the **frontend** URL
-  const href = `${RESULTS_BASE}${RESULTS_PATH}/${encodeURIComponent(
-    slug
-  )}`;
+  const href = `${RESULTS_BASE}${RESULTS_PATH}/${encodeURIComponent(slug)}`;
+  console.log("⚡️ CarbonBadge: badge link →", href);
 
   return (
     <div className="inline-flex flex-col items-center text-center">
@@ -71,14 +73,9 @@ export default function CarbonBadge({ url, data: preData }) {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex overflow-hidden rounded-md shadow-lg
-                   transform transition hover:scale-105"
+        className="inline-flex overflow-hidden rounded-md shadow-lg transform transition hover:scale-105"
       >
-        <div
-          className="px-4 py-2 bg-white dark:bg-slate-800 border
-                     border-greenbuzz text-sm font-semibold text-slate-900
-                     dark:text-slate-200 rounded-l-md"
-        >
+        <div className="px-4 py-2 bg-white dark:bg-slate-800 border border-greenbuzz text-sm font-semibold text-slate-900 dark:text-slate-200 rounded-l-md">
           {co2}g CO₂/view
         </div>
         <div className="flex items-center px-4 py-2 bg-greenbuzz rounded-r-md">

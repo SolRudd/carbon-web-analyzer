@@ -1,16 +1,17 @@
+// src/pages/Badge.jsx
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Helmet } from 'react-helmet-async'; // ✅ Import Helmet
+import { Helmet } from 'react-helmet-async';
 import { 
   FaCertificate,
-  FaCode, 
-  FaRocket, 
-  FaCopy, 
-  FaCheck, 
-  FaEye, 
-  FaPalette, 
-  FaGlobe, 
-  FaShieldAlt, 
+  FaCode,
+  FaRocket,
+  FaCopy,
+  FaCheck,
+  FaEye,
+  FaPalette,
+  FaGlobe,
+  FaShieldAlt,
   FaLightbulb,
   FaQuestionCircle,
   FaExternalLinkAlt,
@@ -24,7 +25,6 @@ import {
 } from "react-icons/fa";
 
 const badgeTypes = [
-  // ... (Your badgeTypes array is perfect, no changes needed)
   {
     id: "auto",
     title: "Auto Badge",
@@ -34,7 +34,12 @@ const badgeTypes = [
     bgColor: "bg-blue-50 dark:bg-blue-900/20",
     borderColor: "border-blue-200 dark:border-blue-700",
     recommended: true,
-    features: ["Auto light/dark detection", "Responsive design", "Auto-updates", "Fast loading"]
+    features: [
+      "Auto light/dark detection",
+      "Responsive design",
+      "Auto-updates",
+      "Fast loading"
+    ]
   },
   {
     id: "svg-light",
@@ -44,7 +49,12 @@ const badgeTypes = [
     color: "from-yellow-400 to-orange-500",
     bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
     borderColor: "border-yellow-200 dark:border-yellow-700",
-    features: ["Light backgrounds", "No JavaScript", "Fast loading", "SEO friendly"]
+    features: [
+      "Light backgrounds",
+      "No JavaScript",
+      "Fast loading",
+      "SEO friendly"
+    ]
   },
   {
     id: "svg-dark",
@@ -54,14 +64,18 @@ const badgeTypes = [
     color: "from-purple-500 to-indigo-600",
     bgColor: "bg-purple-50 dark:bg-purple-900/20",
     borderColor: "border-purple-200 dark:border-purple-700",
-    features: ["Dark backgrounds", "No JavaScript", "Fast loading", "SEO friendly"]
+    features: [
+      "Dark backgrounds",
+      "No JavaScript",
+      "Fast loading",
+      "SEO friendly"
+    ]
   }
 ];
 
-// ✅ Use your production origin + the new badge script we built
 const codeSnippets = {
   auto: `<div class="greentrace-badge" data-url="https://YOURDOMAIN.com" data-theme="auto"></div>
-<script src="https://www.greentracer.org/greentrace-badge.min.js" defer></script>`,
+<script src="https://www.greentracer.org/greentrace-badge.js" defer></script>`,
 
   "svg-light": `<a href="https://www.greentracer.org?ref=badge" target="_blank" rel="noopener noreferrer">
   <img src="https://www.greentracer.org/api/badge.svg?theme=light&url=https://YOURDOMAIN.com"
@@ -79,28 +93,31 @@ export default function Badge() {
   const [websiteUrl, setWebsiteUrl] = useState("https://yoursite.com");
   const [copiedCode, setCopiedCode] = useState(false);
 
-  // ✅ SEO: Create the HowTo schema for getting the badge
   const howToSchema = {
     "@context": "https://schema.org",
     "@type": "HowTo",
     "name": "How to Add the GreenTracer Carbon Badge to Your Website",
-    "description": "Display your website's carbon score with pride by following these three simple steps to add our responsive badge to your site.",
+    "description":
+      "Display your website's carbon score with pride by following these three simple steps to add our responsive badge to your site.",
     "step": [
       {
         "@type": "HowToStep",
         "name": "Test Your Website",
-        "text": "Visit our homepage and test your website's carbon footprint. You must test each page before the badge will display data.",
+        "text":
+          "Visit our homepage and test your website's carbon footprint. You must test each page before the badge will display data.",
         "url": "https://www.greentracer.org/#input-form"
       },
       {
         "@type": "HowToStep",
         "name": "Copy the Code",
-        "text": "Choose your preferred badge style on this page, enter your URL, and copy the generated code snippet."
+        "text":
+          "Choose your preferred badge style on this page, enter your URL, and copy the generated code snippet."
       },
       {
         "@type": "HowToStep",
         "name": "Add to Your Site",
-        "text": "Paste the code into your HTML, typically in the footer or sidebar. The badge will automatically display your carbon score."
+        "text":
+          "Paste the code into your HTML, typically in the footer or sidebar. The badge will automatically display your carbon score."
       }
     ]
   };
@@ -111,65 +128,88 @@ export default function Badge() {
       setCopiedCode(true);
       setTimeout(() => setCopiedCode(false), 2000);
     } catch (err) {
-      console.error('Failed to copy text: ', err);
+      console.error("Failed to copy text:", err);
     }
   };
 
   const getCurrentCode = () => {
-    // Keep your replacement logic as-is so users can paste any URL
-    return codeSnippets[selectedBadge].replace(/YOURDOMAIN\.com/g, websiteUrl.replace(/^https?:\/\//, ''));
+    return codeSnippets[selectedBadge].replace(
+      /YOURDOMAIN\.com/g,
+      websiteUrl.replace(/^https?:\/\//, "")
+    );
   };
 
-  const selectedBadgeInfo = badgeTypes.find(badge => badge.id === selectedBadge);
+  const selectedBadgeInfo = badgeTypes.find(
+    (badge) => badge.id === selectedBadge
+  );
 
   return (
     <>
-      {/* ✅ SEO: Full advanced Helmet setup for the Badge page */}
       <Helmet>
-        {/* -- Primary Meta Tags -- */}
         <title>Get Your Website Carbon Badge | GreenTracer</title>
-        <meta name="description" content="Display your website's carbon score with pride! Get the code for our responsive, auto-updating sustainability badge and show your environmental commitment." />
+        <meta
+          name="description"
+          content="Display your website's carbon score with pride! Get the code for our responsive, auto-updating sustainability badge and show your environmental commitment."
+        />
         <link rel="canonical" href="https://www.greentracer.org/badge" />
 
-        {/* -- Open Graph / Facebook -- */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://www.greentracer.org/badge" />
-        <meta property="og:title" content="Get Your Website Carbon Badge | GreenTracer" />
-        <meta property="og:description" content="Display your website's carbon score with pride! Get the code for our responsive, auto-updating sustainability badge." />
-        <meta property="og:image" content="https://www.greentracer.org/your-social-share-image-for-badge.jpg" />
+        <meta
+          property="og:title"
+          content="Get Your Website Carbon Badge | GreenTracer"
+        />
+        <meta
+          property="og:description"
+          content="Display your website's carbon score with pride! Get the code for our responsive, auto-updating sustainability badge."
+        />
+        <meta
+          property="og:image"
+          content="https://www.greentracer.org/your-social-share-image-for-badge.jpg"
+        />
 
-        {/* -- Twitter -- */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://www.greentracer.org/badge" />
-        <meta property="twitter:title" content="Get Your Website Carbon Badge | GreenTracer" />
-        <meta property="twitter:description" content="Display your website's carbon score with pride! Get the code for our responsive, auto-updating sustainability badge." />
-        <meta property="twitter:image" content="https://www.greentracer.org/your-social-share-image-for-badge.jpg" />
+        <meta
+          property="twitter:title"
+          content="Get Your Website Carbon Badge | GreenTracer"
+        />
+        <meta
+          property="twitter:description"
+          content="Display your website's carbon score with pride! Get the code for our responsive, auto-updating sustainability badge."
+        />
+        <meta
+          property="twitter:image"
+          content="https://www.greentracer.org/your-social-share-image-for-badge.jpg"
+        />
 
-        {/* -- Schema.org Markup -- */}
         <script type="application/ld+json">
           {JSON.stringify(howToSchema)}
         </script>
       </Helmet>
 
       <div className="bg-white dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
+        {/* Hero Section */}
         <section className="relative overflow-hidden py-20 px-4">
           <div className="absolute inset-0 pointer-events-none">
-            {/* ✅ Performance: Added 'motion-safe' to respect user settings */}
             <div className="absolute top-1/4 left-1/4 w-[700px] h-[700px] bg-green-400/20 transform -translate-x-1/2 -translate-y-1/2 blur-3xl opacity-30 motion-safe:animate-pulse" />
             <div className="absolute top-3/4 right-1/4 w-[500px] h-[500px] bg-blue-400/20 transform rotate-12 blur-2xl opacity-25 motion-safe:animate-pulse motion-safe:delay-1000" />
             <div className="absolute bottom-1/4 left-3/4 w-[400px] h-[400px] bg-purple-400/20 transform -rotate-45 blur-2xl opacity-20 motion-safe:animate-pulse motion-safe:delay-2000" />
           </div>
-
           <div className="relative z-10 max-w-6xl mx-auto text-center space-y-8">
             <div className="inline-flex items-center gap-3 bg-green-500/10 dark:bg-green-400/10 px-6 py-3 rounded-full border border-green-500/20 dark:border-green-400/20">
               <FaCertificate className="text-green-600 dark:text-green-400" />
-              <span className="text-green-600 dark:text-green-400 font-semibold">Carbon Badge</span>
+              <span className="text-green-600 dark:text-green-400 font-semibold">
+                Carbon Badge
+              </span>
             </div>
             <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-slate-900 via-green-600 to-green-600 dark:from-white dark:via-green-400 dark:to-blue-400 bg-clip-text text-transparent leading-tight">
               Show Your Green Credentials
             </h1>
             <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-300 max-w-4xl mx-auto leading-relaxed">
-              Display your website's carbon score with pride! Add our beautiful, responsive badge to showcase your environmental commitment to visitors.
+              Display your website's carbon score with pride! Add our
+              beautiful, responsive badge to showcase your environmental
+              commitment to visitors.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
               <Link
@@ -190,15 +230,19 @@ export default function Badge() {
           </div>
         </section>
 
-        {/* ... The rest of your JSX component is perfect, no other changes needed ... */}
-        <section id="badge-generator" className="py-16 px-4 bg-slate-50 dark:bg-slate-900/50">
+        {/* Badge Generator Section */}
+        <section
+          id="badge-generator"
+          className="py-16 px-4 bg-slate-50 dark:bg-slate-900/50"
+        >
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
                 Choose Your Badge Style
               </h2>
               <p className="text-lg text-slate-600 dark:text-slate-300">
-                Select the perfect badge for your website and customize it to match your design
+                Select the perfect badge for your website and customize it to
+                match your design
               </p>
             </div>
 
@@ -219,18 +263,21 @@ export default function Badge() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-6 mb-12">
-              {badgeTypes.map(badge => (
+              {badgeTypes.map((badge) => (
                 <div
                   key={badge.id}
                   onClick={() => setSelectedBadge(badge.id)}
                   className={`relative cursor-pointer transition-all duration-300 transform hover:scale-105 ${
-                    selectedBadge === badge.id ? 'scale-105' : ''
+                    selectedBadge === badge.id ? "scale-105" : ""
                   }`}
                 >
-                  <div className={`bg-white dark:bg-slate-800 rounded-2xl border-2 ${
-                    selectedBadge === badge.id ? badge.borderColor : 'border-slate-200 dark:border-slate-700'
-                  } shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden`}>
-                    
+                  <div
+                    className={`bg-white dark:bg-slate-800 rounded-2xl border-2 ${
+                      selectedBadge === badge.id
+                        ? badge.borderColor
+                        : "border-slate-200 dark:border-slate-700"
+                    } shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden`}
+                  >
                     {badge.recommended && (
                       <div className="absolute top-4 right-4 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold z-10">
                         Recommended
@@ -239,7 +286,9 @@ export default function Badge() {
 
                     <div className="p-6">
                       <div className="flex items-center gap-4 mb-4">
-                        <div className={`w-12 h-12 bg-gradient-to-r ${badge.color} rounded-xl flex items-center justify-center text-white shadow-lg`}>
+                        <div
+                          className={`w-12 h-12 bg-gradient-to-r ${badge.color} rounded-xl flex items-center justify-center text-white shadow-lg`}
+                        >
                           {badge.icon}
                         </div>
                         <div>
@@ -253,8 +302,11 @@ export default function Badge() {
                       </div>
 
                       <div className="space-y-2">
-                        {badge.features.map(feature => (
-                          <div key={feature} className="flex items-center gap-2">
+                        {badge.features.map((feature) => (
+                          <div
+                            key={feature}
+                            className="flex items-center gap-2"
+                          >
                             <FaCheck className="text-green-600 dark:text-green-400 text-sm" />
                             <span className="text-sm text-slate-600 dark:text-slate-400">
                               {feature}
@@ -265,7 +317,9 @@ export default function Badge() {
                     </div>
 
                     {selectedBadge === badge.id && (
-                      <div className={`absolute inset-0 border-4 ${badge.borderColor} rounded-2xl pointer-events-none`}>
+                      <div
+                        className={`absolute inset-0 border-4 ${badge.borderColor} rounded-2xl pointer-events-none`}
+                      >
                         <div className="absolute top-2 left-2 w-6 h-6 bg-green-600 rounded-full flex items-center justify-center">
                           <FaCheck className="text-white text-xs" />
                         </div>
@@ -278,13 +332,19 @@ export default function Badge() {
 
             <div className="max-w-4xl mx-auto">
               <div className="bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
-                <div className={`p-6 bg-gradient-to-r ${selectedBadgeInfo.color} text-white`}>
+                <div
+                  className={`p-6 bg-gradient-to-r ${selectedBadgeInfo.color} text-white`}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {selectedBadgeInfo.icon}
                       <div>
-                        <h3 className="text-xl font-bold">{selectedBadgeInfo.title} Code</h3>
-                        <p className="opacity-90">Copy and paste into your HTML</p>
+                        <h3 className="text-xl font-bold">
+                          {selectedBadgeInfo.title} Code
+                        </h3>
+                        <p className="opacity-90">
+                          Copy and paste into your HTML
+                        </p>
                       </div>
                     </div>
                     <button
@@ -292,7 +352,7 @@ export default function Badge() {
                       className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors duration-200"
                     >
                       {copiedCode ? <FaCheck /> : <FaCopy />}
-                      {copiedCode ? 'Copied!' : 'Copy'}
+                      {copiedCode ? "Copied!" : "Copy"}
                     </button>
                   </div>
                 </div>
