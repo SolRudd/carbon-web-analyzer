@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { API_BASE, RESULTS_BASE } from "../config";
 
 // NOTE: plural "/results"
-const RESULTS_PATH = "/results";
+const RESULTS_PATH = "/result";
 
 export default function CarbonBadge({ url, data: preData }) {
   const [data, setData] = useState(preData || null);

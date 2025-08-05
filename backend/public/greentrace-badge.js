@@ -1,7 +1,7 @@
 ;(function () {
   'use strict';
 
-  // Resolve BASE from this script’s URL so assets + API come from same origin
+  // Resolve BASE from this script's URL so assets + API come from same origin
   var me =
     (document.currentScript && document.currentScript.src) ||
     (function () {
@@ -16,11 +16,12 @@
   var LOGO_WEBP = BASE + '/GreenTraceLogo.webp';
   var LOGO_PNG  = BASE + '/GreenTraceLogo.png';
 
-  // Where result pages live (absolute), plural "results"
+  // WHERE RESULT PAGES LIVE - FIXED TO MATCH REACT VERSION
+  // Changed from plural "results" to singular "result"
   var RESULTS_BASE = API_BASE
     .replace(/^(https?:\/\/)api\./, '$1')  // drop "api." if present
     .replace(/\/+$/, '')                  // strip any trailing slash
-    + '/results';                         // use plural path
+    + '/result';                          // <-- FIXED: singular "result"
 
   function cleanUrl(url) {
     try {
@@ -109,6 +110,8 @@
     var slug = d.slug && String(d.slug).trim()
       ? String(d.slug).trim()
       : slugifyFromUrl(pageUrl);
+    
+    // NOW USES SINGULAR "/result" PATH TO MATCH REACT VERSION
     var href = RESULTS_BASE + '/' + encodeURIComponent(slug);
 
     var padY = 10, padX = 16, radius = 12, fontSize = 18;
