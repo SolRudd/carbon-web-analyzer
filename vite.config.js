@@ -1,22 +1,24 @@
 // vite.config.js
-
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import Prerenderer from 'vite-plugin-prerenderer'; // ✅ THE ONLY CHANGE IS HERE
 import path from 'path';
 import glob from 'fast-glob';
 
+// Helper: dynamically generate blog routes
 const getBlogRoutes = async () => {
   const blogDir = path.join(process.cwd(), 'src', 'blog');
   const files = await glob('*.jsx', { cwd: blogDir });
   return files.map(file => `/blog/${file.replace(/\.jsx$/, '')}`);
 };
 
-export default defineConfig(async ({ command }) => {
+export default defineConfig(async ({ command, mode }) => {
   const blogRoutes = await getBlogRoutes();
-  
   const plugins = [react()];
-  if (command === 'build') {
+
+  // ✅ Only run prerendering if NOT on Vercel
+  const isVercel = process.env.VERCEL === '1';
+  if (command === 'build' && !isVercel) {
+    const Prerenderer = (await import('vite-plugin-prerenderer')).default;
     plugins.push(
       new Prerenderer({
         staticDir: path.join(process.cwd(), 'dist'),
@@ -56,7 +58,7 @@ export default defineConfig(async ({ command }) => {
     build: {
       outDir: 'dist',
       sourcemap: false,
-      chunkSizeWarningLimit: 600,
+      chunkSizeWarningLimit: 2000, // Avoid warnings for large bundles
     },
   };
 });
