@@ -7,7 +7,7 @@
     "dev": "vite",
     "sitemap": "tsx scripts/generate-sitemap.mjs",
     "minify-badge": "node scripts/minify-badge.js",
-    "build": "npm run sitemap && npm run minify-badge && vite build",
+    "build": "npx puppeteer browsers install chrome && npm run sitemap && npm run minify-badge && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "img:webp": "node scripts/convert-images.mjs webp",
