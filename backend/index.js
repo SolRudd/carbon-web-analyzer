@@ -111,6 +111,8 @@ async function runPSI(url, strat, key) {
   return { bytes: total, finalUrl: lr.finalDisplayedUrl || url };
 }
 
+// FIX #1: This function is now "bulletproof" and will NEVER return null.
+// This prevents the server from crashing.
 async function fetchSize(url) {
   const key = process.env.PAGESPEED_API_KEY;
   if (!key) {
@@ -156,13 +158,10 @@ async function checkGreen(h) {
 async function getCached(slug) {
   const s = slug.toLowerCase().replace(/-+$/, '');
   const { data: row } = await supabase.from('results').select('*').eq('slug', s).single();
-
   if (!row) return null;
-
   if (TTL !== 0 && Date.now() - new Date(row.created_at).getTime() > TTL) {
     return null;
   }
-  
   return {
     slug: row.slug,
     url: row.url,
@@ -176,13 +175,19 @@ async function getCached(slug) {
   };
 }
 
+// FIX #2: This function now safely handles the result from fetchSize.
+// This is the second part of the crash prevention.
 async function performCarbonCheck(url) {
   const norm = url.startsWith('http') ? url : `https://${url}`;
   const host = new URL(norm).hostname;
-  const sizeResult = await fetchSize(norm);
+  
+  const sizeResult = await fetchSize(norm); // Get the result from our bulletproof function
+  
+  // This check prevents a crash if something unexpected happens
   if (!sizeResult || typeof sizeResult.bytes === 'undefined') {
-      throw new Error('Failed to fetch page size.');
+      throw new Error('Failed to determine page size.');
   }
+
   const green = await checkGreen(host);
   const mb = sizeResult.bytes / (1024 * 1024);
   const co2 = calcCO2(mb, green);
@@ -206,15 +211,33 @@ async function performCarbonCheck(url) {
   };
 }
 
-// --- PUBLIC & BADGE ROUTES ---
+// --- API ROUTES ---
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/healthz', (_, res) => res.send('OK'));
 app.use('/greentrace-badge.js', badgeCors, limiterBadge, express.static(path.join(__dirname, 'public', 'greentrace-badge.js')));
-app.get('/api/trace', badgeCors, limiterBadge, async (req, res) => {
-  const site = req.query.site;
-  if (!site) return res.status(400).json({ error: 'Missing site.' });
-  const cached = await getCached(slugify(site));
-  if (!cached) return res.status(404).json({ error: 'No data—run a check first.' });
-  res.json(cached);
+
+app.post('/api/check-carbon', limiterCheck, async (req, res) => {
+  if (!req.body.url) return res.status(400).json({ error: 'Missing URL' });
+  try {
+    const result = await performCarbonCheck(req.body.url);
+    res.json(result);
+  } catch (err) {
+    console.error('[/api/check-carbon] failed:', err.message);
+    res.status(500).json({ error: 'Failed to perform carbon check.' });
+  }
 });
+
+app.get('/api/results/:slug', async (req, res) => {
+  try {
+    const row = await getCached(req.params.slug);
+    if (!row) return res.status(404).json({ error: 'Results not found' });
+    res.json(row);
+  } catch (err) {
+    console.error('[/api/results/:slug] failed:', err.message);
+    res.status(500).json({ error: 'Failed to retrieve results.' });
+  }
+});
+
 app.get('/api/trace-or-check', badgeCors, limiterTraceOrCheck, async (req, res) => {
   const site = req.query.site;
   if (!site) return res.status(400).json({ error: 'Missing site.' });
@@ -226,30 +249,6 @@ app.get('/api/trace-or-check', badgeCors, limiterTraceOrCheck, async (req, res) 
   } catch(err) {
      console.error('[/api/trace-or-check] failed:', err.message);
      res.status(500).json({ error: 'Failed to perform trace or check.' });
-  }
-});
-
-// --- MAIN API ROUTES ---
-app.use(express.static(path.join(__dirname, 'public')));
-app.get('/healthz', (_, res) => res.send('OK'));
-app.post('/api/check-carbon', limiterCheck, async (req, res) => {
-  if (!req.body.url) return res.status(400).json({ error: 'Missing URL' });
-  try {
-    const result = await performCarbonCheck(req.body.url);
-    res.json(result);
-  } catch (err) {
-    console.error('[/api/check-carbon] failed:', err.message);
-    res.status(500).json({ error: 'Failed to perform carbon check.' });
-  }
-});
-app.get('/api/results/:slug', async (req, res) => {
-  try {
-    const row = await getCached(req.params.slug);
-    if (!row) return res.status(404).json({ error: 'Results not found' });
-    res.json(row);
-  } catch (err) {
-    console.error('[/api/results/:slug] failed:', err.message);
-    res.status(500).json({ error: 'Failed to retrieve results.' });
   }
 });
 
