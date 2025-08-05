@@ -17,19 +17,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-// --- MIDDLEWARE & SECURITY ---
-app.set('trust proxy', 1);
-app.use(
-  helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } })
-);
-app.use(express.json());
-
-// --- RATE LIMITS ---
-const limiterCheck = rateLimit({ windowMs: 24 * 60 * 60 * 1000, max: 20 });
-const limiterBadge = rateLimit({ windowMs: 60 * 1000, max: 60 });
-const limiterTraceOrCheck = rateLimit({ windowMs: 60 * 1000, max: 12 });
-
-// --- CORS ---
+// --- CORS CONFIG ---
 const badgeCors = cors({ origin: '*', methods: ['GET'] });
 const ALLOWED = [
   'http://localhost:5173',
@@ -45,6 +33,17 @@ function dynamicCORS(origin, cb) {
     cb(new Error(`Blocked CORS origin: ${origin}`));
   }
 }
+
+// --- MIDDLEWARE & SECURITY (FIX #1: CORS is now here) ---
+app.set('trust proxy', 1);
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+app.use(cors({ origin: dynamicCORS, methods: ['GET', 'POST'], allowedHeaders: ['Content-Type'] }));
+app.use(express.json());
+
+// --- RATE LIMITS ---
+const limiterCheck = rateLimit({ windowMs: 24 * 60 * 60 * 1000, max: 20 });
+const limiterBadge = rateLimit({ windowMs: 60 * 1000, max: 60 });
+const limiterTraceOrCheck = rateLimit({ windowMs: 60 * 1000, max: 12 });
 
 // --- TTL FOR CACHE ---
 const TTL = process.env.DEBUG_TTL_ZERO ? 0 : 24 * 60 * 60 * 1000;
@@ -111,18 +110,42 @@ async function runPSI(url, strat, key) {
   const total = Math.max(byteAudit, items.reduce((s, i) => s + (i.transferSize || 0), 0));
   return { bytes: total, finalUrl: lr.finalDisplayedUrl || url };
 }
+
+// ** FIX #2: fetchSize is now robust and will not crash or return null **
 async function fetchSize(url) {
   const key = process.env.PAGESPEED_API_KEY;
-  if (!key) return { bytes: await htmlOnlyEstimateMB(url) * 1024 * 1024, finalUrl: url };
+  if (!key) {
+    const estimatedBytes = await htmlOnlyEstimateMB(url) * 1024 * 1024;
+    return { bytes: estimatedBytes, finalUrl: url };
+  }
   try {
-    const [d, m] = await Promise.allSettled([runPSI(url, 'desktop', key), runPSI(url, 'mobile', key)]);
-    let best = d.status === 'fulfilled' ? d.value : null;
-    if (m.status === 'fulfilled' && (!best || m.value.bytes > best.bytes)) best = m.value;
-    return best;
-  } catch {
-    return { bytes: await htmlOnlyEstimateMB(url) * 1024 * 1024, finalUrl: url };
+    const [d, m] = await Promise.allSettled([
+      runPSI(url, 'desktop', key),
+      runPSI(url, 'mobile', key),
+    ]);
+
+    let bestResult = null;
+    if (d.status === 'fulfilled') {
+      bestResult = d.value;
+    }
+    if (m.status === 'fulfilled' && (!bestResult || m.value.bytes > bestResult.bytes)) {
+      bestResult = m.value;
+    }
+
+    if (bestResult) {
+      return bestResult;
+    } else {
+      console.warn(`PSI failed for ${url}, falling back to HTML-only estimate.`);
+      const estimatedBytes = await htmlOnlyEstimateMB(url) * 1024 * 1024;
+      return { bytes: estimatedBytes, finalUrl: url };
+    }
+  } catch (err) {
+    console.error(`Catastrophic failure in fetchSize for ${url}:`, err.message);
+    const estimatedBytes = await htmlOnlyEstimateMB(url) * 1024 * 1024;
+    return { bytes: estimatedBytes, finalUrl: url };
   }
 }
+
 async function checkGreen(h) {
   try {
     const { data } = await axios.get(`https://api.thegreenwebfoundation.org/greencheck/${h}`, { timeout: 8000 });
@@ -133,25 +156,45 @@ async function checkGreen(h) {
 }
 
 // --- DATABASE FUNCTIONS ---
+// ** FIX #3: getCached now returns consistent camelCase data **
 async function getCached(slug) {
   const s = slug.toLowerCase().replace(/-+$/, '');
   const { data: row } = await supabase.from('results').select('*').eq('slug', s).single();
+
   if (!row) return null;
-  if (TTL !== 0 && Date.now() - new Date(row.created_at).getTime() > TTL) return null;
-  return { ...row, greenHost: !!row.green_host };
+
+  if (TTL !== 0 && Date.now() - new Date(row.created_at).getTime() > TTL) {
+    return null;
+  }
+  
+  return {
+    slug: row.slug,
+    url: row.url,
+    greenHost: !!row.green_host,
+    carbonEstimate: +row.carbon_estimate,
+    grade: row.grade,
+    percentile: +row.percentile,
+    reductionPct: +row.reduction_pct,
+    timestamp: new Date(row.created_at).getTime(),
+    result_data: row.result_data 
+  };
 }
 async function performCarbonCheck(url) {
   const norm = url.startsWith('http') ? url : `https://${url}`;
   const host = new URL(norm).hostname;
-  const [green, size] = await Promise.all([checkGreen(host), fetchSize(norm)]);
-  const mb = size.bytes / (1024 * 1024);
+  const sizeResult = await fetchSize(norm); // Changed to await fetchSize
+  if (!sizeResult || typeof sizeResult.bytes === 'undefined') {
+      throw new Error('Failed to fetch page size.');
+  }
+  const green = await checkGreen(host);
+  const mb = sizeResult.bytes / (1024 * 1024);
   const co2 = calcCO2(mb, green);
   const pct = percentileFromCarbon(co2);
   const red = green ? totalGreenReductionPct() : 0;
-  const slug = slugify(size.finalUrl || norm);
+  const slug = slugify(sizeResult.finalUrl || norm);
   const grade = gradeFor(co2);
   const { data: row } = await supabase.from('results').upsert(
-    { slug, url: size.finalUrl || norm, green_host: green, carbon_estimate: co2, grade, percentile: pct, reduction_pct: red, result_data: { size } },
+    { slug, url: sizeResult.finalUrl || norm, green_host: green, carbon_estimate: co2, grade, percentile: pct, reduction_pct: red, result_data: { size: sizeResult } },
     { onConflict: 'slug' }
   ).select().single();
   return {
@@ -185,7 +228,6 @@ app.get('/api/trace-or-check', badgeCors, limiterTraceOrCheck, async (req, res) 
 });
 
 // --- MAIN API ROUTES ---
-app.use(cors({ origin: dynamicCORS, methods: ['GET', 'POST'], allowedHeaders: ['Content-Type'] }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/healthz', (_, res) => res.send('OK'));
 app.post('/api/check-carbon', limiterCheck, async (req, res) => {
@@ -206,7 +248,13 @@ app.get('/api/results/:slug', async (req, res) => {
 
 // --- FALLBACKS & ERROR HANDLING ---
 app.use((_, res) => res.status(404).json({ error: 'Endpoint not found' }));
-app.use((err, _, res) => { console.error(err); res.status(500).json({ error: 'Server error' }); });
+app.use((err, _, res, next) => {
+  console.error(err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(500).json({ error: 'Server error' });
+});
 
 // --- START SERVER ---
 app.listen(PORT, '0.0.0.0', () => console.log(`🚀 GreenTrace API listening on port ${PORT}`));

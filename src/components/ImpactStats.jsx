@@ -1,4 +1,3 @@
-// src/components/ImpactStats.jsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -8,23 +7,17 @@ import {
 const VIEW_OPTIONS = [1, 10, 100, 1000, 10000, 50000, 100000, 500000, 1000000];
 
 export default function ImpactStats({ carbonPerView = 0, siteUrl }) {
-  const [idx, setIdx] = useState(3); // default 1,000 views/month
+  const [idx, setIdx] = useState(3);
   const monthlyViews = VIEW_OPTIONS[idx];
 
-  // Annual CO₂ in grams (grams/view * views/month * 12 months)
-  const annualCO2gRaw = Number(carbonPerView) * monthlyViews * 12;
+  // ** THIS IS THE FIX: Ensures calculations are always based on a valid number. **
+  const validCarbonPerView = Number(carbonPerView) || 0;
+  const annualCO2gRaw = validCarbonPerView * monthlyViews * 12;
 
-  // Display g or kg
   const isKg = annualCO2gRaw >= 1000;
   const displayValue = isKg ? (annualCO2gRaw / 1000).toFixed(2) : Math.round(annualCO2gRaw);
   const displayUnit  = isKg ? "kg" : "g";
 
-  // Equivalencies (all annual)
-  // Sources/assumptions:
-  //  - 1 cup of tea ≈ 18 g CO₂
-  //  - 1 kWh ≈ 475 g CO₂ (global average)
-  //  - 1 smartphone charge ≈ 8.22 g CO₂
-  //  - 1 tree absorbs ≈ 21.77 kg CO₂/year ≈ 21,770 g
   const TEA_G_PER_CUP   = 18;
   const G_PER_KWH       = 475;
   const G_PER_CHARGE    = 8.22;
@@ -61,11 +54,10 @@ export default function ImpactStats({ carbonPerView = 0, siteUrl }) {
     },
   ];
 
-  // Grade for display only (same thresholds as backend)
   const THRESHOLDS = { "A+": 0.095, A: 0.186, B: 0.341, C: 0.493, D: 0.656, E: 0.846 };
   let co2Grade = "F";
   Object.entries(THRESHOLDS).some(([g, t]) => {
-    if (carbonPerView <= t) { co2Grade = g; return true; }
+    if (validCarbonPerView <= t) { co2Grade = g; return true; }
     return false;
   });
   const gradeConfig = {
@@ -81,8 +73,7 @@ export default function ImpactStats({ carbonPerView = 0, siteUrl }) {
 
   const prev = () => setIdx((i) => Math.max(0, i - 1));
   const next = () => setIdx((i) => Math.min(VIEW_OPTIONS.length - 1, i + 1));
-
-  // Animations
+  
   const containerVariants = { hidden: { opacity: 0, y: 50 }, visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.1, duration: 0.6, ease: "easeOut" } } };
   const itemVariants      = { hidden: { opacity: 0, y: 20 }, visible:  { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } } };
 
