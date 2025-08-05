@@ -158,34 +158,45 @@ async function getCached(slug) {
 async function performCarbonCheck(url) {
   const norm = url.startsWith('http') ? url : `https://${url}`;
   const host = new URL(norm).hostname;
-  const [green, sizeInfo] = await Promise.all([
-    checkGreen(host),
-    fetchSize(norm),
-  ]);
-  const sizeMB = sizeInfo.bytes / (1024 * 1024);
+  const [green, sizeInfo] = await Promise.all([checkGreen(host), fetchSize(norm)]);
+  const sizeMB = (sizeInfo.bytes || 0) / (1024 * 1024);
   const measuredUrl = sizeInfo.finalUrl || norm;
-  console.log(
-    `[check-carbon] green=${green} sizeMB=${sizeMB.toFixed(3)} url=${measuredUrl}`
-  );
+  console.log(`[check-carbon] green=${green} sizeMB=${sizeMB.toFixed(3)} url=${measuredUrl}`);
   const carbon = calcCO2(sizeMB, green);
   const pct = percentileFromCarbon(carbon);
   const reductionPct = green ? totalGreenReductionPct() : 0;
   const slug = slugify(measuredUrl);
   const grade = gradeFor(carbon);
-  const { data, error } = await supabase
+  // Upsert into Supabase
+  const { data: row, error } = await supabase
     .from('results')
-    .upsert(
-      {
-        slug: slug,
-        url: measuredUrl,
-        green_host: green,
-        carbon_estimate: carbon,
-        grade: grade,
-        percentile: pct,
-        reduction_pct: reductionPct,
-        result_data: { sizeInfo },
-      },
-      { onConflict: 'slug' }
+    .upsert({
+      slug: slug,
+      url: measuredUrl,
+      green_host: green,
+      carbon_estimate: carbon,
+      grade: grade,
+      percentile: pct,
+      reduction_pct: reductionPct,
+      result_data: { sizeInfo }
+    }, { onConflict: 'slug' })
+    .select()
+    .single();
+  if (error) throw error;
+  // Return camelCase keys for the frontend
+  return {
+    slug: row.slug,
+    url: row.url,
+    greenHost: !!row.green_host,
+    sizeMB: +row.carbon_estimate, // optional, if you want to surface
+    carbonEstimate: +row.carbon_estimate,
+    grade: row.grade,
+    percentile: +row.percentile,
+    reductionPct: +row.reduction_pct,
+    resultData: row.result_data,
+    timestamp: new Date(row.created_at).getTime()
+  };
+}
     )
     .select()
     .single();
