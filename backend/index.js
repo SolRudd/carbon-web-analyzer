@@ -36,7 +36,8 @@ const limiterTraceOrCheck = rateLimit({ windowMs: 60 * 1000, max: 12, message: {
 const badgeCors = cors({ origin: '*', methods: ['GET'], allowedHeaders: ['Content-Type'] });
 const ALLOWED = [
   'http://localhost:5173', 'https://greentracer.org', 'https://www.greentracer.org',
-  'https://greentracer-frontend.vercel.app', 'https://buzzboost.co.uk', /^https:\/\/.*\.buzzboost\.co\.uk$/
+  'https://greentracer-frontend.vercel.app', /^https:\/\/greentracer-frontend-.*\.vercel\.app$/,
+  'https://buzzboost.co.uk', /^https:\/\/.*\.buzzboost\.co\.uk$/
 ];
 function dynamicCORS(origin, cb) {
   if (!origin || ALLOWED.some(rule => typeof rule === 'string' ? rule === origin : rule.test(origin))) {
@@ -48,7 +49,7 @@ function dynamicCORS(origin, cb) {
 // --- TTL FOR CACHE ---
 const TTL = process.env.DEBUG_TTL_ZERO ? 0 : 24 * 60 * 60 * 1000;
 
-// --- HELPER FUNCTIONS (Restored from your original file) ---
+// --- HELPER FUNCTIONS ---
 function slugify(site) {
   try {
     const u = new URL(site.startsWith('http') ? site : `https://${site}`);
@@ -85,7 +86,6 @@ function calcCO2(sizeMB, isGreenDC) {
   const grams = kWh * GRID_INTENSITY;
   return grams < 0.01 ? +grams.toPrecision(2) : grams < 1 ? +grams.toFixed(3) : +grams.toFixed(2);
 }
-
 async function runPSI(url, strategy, apiKey) {
   const api = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}&category=performance&key=${apiKey}`;
   const r = await axios.get(api, { timeout: 30000 });
@@ -133,37 +133,32 @@ async function checkGreen(host) {
   } catch { return false; }
 }
 
+// DATABASE FUNCTIONS
 async function getCached(slug) {
   const s = String(slug || '').toLowerCase().replace(/-+$/,'');
   const { data: row, error } = await supabase.from('results').select('*').eq('slug', s).single();
   if (error || !row) return null;
   if (TTL !== 0 && Date.now() - new Date(row.created_at).getTime() > TTL) return null;
-  return { ...row, greenHost: !!row.green_host }; // Reformat to match frontend expectations
+  return { ...row, greenHost: !!row.green_host };
 }
-
 async function performCarbonCheck(url) {
     const norm = url.startsWith('http') ? url : `https://${url}`;
     const host = new URL(norm).hostname;
-
     const [green, sizeInfo] = await Promise.all([checkGreen(host), fetchSize(norm)]);
     const sizeMB = (sizeInfo.bytes || 0) / (1024 * 1024);
     const measuredUrl = sizeInfo.finalUrl || norm;
-
     console.log(`[check-carbon] green=${green} sizeMB=${sizeMB.toFixed(3)} url=${measuredUrl}`);
-
     const carbon = calcCO2(sizeMB, green);
     const pct = percentileFromCarbon(carbon);
     const reductionPct = green ? totalGreenReductionPct() : 0;
     const slug = slugify(measuredUrl);
     const grade = gradeFor(carbon);
-
     const { data, error } = await supabase.from('results').upsert({
-        slug: slug, url: measuredUrl, green_host: green, carbon_estimate: carbon, grade: grade, 
+        slug: slug, url: measuredUrl, green_host: green, carbon_estimate: carbon, grade: grade,
         percentile: pct, reduction_pct: reductionPct, result_data: { sizeInfo }
     }, { onConflict: 'slug' }).select().single();
-
     if (error) throw error;
-    return data;
+    return { ...data, greenHost: !!data.green_host };
 }
 
 // --- Badge and Public API Routes ---
@@ -187,7 +182,7 @@ app.get('/api/trace-or-check', badgeCors, limiterTraceOrCheck, async (req, res) 
     res.json(freshResult);
   } catch (e) {
     console.error('[trace-or-check] failed:', e.message);
-    return res.status(500).json({ error: 'Trace failed' });
+    res.status(500).json({ error: 'Trace failed' });
   }
 });
 
@@ -202,6 +197,7 @@ app.post('/api/check-carbon', requireApiKey, limiterCheck, async (req, res) => {
     const result = await performCarbonCheck(req.body.url);
     res.json(result);
   } catch (err) {
+    console.error('[/api/check-carbon] failed:', err.message);
     res.status(500).json({ error: 'Failed to perform carbon check.' });
   }
 });
@@ -210,28 +206,6 @@ app.get('/api/results/:slug', async (req, res) => {
   const row = await getCached(req.params.slug);
   if (!row) return res.status(404).json({ error: 'Results not found' });
   res.json(row);
-});
-
-app.get('/api/results/all-slugs', async (req, res) => {
-  try {
-    const { data, error } = await supabase.from('results').select('slug');
-    if (error) throw error;
-    res.status(200).json(data.map(item => item.slug));
-  } catch (err) { res.status(500).json({ error: 'Internal Server Error' }); }
-});
-
-app.get('/api/clean-db', requireApiKey, async (req, res) => {
-  if (req.query.secret !== process.env.CLEAN_DB_SECRET) return res.status(401).json({ error:'Unauthorized.' });
-  const { error } = await supabase.from('results').delete().neq('slug', 'this-is-a-placeholder-for-safety');
-  if (error) return res.status(500).json({ error: 'Failed to wipe database.' });
-  res.json({ ok: true, message: 'Database wiped.' });
-});
-
-app.get('/api/debug-pagesize', requireApiKey, async (req, res) => {
-  const url = req.query.url;
-  if (!url) return res.status(400).json({ error: 'url query required' });
-  const { bytes, finalUrl } = await fetchSize(url);
-  res.json({ requested: url, finalUrl, bytes, sizeMB: +(bytes / (1024 * 1024)).toFixed(6) });
 });
 
 // --- 404 & Global Error Handler ---
