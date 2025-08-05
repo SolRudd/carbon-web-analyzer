@@ -11,8 +11,9 @@ export default function ResultDetails({
   reductionPct = 0,       // overall %, server computed (~8 when green)
   breakdown               // optional object from backend (transparency)
 }) {
-  // ** THIS IS THE FIX: Ensures co2 is always a number, preventing NaN errors. **
-  const co2 = (Number(carbonEstimate) || 0).toFixed(2);
+  // ** FINAL FIX: This makes the component robust and prevents NaN errors **
+  const validCarbonEstimate = Number(carbonEstimate) || 0;
+  const co2 = validCarbonEstimate.toFixed(2);
 
   const POTENTIAL_OVERALL = breakdown?.totalReductionApprox ?? 8;
   const savePct = Math.round(greenHost ? (Number(reductionPct) || POTENTIAL_OVERALL) : POTENTIAL_OVERALL);
@@ -20,7 +21,7 @@ export default function ResultDetails({
   const THRESHOLDS = { "A+": 0.095, A: 0.186, B: 0.341, C: 0.493, D: 0.656, E: 0.846 };
   let co2Grade = "F";
   Object.entries(THRESHOLDS).some(([g, t]) => {
-    if ((Number(carbonEstimate) || 0) <= t) { co2Grade = g; return true; }
+    if (validCarbonEstimate <= t) { co2Grade = g; return true; }
     return false;
   });
 

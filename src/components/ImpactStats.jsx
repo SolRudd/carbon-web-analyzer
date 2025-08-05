@@ -7,10 +7,10 @@ import {
 const VIEW_OPTIONS = [1, 10, 100, 1000, 10000, 50000, 100000, 500000, 1000000];
 
 export default function ImpactStats({ carbonPerView = 0, siteUrl }) {
-  const [idx, setIdx] = useState(3);
+  const [idx, setIdx] = useState(3); // default 1,000 views/month
   const monthlyViews = VIEW_OPTIONS[idx];
 
-  // ** THIS IS THE FIX: Ensures calculations are always based on a valid number. **
+  // ** FINAL FIX: This makes the component robust and prevents NaN errors **
   const validCarbonPerView = Number(carbonPerView) || 0;
   const annualCO2gRaw = validCarbonPerView * monthlyViews * 12;
 

@@ -34,7 +34,7 @@ function dynamicCORS(origin, cb) {
   }
 }
 
-// --- MIDDLEWARE & SECURITY (FIX #1: CORS is now here) ---
+// --- MIDDLEWARE & SECURITY ---
 app.set('trust proxy', 1);
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({ origin: dynamicCORS, methods: ['GET', 'POST'], allowedHeaders: ['Content-Type'] }));
@@ -111,7 +111,6 @@ async function runPSI(url, strat, key) {
   return { bytes: total, finalUrl: lr.finalDisplayedUrl || url };
 }
 
-// ** FIX #2: fetchSize is now robust and will not crash or return null **
 async function fetchSize(url) {
   const key = process.env.PAGESPEED_API_KEY;
   if (!key) {
@@ -123,7 +122,6 @@ async function fetchSize(url) {
       runPSI(url, 'desktop', key),
       runPSI(url, 'mobile', key),
     ]);
-
     let bestResult = null;
     if (d.status === 'fulfilled') {
       bestResult = d.value;
@@ -131,7 +129,6 @@ async function fetchSize(url) {
     if (m.status === 'fulfilled' && (!bestResult || m.value.bytes > bestResult.bytes)) {
       bestResult = m.value;
     }
-
     if (bestResult) {
       return bestResult;
     } else {
@@ -156,7 +153,6 @@ async function checkGreen(h) {
 }
 
 // --- DATABASE FUNCTIONS ---
-// ** FIX #3: getCached now returns consistent camelCase data **
 async function getCached(slug) {
   const s = slug.toLowerCase().replace(/-+$/, '');
   const { data: row } = await supabase.from('results').select('*').eq('slug', s).single();
@@ -179,10 +175,11 @@ async function getCached(slug) {
     result_data: row.result_data 
   };
 }
+
 async function performCarbonCheck(url) {
   const norm = url.startsWith('http') ? url : `https://${url}`;
   const host = new URL(norm).hostname;
-  const sizeResult = await fetchSize(norm); // Changed to await fetchSize
+  const sizeResult = await fetchSize(norm);
   if (!sizeResult || typeof sizeResult.bytes === 'undefined') {
       throw new Error('Failed to fetch page size.');
   }
@@ -221,10 +218,15 @@ app.get('/api/trace', badgeCors, limiterBadge, async (req, res) => {
 app.get('/api/trace-or-check', badgeCors, limiterTraceOrCheck, async (req, res) => {
   const site = req.query.site;
   if (!site) return res.status(400).json({ error: 'Missing site.' });
-  const cached = await getCached(slugify(site));
-  if (cached) return res.json(cached);
-  const fresh = await performCarbonCheck(site);
-  res.json(fresh);
+  try {
+    const cached = await getCached(slugify(site));
+    if (cached) return res.json(cached);
+    const fresh = await performCarbonCheck(site);
+    res.json(fresh);
+  } catch(err) {
+     console.error('[/api/trace-or-check] failed:', err.message);
+     res.status(500).json({ error: 'Failed to perform trace or check.' });
+  }
 });
 
 // --- MAIN API ROUTES ---
@@ -241,9 +243,14 @@ app.post('/api/check-carbon', limiterCheck, async (req, res) => {
   }
 });
 app.get('/api/results/:slug', async (req, res) => {
-  const row = await getCached(req.params.slug);
-  if (!row) return res.status(404).json({ error: 'Results not found' });
-  res.json(row);
+  try {
+    const row = await getCached(req.params.slug);
+    if (!row) return res.status(404).json({ error: 'Results not found' });
+    res.json(row);
+  } catch (err) {
+    console.error('[/api/results/:slug] failed:', err.message);
+    res.status(500).json({ error: 'Failed to retrieve results.' });
+  }
 });
 
 // --- FALLBACKS & ERROR HANDLING ---
