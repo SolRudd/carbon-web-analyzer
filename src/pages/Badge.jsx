@@ -75,15 +75,15 @@ const badgeTypes = [
 
 const codeSnippets = {
   auto: `<div class="greentrace-badge" data-url="https://YOURDOMAIN.com" data-theme="auto"></div>
-<script src="https://www.greentracer.org/greentrace-badge.js" defer></script>`,
+<script src="https://www.api.greentracer.org/greentrace-badge.js" defer></script>`,
 
   "svg-light": `<a href="https://www.greentracer.org?ref=badge" target="_blank" rel="noopener noreferrer">
-  <img src="https://www.greentracer.org/api/badge.svg?theme=light&url=https://YOURDOMAIN.com"
+  <img src="https://www.api.greentracer.org/api/badge.svg?theme=light&url=https://YOURDOMAIN.com"
        alt="GreenTracer Badge (Light)" width="160" />
 </a>`,
 
   "svg-dark": `<a href="https://www.greentracer.org?ref=badge" target="_blank" rel="noopener noreferrer">
-  <img src="https://www.greentracer.org/api/badge.svg?theme=dark&url=https://YOURDOMAIN.com"
+  <img src="https://www.api.greentracer.org/api/badge.svg?theme=dark&url=https://YOURDOMAIN.com"
        alt="GreenTracer Badge (Dark)" width="160" />
 </a>`
 };
