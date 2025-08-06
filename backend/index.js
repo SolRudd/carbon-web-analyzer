@@ -33,14 +33,7 @@ const badgeCors = cors({ origin:'*', methods:['GET'] });
 
 // allow API calls from your frontends (and any badge user)
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'https://greentracer.org',
-    'https://www.greentracer.org',
-    /^https?:\/\/.*\.vercel\.app$/,
-    'https://buzzboost.co.uk',
-    '*'  // <— ensure badge.svg and JS badge always work
-  ],
+  origin: true,   // echo back whatever Origin header the client sent
   methods: ['GET','POST'],
   allowedHeaders: ['Content-Type','X-API-Key']
 }));
