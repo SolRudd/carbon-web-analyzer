@@ -59,7 +59,7 @@
         renderBadge(data, siteUrl, el);
       })
       .catch(function() {
-        el.innerHTML = 
+        el.innerHTML =
           '<div style="color:#dc2626;font-size:12px;">Run a carbon check first at ' +
           '<a href="https://www.greentracer.org" target="_blank" rel="noopener noreferrer">' +
           'greentracer.org</a></div>';
@@ -73,13 +73,14 @@
     var slug = data.slug ? String(data.slug).trim() : slugifyFromUrl(pageUrl);
     var href = RESULTS_BASE + '/' + encodeURIComponent(slug);
 
-    // match React’s rounded-md (6px), text-sm (14px), px-4 py-2 (16/8px), shadow-lg
+    // sizing to match your React badge (rounded-md / text-sm / px-4 py-2 / shadow-lg)
     var padY     = 8;
     var padX     = 16;
     var radius   = 6;
     var fontSize = 14;
 
-    el.innerHTML =
+    // the badge itself
+    var badgeHTML =
       '<a href="' + href + '" target="_blank" rel="noopener noreferrer" ' +
          'style="text-decoration:none;display:inline-block">' +
         '<div style="' +
@@ -113,10 +114,24 @@
             '</picture>' +
           '</div>' +
         '</div>' +
-      '</a>' +
-      '<div style="margin-top:6px;font-size:14px;color:' + t.subText +
-                  ';text-align:center;">' +
+      '</a>';
+
+    // text centered **below** the badge
+    var textHTML =
+      '<div style="' +
+        'margin-top:6px;' +
+        'font-size:14px;' +
+        'color:' + t.subText + ';' +
+        'text-align:center;' +
+      '">' +
         'Cleaner than ' + pct + '% of pages tested' +
+      '</div>';
+
+    // wrap them in a centered column
+    el.innerHTML =
+      '<div style="display:inline-flex;flex-direction:column;align-items:center;">' +
+        badgeHTML +
+        textHTML +
       '</div>';
   }
 
