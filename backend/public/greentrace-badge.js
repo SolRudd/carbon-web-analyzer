@@ -127,9 +127,9 @@
         'Cleaner than ' + pct + '% of pages tested' +
       '</div>';
 
-    // wrap them in a centered column
+    // wrap them in a centered block (this ensures center alignment)
     el.innerHTML =
-      '<div style="display:inline-flex;flex-direction:column;align-items:center;">' +
+      '<div style="display:inline-block; text-align:center;">' +
         badgeHTML +
         textHTML +
       '</div>';
