@@ -1,199 +1,191 @@
-GreenTracer
+# GreenTracer
 
 A lightweight, open-source web carbon footprint estimator. Enter any public URL and get an instant estimate of its carbon emissions, grade, and percentile compared to other websites.
 
-🚀 Features
+## 🚀 Features
 
-Client & Server: React/Vue front-end + Node.js backend.
+- **Client & Server**: React front-end + Node.js/Express backend
+- **Carbon Calculation**:
 
-Carbon Calculation: Uses Puppeteer to measure page weight and compute estimated emissions.
+  - Uses Google PageSpeed Insights API (with HTML-only fallback) to measure page weight and compute estimated emissions
+  - No longer depends on headless Chrome—lightweight and fast
 
-Green Hosting Check: Integrates with The Green Web Foundation API to adjust calculations.
+- **Green Hosting Check**: Integrates with The Green Web Foundation API to apply an 8% reduction if the host is certified green (binary flag)
+- **Caching & TTL**: Results are cached in Supabase for 24 hours (configurable via `DEBUG_TTL_ZERO`)
+- **Static Badge**: Provides both a JS-based responsive badge and a pure SVG endpoint (`/api/badge.svg?theme=...&url=...`)
+- **Security & Rate Limiting**: Helmet, CORS, rate-limiters, and Supabase Row-Level Security
+- **Containerized**: Docker & Docker Compose for easy setup and consistent environments
+- **Health Check**: `/healthz` endpoint returns `OK` for uptime monitoring
 
-Caching & History: Stores results in SQLite with a simple REST API.
+## 📋 Contents
 
-Containerized: Docker & Docker Compose for easy setup and consistent environments.
+- [Prerequisites](#-prerequisites)
+- [Local Setup](#-local-setup)
 
-📋 Contents
+  - [Back-end](#-back-end)
+  - [Front-end](#-front-end)
 
-Prerequisites
+- [Using Docker](#-using-docker)
+- [Deployment](#-deployment)
+- [Environment Variables](#-environment-variables)
+- [Badge Integration](#-badge-integration)
+- [Contributing](#-contributing)
+- [License](#-license)
 
-Local Setup
+## ⚙️ Prerequisites
 
-Back-end
+- Node.js ≥ v18.x
+- npm or yarn
+- Docker & Docker Compose (optional, but recommended)
 
-Front-end
+## 🏗️ Local Setup
 
-Using Docker
+### Clone the repo
 
-Deployment
-
-Environment Variables
-
-Contributing
-
-License
-
-⚙️ Prerequisites
-
-Node.js ≥ v18.x
-
-npm or yarn
-
-Docker & Docker Compose (optional, but recommended)
-
-A terminal/command line
-
-🏗️ Local Setup
-
-Clone the repository and install dependencies for both back-end and front-end.
-
-# Clone the repo
-
+```bash
 git clone https://github.com/SolRudd/carbon-web-analyzer.git
-cmp carbon-web-analyzer
+cd carbon-web-analyzer
+```
 
-Back-end
+### Back-end
 
+```bash
 cd backend
-npm install # or `yarn`
-
-Copy the example env:
-
+npm install # or yarn install
 cp .env.example .env
-
-Edit .env and set your values (see Environment Variables).
-
-Run the server:
-
+# Edit .env to set your Supabase URL & Service Key
 npm start
+# Verify
+curl http://localhost:8080/healthz  # returns OK
+```
 
-Verify:
+### Front-end
 
-curl http://localhost:8080/healthz # returns OK
-
-Front-end
-
+```bash
 cd ../frontend
-npm install # or `yarn`
-
-Copy and edit:
-
+npm install # or yarn install
 cp .env.example .env.local
+# Set VITE_API_URL=http://localhost:8080
+npm run dev
+# Visit http://localhost:3000
+```
 
-Start dev server:
+## 📦 Using Docker
 
-npm run dev # Vite starts on http://localhost:3000
+### Docker Compose
 
-Open in browser and start checking URLs!
+At project root:
 
-📦 Using Docker
-
-We provide Dockerfiles and Compose for easy one‑command setup.
-
-Docker Compose
-
-At the project root:
-
+```bash
 docker compose up --build
+```
 
 This will start:
 
-backend on http://localhost:8080
-
-frontend on http://localhost:3000 (if configured)
+- Backend on [http://localhost:8080](http://localhost:8080)
+- Frontend on [http://localhost:3000](http://localhost:3000)
 
 To stop:
 
+```bash
 docker compose down
+```
 
-Single Container
+### Single Container (Backend)
 
-# Build backend image
-
-docker build -t greentracer-backend ./backend
-
-# Run backend
-
+```bash
+cd backend
+docker build -t greentracer-backend .
 docker run --rm -p 8080:8080 greentracer-backend
+```
 
-🚀 Deployment
+## 🚀 Deployment
 
-Backend (Render)
+### Backend (Render)
 
-Connect your GitHub repo in Render.
+1. Connect your GitHub repo in Render
+2. Set Start Command to `npm start`
+3. Add Custom Domain: `api.greentracer.org` (CNAME to Render URL)
+4. Add environment variables (see below) and deploy
 
-Set the Start Command to:
+### Front-end (Vercel)
 
-npm start
+1. Import your project in Vercel
+2. Build Command: `npm run build` (Vite)
+3. Output Directory: `dist`
+4. Environment Variable: `VITE_API_URL=https://api.greentracer.org`
+5. Deploy to [https://www.greentracer.org](https://www.greentracer.org)
 
-Add Custom Domain: api.greentracer.org and configure your DNS CNAME to point at carbon-web-analyzer.onrender.com.
+## 🔑 Environment Variables
 
-Add Environment Variables (see next section).
+### Backend `.env.example`
 
-Deploy!
-
-Front-end (Vercel)
-
-Import your project in Vercel (framework auto‑detected as Vite).
-
-Set Build Command to vite build and Output Directory to dist.
-
-Add Environment Variable: VITE_API_URL = https://api.greentracer.org.
-
-Deploy and visit https://www.greentracer.org.
-
-🔑 Environment Variables
-
-Key
-
-Description
-
-Example
-
-CORS_ORIGIN
-
-Comma‑separated front-end URLs
-
-https://www.greentracer.org
-
-PORT
-
-Back-end listening port
-
-8080
-
-VITE_API_URL
-
-Front-end API base URL (prod)
-
-https://api.greentracer.org
-
-Back-end .env.example:
-
-CORS_ORIGIN=https://www.greentracer.org
+```
+SUPABASE_URL=https://<project>.supabase.co
+SUPABASE_SERVICE_KEY=eyJhb...
+DEBUG_TTL_ZERO=false    # set true for no cache during testing
 PORT=8080
+```
 
-Front-end .env.example:
+### Front-end `.env.example`
 
+```
 VITE_API_URL=http://localhost:8080
+```
 
-🤝 Contributing
+## 🛠 Badge Integration
 
-Fork the repo
+### Auto Badge (Responsive)
 
-Create a feature branch: git checkout -b feature/YourFeature
+```html
+<div
+  class="greentrace-badge"
+  data-url="https://yourdomain.com"
+  data-theme="auto"
+></div>
+<script src="https://api.greentracer.org/greentrace-badge.js" defer></script>
+```
 
-Commit changes: git commit -m "feat: add YourFeature"
+### Static SVG Badge (Light)
 
-Push: git push origin feature/YourFeature
+```html
+<a
+  href="https://www.greentracer.org?ref=badge"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  <img
+    src="https://api.greentracer.org/api/badge.svg?theme=light&url=https://yourdomain.com"
+    alt="GreenTracer Badge (Light)"
+    width="160"
+  />
+</a>
+```
 
-Open a Pull Request! 🎉
+### Static SVG Badge (Dark)
+
+```html
+<a
+  href="https://www.greentracer.org?ref=badge"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  <img
+    src="https://api.greentracer.org/api/badge.svg?theme=dark&url=https://yourdomain.com"
+    alt="GreenTracer Badge (Dark)"
+    width="160"
+  />
+</a>
+```
+
+> **Note:** The Green Web Foundation check is a binary flag—if your host is certified green you get an 8% reduction; otherwise no reduction.
+
+## 🤝 Contributing
+
+1. Fork the repo
+2. Create a feature branch: `git checkout -b feature/YourFeature`
+3. Commit your changes: `git commit -m "feat: add YourFeature"`
+4. Push: `git push origin feature/YourFeature`
+5. Open a Pull Request! 🎉
 
 Please follow the Code of Conduct and use descriptive commit messages.
-
-📄 License
-
-This project is licensed under the MIT License. See LICENSE for details.
-
-Happy tracing! 🌿
