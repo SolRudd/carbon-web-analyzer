@@ -9,21 +9,25 @@ import bubblePng from "../assets/bubble.png";
 import bubbleWebp from "../assets/bubble.webp";
 import bubbleAvif from "../assets/bubble.avif";
 
-// Keep this aligned with backend normalization (https + strip www + trim trailing slash)
+// THIS IS THE FIX: A helper function to clean and standardize URLs before testing.
+// It removes 'www.' to ensure consistency.
 function normalizeUrl(inputUrl) {
-  let url = (inputUrl || "").trim();
-  if (!url) return "";
-  if (!/^(https?:\/\/)/i.test(url)) url = `https://${url}`;
+  let url = inputUrl.trim();
+  if (!url) return '';
+  if (!/^(https?:\/\/)/i.test(url)) {
+    url = `https://${url}`;
+  }
   try {
-    const u = new URL(url);
-    if (u.hostname.startsWith("www.")) u.hostname = u.hostname.slice(4);
-    u.hash = "";
-    u.pathname = u.pathname.replace(/\/+$/, "");
-    return u.origin + u.pathname;
-  } catch {
-    return "";
+    const urlObject = new URL(url);
+    if (urlObject.hostname.startsWith('www.')) {
+      urlObject.hostname = urlObject.hostname.substring(4);
+    }
+    return urlObject.origin + urlObject.pathname.replace(/\/+$/, '');
+  } catch (e) {
+    return inputUrl; // Fallback for any invalid URLs
   }
 }
+
 
 export default function InputForm() {
   const [url, setUrl] = useState("");
@@ -33,8 +37,7 @@ export default function InputForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loading) return; // prevent double submit
-
+    // We use the new helper function here to clean the URL
     const cleanUrl = normalizeUrl(url);
     if (!cleanUrl) {
       alert("Please enter a valid URL.");
@@ -45,44 +48,26 @@ export default function InputForm() {
     setError(null);
 
     try {
-      const headers = { "Content-Type": "application/json" };
-      // Only sent if you actually set API_KEY on server + exposed VITE_API_KEY in FE
-      if (import.meta.env.VITE_API_KEY) {
-        headers["X-API-Key"] = import.meta.env.VITE_API_KEY;
-      }
-
-      const req = fetch(`${API_BASE}/api/check-carbon`, {
+      const apiPromise = fetch(`${API_BASE}/api/check-carbon`, {
         method: "POST",
-        headers,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // We send the clean, standardized URL to the backend
         body: JSON.stringify({ url: cleanUrl }),
       });
 
-      // Keep your nice UX minimum 2s spinner
       const [res] = await Promise.all([
-        req,
-        new Promise((r) => setTimeout(r, 2000)),
+        apiPromise,
+        new Promise((resolve) => setTimeout(resolve, 2000)), // Minimum 2s loading time for UX
       ]);
 
-      let data = {};
-      try {
-        data = await res.json();
-      } catch {
+      const data = await res.json().catch(() => {
         throw new Error("Invalid JSON response from server.");
-      }
+      });
 
       if (!res.ok) {
-        const msg =
-          data?.error ||
-          (res.status === 401
-            ? "Unauthorized request."
-            : res.status === 429
-            ? "Too many requests, please try again in a minute."
-            : `Server returned ${res.status} status.`);
-        throw new Error(msg);
-      }
-
-      if (!data?.slug) {
-        throw new Error("Server did not return a result slug.");
+        throw new Error(data.error || `Server returned ${res.status} status.`);
       }
 
       navigate(`/result/${data.slug}`);
