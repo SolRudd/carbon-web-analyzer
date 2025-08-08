@@ -9,6 +9,22 @@ import bubblePng from "../assets/bubble.png";
 import bubbleWebp from "../assets/bubble.webp";
 import bubbleAvif from "../assets/bubble.avif";
 
+// Keep this aligned with backend normalization (https + strip www + trim trailing slash)
+function normalizeUrl(inputUrl) {
+  let url = (inputUrl || "").trim();
+  if (!url) return "";
+  if (!/^(https?:\/\/)/i.test(url)) url = `https://${url}`;
+  try {
+    const u = new URL(url);
+    if (u.hostname.startsWith("www.")) u.hostname = u.hostname.slice(4);
+    u.hash = "";
+    u.pathname = u.pathname.replace(/\/+$/, "");
+    return u.origin + u.pathname;
+  } catch {
+    return "";
+  }
+}
+
 export default function InputForm() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,38 +33,56 @@ export default function InputForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    let site = url.trim();
-    if (!site) {
+    if (loading) return; // prevent double submit
+
+    const cleanUrl = normalizeUrl(url);
+    if (!cleanUrl) {
       alert("Please enter a valid URL.");
       return;
     }
-    if (!/^https?:\/\//i.test(site)) {
-      site = `https://${site}`;
-    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const apiPromise = fetch(`${API_BASE}/api/check-carbon`, {
+      const headers = { "Content-Type": "application/json" };
+      // Only sent if you actually set API_KEY on server + exposed VITE_API_KEY in FE
+      if (import.meta.env.VITE_API_KEY) {
+        headers["X-API-Key"] = import.meta.env.VITE_API_KEY;
+      }
+
+      const req = fetch(`${API_BASE}/api/check-carbon`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          // ✅ FIX: The X-API-Key header has been removed to match the secure backend
-        },
-        body: JSON.stringify({ url: site }),
+        headers,
+        body: JSON.stringify({ url: cleanUrl }),
       });
 
+      // Keep your nice UX minimum 2s spinner
       const [res] = await Promise.all([
-        apiPromise,
-        new Promise((resolve) => setTimeout(resolve, 15000)),
+        req,
+        new Promise((r) => setTimeout(r, 2000)),
       ]);
 
-      const data = await res.json().catch(() => {
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {
         throw new Error("Invalid JSON response from server.");
-      });
+      }
 
       if (!res.ok) {
-        throw new Error(data.error || `Server returned ${res.status} status.`);
+        const msg =
+          data?.error ||
+          (res.status === 401
+            ? "Unauthorized request."
+            : res.status === 429
+            ? "Too many requests, please try again in a minute."
+            : `Server returned ${res.status} status.`);
+        throw new Error(msg);
+      }
+
+      if (!data?.slug) {
+        throw new Error("Server did not return a result slug.");
       }
 
       navigate(`/result/${data.slug}`);
@@ -83,8 +117,8 @@ export default function InputForm() {
     >
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 w-[900px] h-[900px] bg-glow-green transform -translate-x-1/2 -translate-y-1/2 blur-3xl opacity-30 dark:opacity-20 motion-safe:animate-pulse" />
-        <div className="absolute top-1/4 right-1/4 w/[400px] h/[400px] bg-blue-400/10 dark:bg-blue-400/5 transform rotate-12 blur-2xl opacity-20 dark:opacity-10 motion-safe:animate-pulse motion-safe:delay-1000" />
-        <div className="absolute bottom-1/3 left-1/4 w/[300px] h/[300px] bg-purple-400/10 dark:bg-purple-400/5 transform -rotate-45 blur-2xl opacity-15 dark:opacity-5 motion-safe:animate-pulse motion-safe:delay-2000" />
+        <div className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-blue-400/10 dark:bg-blue-400/5 transform rotate-12 blur-2xl opacity-20 dark:opacity-10 motion-safe:animate-pulse motion-safe:delay-1000" />
+        <div className="absolute bottom-1/3 left-1/4 w-[300px] h-[300px] bg-purple-400/10 dark:bg-purple-400/5 transform -rotate-45 blur-2xl opacity-15 dark:opacity-5 motion-safe:animate-pulse motion-safe:delay-2000" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto flex flex-col items-center gap-12">
