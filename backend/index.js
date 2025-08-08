@@ -45,13 +45,9 @@ const limiterBadge         = rateLimit({ windowMs:    60*1000,   max: 60 });
 const limiterTraceOrCheck  = rateLimit({ windowMs:    60*1000,   max: 12 });
 
 // ── CORS Rules ──────────────────────────────────────
-// Badge can be fetched from anywhere:
 const badgeCors = cors({ origin:'*', methods:['GET'] });
-
-// API: keep your current permissive setting (safe for now)
-// If you want to tighten later, set origin to an allowlist array.
 app.use(cors({
-  origin: true,   // echoes Origin automatically
+  origin: true,
   methods: ['GET','POST'],
   allowedHeaders: ['Content-Type','X-API-Key']
 }));
@@ -72,8 +68,9 @@ function normalizeUrl(input) {
   let s = input.trim();
   if (!/^https?:\/\//i.test(s)) s = `https://${s}`;
   const u = new URL(s);
-  u.hash = ''; // drop fragments
-  // collapse multiple trailing slashes in path
+  // Match frontend: strip leading www.
+  if (u.hostname.startsWith('www.')) u.hostname = u.hostname.slice(4);
+  u.hash = '';
   u.pathname = u.pathname.replace(/\/+$/,'').replace(/\/{2,}/g,'/');
   return u.toString();
 }
@@ -91,17 +88,14 @@ async function assertPublicHttp(urlStr) {
 }
 
 function isPrivate(ip) {
-  // IPv4
   if (net.isIPv4(ip)) {
     return ip.startsWith('10.') ||
            ip.startsWith('127.') ||
            ip.startsWith('172.16.') || ip.startsWith('172.17.') || ip.startsWith('172.18.') || ip.startsWith('172.19.') ||
-           ip.startsWith('172.2') ||  // covers 172.20.0.0–172.29.255.255
-           ip.startsWith('172.30.') || ip.startsWith('172.31.') ||
+           ip.startsWith('172.2') || ip.startsWith('172.30.') || ip.startsWith('172.31.') ||
            ip.startsWith('192.168.') ||
            ip === '0.0.0.0';
   }
-  // IPv6
   return ip === '::1' || ip.startsWith('fc') || ip.startsWith('fd') || ip.startsWith('fe80');
 }
 
@@ -125,7 +119,6 @@ async function getCached(slug) {
   return rowToPublic(row);
 }
 
-// returns cached even if stale, plus a flag
 async function getCachedAny(slug) {
   const s = slug.toLowerCase().replace(/-+$/,'');
   const { data: row, error } = await supabase
@@ -155,7 +148,6 @@ app.get('/greentrace-badge.js', badgeCors, limiterBadge, (req,res) => {
   res.sendFile(path.join(__dirname,'public','greentrace-badge.js'));
 });
 
-// Truly static SVG badge with better caching (ETag + SWR)
 app.get('/api/badge.svg', badgeCors, limiterBadge, async (req, res) => {
   const theme = (req.query.theme||'auto').toLowerCase();
   const site  = req.query.url;
@@ -212,7 +204,6 @@ app.get('/api/badge.svg', badgeCors, limiterBadge, async (req, res) => {
 
 app.use(express.static(path.join(__dirname,'public')));
 app.get('/healthz', async (_req,res) => {
-  // tiny Supabase ping
   try {
     await supabase.from('results').select('slug').limit(1);
     res.send('OK');
@@ -221,23 +212,43 @@ app.get('/healthz', async (_req,res) => {
   }
 });
 
-// ── “Trace” endpoint: only return cached ───────────
+// ── “Trace”: accept site | url | slug; return legacy 404 message ──
 app.get('/api/trace', badgeCors, limiterBadge, async (req,res) => {
-  const site = req.query.site;
-  if (!site) return res.status(400).json({ error:'Missing site.', code:'MISSING_SITE' });
-  const row = await getCached(slugify(site));
-  if (!row) return res.status(404).json({ error:'No data—run a check first.', code:'NOT_FOUND' });
-  res.json(row);
+  const { site, url, slug } = req.query;
+
+  if (slug) {
+    const s = String(slug).toLowerCase().replace(/-+$/,'');
+    const { data: row, error } = await supabase.from('results').select('*').eq('slug', s).single();
+    if (error || !row) {
+      return res.status(404).json({
+        error: 'Could not find a report for this URL. Please try testing it from the homepage.'
+      });
+    }
+    return res.json(rowToPublic(row));
+  }
+
+  const raw = site || url;
+  if (!raw) {
+    return res.status(400).json({ error:'Missing site.', code:'MISSING_SITE' });
+  }
+
+  const cached = await getCached(slugify(String(raw)));
+  if (!cached) {
+    return res.status(404).json({
+      error: 'Could not find a report for this URL. Please try testing it from the homepage.'
+    });
+  }
+  res.json(cached);
 });
 
-// ── New SWR endpoint: serve cached fast, refresh if stale ─────────
+// ── SWR endpoint (optional use): serve cached fast, refresh if stale
 app.get('/api/trace-or-refresh', badgeCors, limiterTraceOrCheck, async (req, res) => {
-  const q = req.query.site;
+  const q = req.query.site || req.query.url;
   if (!q) return res.status(400).json({ error: 'Missing site.', code: 'MISSING_SITE' });
 
   let norm;
   try {
-    norm = normalizeUrl(q);
+    norm = normalizeUrl(String(q));
     await assertPublicHttp(norm);
   } catch (e) {
     return res.status(400).json({ error:'Bad URL.', code: e.code || 'BAD_URL' });
@@ -247,7 +258,6 @@ app.get('/api/trace-or-refresh', badgeCors, limiterTraceOrCheck, async (req, res
   if (row) {
     res.json({ ...rowToPublic(row), stale });
     if (stale) {
-      // Fire and forget refresh
       performCarbonCheck(norm, new URL(norm).hostname).catch(err =>
         console.error('[refresh job] failed:', err.message)
       );
@@ -255,7 +265,6 @@ app.get('/api/trace-or-refresh', badgeCors, limiterTraceOrCheck, async (req, res
     return;
   }
 
-  // No cache? compute once
   try {
     const fresh = await performCarbonCheck(norm, new URL(norm).hostname);
     res.json(fresh);
@@ -265,14 +274,14 @@ app.get('/api/trace-or-refresh', badgeCors, limiterTraceOrCheck, async (req, res
   }
 });
 
-// ── “Trace or Check” endpoint (kept for compatibility) ───────────
+// ── “Trace or Check” (compat): accept site | url ──────────────────
 app.get('/api/trace-or-check', badgeCors, limiterTraceOrCheck, async (req,res) => {
-  const site = req.query.site;
-  if (!site) return res.status(400).json({ error:'Missing site.', code:'MISSING_SITE' });
+  const raw = req.query.site || req.query.url;
+  if (!raw) return res.status(400).json({ error:'Missing site.', code:'MISSING_SITE' });
 
   let norm, host;
   try {
-    norm = normalizeUrl(site);
+    norm = normalizeUrl(String(raw));
     await assertPublicHttp(norm);
     host = new URL(norm).hostname;
   } catch {
@@ -314,7 +323,7 @@ app.get('/api/check-carbon', limiterCheck, async (req,res) => {
   }
 });
 
-// ── POST /api/check-carbon (now supports optional API Key) ───────
+// ── POST /api/check-carbon (optional API Key) ──────
 app.post('/api/check-carbon', requireApiKey, limiterCheck, async (req,res) => {
   const input = req.body?.url;
   if (!input) return res.status(400).json({ error:'Missing URL.', code:'MISSING_URL' });
@@ -357,6 +366,7 @@ async function performCarbonCheck(norm, host) {
       percentile,
       reduction_pct:   reductionPct,
       grade,
+      size_mb:         +sizeMB,
       result_data:     { sizeInfo, carbon, percentile, reductionPct, grade }
     }, { onConflict:['slug'] })
     .select().single();
@@ -403,7 +413,6 @@ function calcCO2(sizeMB, isGreen) {
   return g<0.01?+g.toPrecision(2):g<1?+g.toFixed(3):+g.toFixed(2);
 }
 
-// PSI via Google API (desktop+mobile); safe HTTP client
 async function runPSI(url, strat, key) {
   const api=`https://www.googleapis.com/pagespeedonline/v5/runPagespeed`
     +`?url=${encodeURIComponent(url)}&strategy=${strat}&category=performance&key=${key}`;
@@ -416,7 +425,6 @@ async function runPSI(url, strat, key) {
   return { bytes:Math.max(b,sum), finalUrl:lr.finalDisplayedUrl || url };
 }
 
-// Fallback HTML-only estimate
 async function htmlOnlyEstimateMB(url) {
   try {
     const r = await httpClient.get(url, { timeout: 12000, headers:{'User-Agent':'Mozilla/5.0'} });
@@ -428,7 +436,6 @@ async function htmlOnlyEstimateMB(url) {
   }
 }
 
-// Size fetcher (desktop+mobile, pick larger)
 async function fetchSize(url) {
   const key = process.env.PAGESPEED_API_KEY;
   if (!key) {
