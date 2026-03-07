@@ -57,11 +57,20 @@ app.get('/api/badge.svg', badgeCors, limiterBadge, async (req, res) => {
   let data;
   try {
     const r = await axios.get(
-      `https://${req.get('host')}/api/trace-or-check?site=${encodeURIComponent(site)}`,
+      `https://${req.get('host')}/api/trace?site=${encodeURIComponent(site)}`,
       { timeout:5000 }
     );
     data = r.data;
   } catch (e) {
+    if (e.response && e.response.status === 404) {
+      res.set('Content-Type','image/svg+xml');
+      return res.status(200).send(`<svg xmlns="http://www.w3.org/2000/svg" width="240" height="40">
+        <rect width="240" height="40" fill="#f3f4f6" rx="4"/>
+        <text x="10" y="25" fill="#374151" font-family="Inter,system-ui" font-size="12" font-weight="500">
+          No data - run a scan first
+        </text>
+      </svg>`);
+    }
     res.set('Content-Type','image/svg+xml');
     return res.status(500).send(`<svg><text x="0" y="15" fill="red">Error</text></svg>`);
   }

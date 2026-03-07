@@ -50,7 +50,7 @@
   }
 
   function fetchOrCreateBadge(siteUrl, el) {
-    fetch(API_BASE + '/api/trace-or-check?site=' + encodeURIComponent(siteUrl), { mode:'cors' })
+    fetch(API_BASE + '/api/trace?site=' + encodeURIComponent(siteUrl), { mode:'cors' })
       .then(function(res) {
         if (!res.ok) throw new Error('status '+res.status);
         return res.json();
