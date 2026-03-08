@@ -1,7 +1,8 @@
 // src/pages/Badge.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
+import { API_BASE } from "../config";
 import {
   FaCertificate,
   FaCode,
@@ -24,13 +25,44 @@ import {
   FaDesktop
 } from "react-icons/fa";
 
-const badgeType = {
-  id: "js-badge",
-  title: "GreenTracer Badge",
-  subtitle: "Responsive & Logo-Enabled",
-  icon: <FaRocket className="text-2xl" />,
-  color: "from-blue-500 to-cyan-500",
-  features: ["Logo included", "Auto light/dark detection", "Responsive design", "Custom colours", "Cached-only (no rescans)"]
+const badgeTypes = {
+  carbon: {
+    id: "carbon",
+    title: "Carbon Impact Badge",
+    subtitle: "Responsive & Logo-Enabled",
+    icon: <FaRocket className="text-2xl" />,
+    color: "from-blue-500 to-cyan-500",
+    features: ["CO₂ per view", "Cleaner-than percentile", "Custom colours", "Cached-only (no rescans)"]
+  },
+  hosting: {
+    id: "hosting",
+    title: "Green Hosting Verified",
+    subtitle: "Trust Signal Badge",
+    icon: <FaShieldAlt className="text-2xl" />,
+    color: "from-green-500 to-emerald-600",
+    features: ["Hosting verification status", "Latest saved result only", "Custom colours", "No false verification"]
+  }
+};
+
+const isValidHexColor = (v) => /^#[0-9A-Fa-f]{6}$/.test((v || "").trim());
+
+const normalizeSiteUrl = (u) => {
+  try {
+    const url = new URL((u || "").includes("://") ? u : `https://${u}`);
+    return url.href.replace(/\/$/, "");
+  } catch {
+    return null;
+  }
+};
+
+const getLogoFilterForColor = (hexColor, hasCustomColor) => {
+  if (!hasCustomColor) return "brightness(0) invert(1)";
+  const hex = hexColor.slice(1);
+  const r = parseInt(hex.slice(0, 2), 16) / 255;
+  const g = parseInt(hex.slice(2, 4), 16) / 255;
+  const b = parseInt(hex.slice(4, 6), 16) / 255;
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance > 0.6 ? "brightness(0) invert(1)" : "brightness(0)";
 };
 
 
@@ -38,10 +70,17 @@ const badgeType = {
 export default function Badge() {
 
   const [websiteUrl, setWebsiteUrl] = useState("https://yoursite.com");
+  const [selectedBadgeType, setSelectedBadgeType] = useState("carbon");
   const [copiedCode, setCopiedCode] = useState(false);
   const [bgColor, setBgColor] = useState("#ffffff");
   const [accentColor, setAccentColor] = useState("#16A34A");
   const [textColor, setTextColor] = useState("");
+  const [hostingStatus, setHostingStatus] = useState({
+    loading: false,
+    checkedUrl: "",
+    hasSavedData: false,
+    isGreenHost: false
+  });
 
   const howToSchema = {
     "@context": "https://schema.org",
@@ -82,25 +121,87 @@ export default function Badge() {
     }
   };
 
+  useEffect(() => {
+    const normalizedUrl = normalizeSiteUrl(websiteUrl);
+    if (!normalizedUrl) {
+      setHostingStatus({
+        loading: false,
+        checkedUrl: "",
+        hasSavedData: false,
+        isGreenHost: false
+      });
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      setHostingStatus((prev) => ({ ...prev, loading: true, checkedUrl: normalizedUrl }));
+      fetch(`${API_BASE}/api/trace?site=${encodeURIComponent(normalizedUrl)}`, { signal: controller.signal })
+        .then((res) => {
+          if (res.status === 404) {
+            return null;
+          }
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+          }
+          return res.json();
+        })
+        .then((data) => {
+          if (!data) {
+            setHostingStatus({
+              loading: false,
+              checkedUrl: normalizedUrl,
+              hasSavedData: false,
+              isGreenHost: false
+            });
+            return;
+          }
+          setHostingStatus({
+            loading: false,
+            checkedUrl: normalizedUrl,
+            hasSavedData: true,
+            isGreenHost: !!data.greenHost
+          });
+        })
+        .catch((err) => {
+          if (err.name === "AbortError") return;
+          console.error("Failed to fetch cached badge eligibility:", err);
+          setHostingStatus({
+            loading: false,
+            checkedUrl: normalizedUrl,
+            hasSavedData: false,
+            isGreenHost: false
+          });
+        });
+    }, 350);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [websiteUrl]);
+
+  useEffect(() => {
+    if (selectedBadgeType === "hosting" && !hostingStatus.isGreenHost) {
+      setSelectedBadgeType("carbon");
+    }
+  }, [hostingStatus.isGreenHost, selectedBadgeType]);
+
   /* Robust generator: ensures https://, trims trailing slash */
   const getCurrentCode = () => {
-    const isValidHexColor = (v) => /^#[0-9A-Fa-f]{6}$/.test((v || "").trim());
-    const ensureHttps = (u) => {
-      try {
-        const url = new URL(u.includes("://") ? u : `https://${u}`);
-        return url.href.replace(/\/$/, ""); // drop trailing slash
-      } catch {
-        return "https://yoursite.com";
-      }
-    };
-
-    const target = ensureHttps(websiteUrl);
+    const target = normalizeSiteUrl(websiteUrl) || "https://yoursite.com";
     const normalizedTextColor = isValidHexColor(textColor) ? textColor.trim() : "";
+    const typeAttr = selectedBadgeType === "hosting" ? ` data-badge-type="hosting"` : "";
     const customAttrs = `${bgColor !== '#ffffff' ? ` data-bg-color="${bgColor}"` : ''}${accentColor !== '#16A34A' ? ` data-accent-color="${accentColor}"` : ''}${normalizedTextColor ? ` data-text-color="${normalizedTextColor}"` : ''}`;
 
-    return `<div class="greentrace-badge" data-url="${target}" data-theme="auto"${customAttrs}></div>
+    return `<div class="greentrace-badge" data-url="${target}" data-theme="auto"${typeAttr}${customAttrs}></div>
 <script src="https://api.greentracer.org/greentrace-badge.js" defer></script>`;
   };
+
+  const selectedBadge = badgeTypes[selectedBadgeType];
+  const hasCustomTextColor = isValidHexColor(textColor);
+  const previewTextColor = hasCustomTextColor ? textColor.trim() : "#0F172A";
+  const previewLogoFilter = getLogoFilterForColor(previewTextColor, hasCustomTextColor);
 
   return (
     <>
@@ -144,7 +245,7 @@ export default function Badge() {
           <div className="relative z-10 max-w-6xl mx-auto text-center space-y-8">
             <div className="inline-flex items-center gap-3 bg-green-500/10 dark:bg-green-400/10 px-6 py-3 rounded-full border border-green-500/20 dark:border-green-400/20">
               <FaCertificate className="text-green-600 dark:text-green-400" />
-              <span className="text-green-600 dark:text-green-400 font-semibold">Carbon Badge</span>
+              <span className="text-green-600 dark:text-green-400 font-semibold">GreenTracer Badges</span>
             </div>
             <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-slate-900 via-green-600 to-green-600 dark:from-white dark:via-green-400 dark:to-blue-400 bg-clip-text text-transparent leading-tight">
               Show Your Green Credentials
@@ -196,6 +297,50 @@ export default function Badge() {
                   className="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-2xl shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300 text-lg"
                 />
               </div>
+            </div>
+
+            <div className="max-w-2xl mx-auto mb-8">
+              <label className="block text-sm font-medium mb-3 text-slate-700 dark:text-slate-300">
+                Badge Type
+              </label>
+              <div className="grid md:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedBadgeType("carbon")}
+                  className={`p-4 rounded-xl border text-left transition-colors ${
+                    selectedBadgeType === "carbon"
+                      ? "border-green-600 bg-green-50 dark:bg-green-900/20"
+                      : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                  }`}
+                >
+                  <p className="font-semibold">Carbon Impact Badge</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">CO₂ + percentile trust signal</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (hostingStatus.isGreenHost) setSelectedBadgeType("hosting");
+                  }}
+                  disabled={!hostingStatus.isGreenHost}
+                  className={`p-4 rounded-xl border text-left transition-colors ${
+                    selectedBadgeType === "hosting"
+                      ? "border-green-600 bg-green-50 dark:bg-green-900/20"
+                      : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                  } ${!hostingStatus.isGreenHost ? "opacity-60 cursor-not-allowed" : ""}`}
+                >
+                  <p className="font-semibold">Green Hosting Verified</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Available only for green-hosted saved results</p>
+                </button>
+              </div>
+              <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
+                {hostingStatus.loading
+                  ? "Checking latest saved result for hosting verification..."
+                  : hostingStatus.isGreenHost
+                    ? "Green hosting verified on latest saved result. Hosting badge is available."
+                    : hostingStatus.hasSavedData
+                      ? "Latest saved result does not confirm green hosting, so hosting badge is disabled."
+                      : "No saved result found yet for this URL. Run a check first to unlock hosting verification."}
+              </p>
             </div>
 
             {/* Customisation Section */}
@@ -289,16 +434,16 @@ export default function Badge() {
             {/* Badge Info Card */}
             <div className="max-w-2xl mx-auto mb-12 p-8 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-lg">
               <div className="flex items-center gap-4 mb-4">
-                <div className={`w-12 h-12 bg-gradient-to-r ${badgeType.color} rounded-xl flex items-center justify-center text-white shadow-lg`}>
-                  {badgeType.icon}
+                <div className={`w-12 h-12 bg-gradient-to-r ${selectedBadge.color} rounded-xl flex items-center justify-center text-white shadow-lg`}>
+                  {selectedBadge.icon}
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">{badgeType.title}</h3>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm">{badgeType.subtitle}</p>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">{selectedBadge.title}</h3>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm">{selectedBadge.subtitle}</p>
                 </div>
               </div>
               <div className="space-y-2">
-                {badgeType.features.map((feature) => (
+                {selectedBadge.features.map((feature) => (
                   <div key={feature} className="flex items-center gap-2">
                     <FaCheck className="text-green-600 dark:text-green-400 text-sm" />
                     <span className="text-sm text-slate-600 dark:text-slate-400">{feature}</span>
@@ -316,52 +461,48 @@ export default function Badge() {
               <div className="flex flex-col items-center gap-6">
                 <p className="text-sm text-slate-600 dark:text-slate-400">Your badge will look like this on your website:</p>
                 {/* HTML Badge Preview - matching the actual JS badge structure */}
-                <div
-                  className="inline-flex overflow-hidden rounded-md shadow-lg border"
-                  style={{
-                    borderColor: accentColor,
-                    backgroundColor: bgColor,
-                  }}
-                >
+                <div className="inline-flex flex-col items-center">
                   <div
-                    className="px-4 py-2 text-sm font-semibold"
+                    className="inline-flex overflow-hidden rounded-md shadow-lg border"
                     style={{
+                      borderColor: accentColor,
                       backgroundColor: bgColor,
-                      color: /^#[0-9A-Fa-f]{6}$/.test((textColor || "").trim()) ? textColor : '#0F172A',
-                      borderRight: `1px solid ${accentColor}`,
                     }}
                   >
-                    0.45g CO₂/view
+                    <div
+                      className="px-4 py-2 text-sm font-semibold"
+                      style={{
+                        backgroundColor: bgColor,
+                        color: previewTextColor,
+                        borderRight: `1px solid ${accentColor}`,
+                      }}
+                    >
+                      {selectedBadgeType === "hosting" ? "Green Hosting Verified" : "0.45g CO₂/view"}
+                    </div>
+                    <div
+                      className="flex items-center px-4 py-2"
+                      style={{
+                        backgroundColor: accentColor,
+                      }}
+                    >
+                      <picture>
+                        <source type="image/avif" srcSet="/GreenTraceLogo.avif" />
+                        <source type="image/webp" srcSet="/GreenTraceLogo.webp" />
+                        <img
+                          src="/GreenTraceLogo.png"
+                          alt="GreenTracer"
+                          className="h-5 w-auto"
+                          style={{ filter: previewLogoFilter }}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </picture>
+                    </div>
                   </div>
-                  <div
-                    className="flex items-center px-4 py-2"
-                    style={{
-                      backgroundColor: accentColor,
-                    }}
-                  >
-                    <picture>
-                      <source type="image/avif" srcSet="/GreenTraceLogo.avif" />
-                      <source type="image/webp" srcSet="/GreenTraceLogo.webp" />
-                      <img
-                        src="/GreenTraceLogo.png"
-                        alt="GreenTracer"
-                        className="h-5 w-auto"
-                        style={{
-                          filter: /^#[0-9A-Fa-f]{6}$/.test((textColor || "").trim())
-                            ? (() => {
-                                const hex = textColor.trim().slice(1);
-                                const r = parseInt(hex.slice(0, 2), 16) / 255;
-                                const g = parseInt(hex.slice(2, 4), 16) / 255;
-                                const b = parseInt(hex.slice(4, 6), 16) / 255;
-                                const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-                                return luminance > 0.6 ? "brightness(0) invert(1)" : "brightness(0)";
-                              })()
-                            : "brightness(0) invert(1)",
-                        }}
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    </picture>
+                  <div className="mt-1 text-xs text-slate-600 dark:text-slate-400 text-center">
+                    {selectedBadgeType === "hosting"
+                      ? "Verified from latest saved GreenTracer result"
+                      : "Cleaner than 82% of pages tested"}
                   </div>
                 </div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 text-center space-y-1">
@@ -373,12 +514,12 @@ export default function Badge() {
 
             <div className="max-w-4xl mx-auto">
               <div className="bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
-                <div className={`p-6 bg-gradient-to-r ${badgeType.color} text-white`}>
+                <div className={`p-6 bg-gradient-to-r ${selectedBadge.color} text-white`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      {badgeType.icon}
+                      {selectedBadge.icon}
                       <div>
-                        <h3 className="text-xl font-bold">{badgeType.title} Code</h3>
+                        <h3 className="text-xl font-bold">{selectedBadge.title} Code</h3>
                         <p className="opacity-90">Copy and paste into your HTML</p>
                       </div>
                     </div>

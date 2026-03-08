@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { FaRocket } from "react-icons/fa";
 import { API_BASE } from "../config";
 
-export default function BadgePromo({ siteUrl }) {
+export default function BadgePromo({ siteUrl, greenHost = false }) {
   const previewUrl = siteUrl || "https://buzzboost.co.uk";
   const [previewData, setPreviewData] = useState(null);
 
@@ -57,6 +57,11 @@ export default function BadgePromo({ siteUrl }) {
           <p className="text-base md:text-lg text-slate-700 dark:text-slate-300 max-w-md leading-relaxed">
             Drop this badge into your site’s footer to show your <span className="text-green-600 dark:text-green-400 font-semibold">verified carbon footprint</span> and let your visitors see your real environmental impact!
           </p>
+          {greenHost ? (
+            <p className="text-sm text-green-700 dark:text-green-300">
+              This result also qualifies for the <strong>Green Hosting Verified</strong> badge.
+            </p>
+          ) : null}
           <Link
             to="/badge"
             className="

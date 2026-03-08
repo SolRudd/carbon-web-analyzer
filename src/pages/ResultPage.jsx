@@ -130,7 +130,7 @@ export default function ResultPage() {
             grade={result.grade} 
           />
           <ImpactSection />
-          <BadgePromo siteUrl={result.url} />
+          <BadgePromo siteUrl={result.url} greenHost={!!result.greenHost} />
           <TestCTA />
         </div>
         <div className="mt-24">

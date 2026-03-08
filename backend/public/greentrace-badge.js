@@ -75,46 +75,43 @@
   }
 
   function fetchOrCreateBadge(siteUrl, el) {
+    var badgeType = (el.getAttribute('data-badge-type') || 'carbon').toLowerCase();
     fetch(API_BASE + '/api/trace?site=' + encodeURIComponent(siteUrl), { mode:'cors' })
       .then(function(res) {
         if (!res.ok) throw new Error('status '+res.status);
         return res.json();
       })
       .then(function(data) {
-        renderBadge(data, siteUrl, el);
+        renderBadge(data, siteUrl, el, badgeType);
       })
       .catch(function() {
+        var fallbackText = badgeType === 'hosting'
+          ? 'Hosting badge unavailable. Run a site check first at '
+          : 'Run a carbon check first at ';
         el.innerHTML =
-          '<div style="color:#dc2626;font-size:12px;">Run a carbon check first at ' +
+          '<div style="color:#dc2626;font-size:12px;">' + fallbackText +
           '<a href="https://www.greentracer.org" target="_blank" rel="noopener noreferrer">' +
           'greentracer.org</a></div>';
       });
   }
 
-  function renderBadge(data, pageUrl, el) {
-    var t    = getTheme(el);
-    var co2  = (+data.carbonEstimate || 0).toFixed(2);
-    var pct  = data.percentile != null ? data.percentile : '--';
-    var slug = data.slug ? String(data.slug).trim() : slugifyFromUrl(pageUrl);
-    var href = RESULTS_BASE + '/' + encodeURIComponent(slug);
+  function getLogoFilter(t) {
+    if (!t.customTextColor) return 'brightness(0) invert(1)';
+    var hex = t.customTextColor.slice(1);
+    var r = parseInt(hex.slice(0, 2), 16) / 255;
+    var g = parseInt(hex.slice(2, 4), 16) / 255;
+    var b = parseInt(hex.slice(4, 6), 16) / 255;
+    var luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    return luminance > 0.6 ? 'brightness(0) invert(1)' : 'brightness(0)';
+  }
 
-    // sizing to match your React badge (rounded-md / text-sm / px-4 py-2 / shadow-lg)
-    var padY     = 8;
-    var padX     = 16;
-    var radius   = 6;
+  function renderBadgeFrame(el, t, href, leftText, subText) {
+    var padY = 8;
+    var padX = 16;
+    var radius = 6;
     var fontSize = 14;
-    var logoFilter = 'brightness(0) invert(1)';
+    var logoFilter = getLogoFilter(t);
 
-    if (t.customTextColor) {
-      var hex = t.customTextColor.slice(1);
-      var r = parseInt(hex.slice(0, 2), 16) / 255;
-      var g = parseInt(hex.slice(2, 4), 16) / 255;
-      var b = parseInt(hex.slice(4, 6), 16) / 255;
-      var luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-      logoFilter = luminance > 0.6 ? 'brightness(0) invert(1)' : 'brightness(0)';
-    }
-
-    // the badge itself
     var badgeHTML =
       '<a href="' + href + '" target="_blank" rel="noopener noreferrer" ' +
          'style="text-decoration:none;display:inline-block">' +
@@ -133,7 +130,7 @@
             'font-weight:700;white-space:nowrap;' +
             'border-right:1px solid ' + t.divider + ';' +
           '">' +
-            co2 + 'g CO₂/view' +
+            leftText +
           '</div>' +
           '<div style="' +
             'background:' + t.rightBg + ';' +
@@ -151,23 +148,51 @@
         '</div>' +
       '</a>';
 
-    // text centered **below** the badge
     var textHTML =
       '<div style="' +
         'margin-top:6px;' +
         'font-size:14px;' +
         'color:' + t.subText + ';' +
         'text-align:center;' +
-      '">' +
-        'Cleaner than ' + pct + '% of pages tested' +
-      '</div>';
+      '">' + subText + '</div>';
 
-    // wrap them in a centered block (this ensures center alignment)
     el.innerHTML =
       '<div style="display:inline-block; text-align:center;">' +
         badgeHTML +
         textHTML +
       '</div>';
+  }
+
+  function renderCarbonBadge(data, pageUrl, el, t) {
+    var co2  = (+data.carbonEstimate || 0).toFixed(2);
+    var pct  = data.percentile != null ? data.percentile : '--';
+    var slug = data.slug ? String(data.slug).trim() : slugifyFromUrl(pageUrl);
+    var href = RESULTS_BASE + '/' + encodeURIComponent(slug);
+    renderBadgeFrame(el, t, href, co2 + 'g CO₂/view', 'Cleaner than ' + pct + '% of pages tested');
+  }
+
+  function renderHostingBadge(data, pageUrl, el, t) {
+    if (!data.greenHost) {
+      var text = t.customTextColor || '#92400e';
+      el.innerHTML =
+        '<div style="display:inline-block;border:1px solid #f59e0b;border-radius:6px;padding:8px 12px;' +
+        'font-family:Inter,system-ui;font-size:13px;background:#fffbeb;color:' + text + ';">' +
+        'Green hosting is not verified in the latest saved result for this site.' +
+        '</div>';
+      return;
+    }
+    var slug = data.slug ? String(data.slug).trim() : slugifyFromUrl(pageUrl);
+    var href = RESULTS_BASE + '/' + encodeURIComponent(slug);
+    renderBadgeFrame(el, t, href, 'Green Hosting Verified', 'Verified from latest saved GreenTracer result');
+  }
+
+  function renderBadge(data, pageUrl, el, badgeType) {
+    var t = getTheme(el);
+    if (badgeType === 'hosting') {
+      renderHostingBadge(data, pageUrl, el, t);
+      return;
+    }
+    renderCarbonBadge(data, pageUrl, el, t);
   }
 
   function initBadges() {
