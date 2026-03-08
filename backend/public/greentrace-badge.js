@@ -35,6 +35,15 @@
 
   function getTheme(el) {
     var force = (el.getAttribute('data-theme') || 'auto').toLowerCase();
+    var customBgColor = el.getAttribute('data-bg-color');
+    var customAccentColor = el.getAttribute('data-accent-color');
+    var customTextColor = el.getAttribute('data-text-color');
+    
+    // Helper to validate hex
+    function isValidHex(h) {
+      return /^#[0-9A-Fa-f]{6}$/.test(h);
+    }
+    
     var isDark =
       force === 'dark' ? true :
       force === 'light' ? false :
@@ -42,11 +51,27 @@
       (window.matchMedia &&
        window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-    return isDark
+    var base = isDark
       ? { leftBg:'#1f2937', leftText:'#e5e7eb', rightBg:'#16A34A',
-          border:'#16A34A', subText:'#94a3b8', divider:'#111827' }
+          border:'#16A34A', subText:'#94a3b8', divider:'#111827', customTextColor:null }
       : { leftBg:'#ffffff', leftText:'#0F172A', rightBg:'#16A34A',
-          border:'#16A34A', subText:'#475569', divider:'#e2e8f0' };
+          border:'#16A34A', subText:'#475569', divider:'#e2e8f0', customTextColor:null };
+
+    // Apply custom colours if provided and valid
+    if (customBgColor && isValidHex(customBgColor)) {
+      base.leftBg = customBgColor;
+    }
+    if (customAccentColor && isValidHex(customAccentColor)) {
+      base.rightBg = customAccentColor;
+      base.border = customAccentColor;
+    }
+    if (customTextColor && isValidHex(customTextColor)) {
+      base.leftText = customTextColor;
+      base.subText = customTextColor;
+      base.customTextColor = customTextColor;
+    }
+    
+    return base;
   }
 
   function fetchOrCreateBadge(siteUrl, el) {
@@ -78,6 +103,16 @@
     var padX     = 16;
     var radius   = 6;
     var fontSize = 14;
+    var logoFilter = 'brightness(0) invert(1)';
+
+    if (t.customTextColor) {
+      var hex = t.customTextColor.slice(1);
+      var r = parseInt(hex.slice(0, 2), 16) / 255;
+      var g = parseInt(hex.slice(2, 4), 16) / 255;
+      var b = parseInt(hex.slice(4, 6), 16) / 255;
+      var luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      logoFilter = luminance > 0.6 ? 'brightness(0) invert(1)' : 'brightness(0)';
+    }
 
     // the badge itself
     var badgeHTML =
@@ -109,7 +144,7 @@
               '<source type="image/avif" srcset="' + LOGO_AVIF + '" />' +
               '<source type="image/webp" srcset="' + LOGO_WEBP + '" />' +
               '<img src="' + LOGO_PNG + '" alt="GreenTrace" ' +
-                   'style="height:20px;filter:brightness(0) invert(1);" ' +
+                   'style="height:20px;filter:' + logoFilter + ';" ' +
                    'loading="lazy" decoding="async" />' +
             '</picture>' +
           '</div>' +

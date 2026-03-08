@@ -24,58 +24,24 @@ import {
   FaDesktop
 } from "react-icons/fa";
 
-const badgeTypes = [
-  {
-    id: "auto",
-    title: "Auto Badge",
-    subtitle: "Smart & Responsive",
-    icon: <FaRocket className="text-2xl" />,
-    color: "from-blue-500 to-cyan-500",
-    bgColor: "bg-blue-50 dark:bg-blue-900/20",
-    borderColor: "border-blue-200 dark:border-blue-700",
-    recommended: true,
-    features: ["Auto light/dark detection", "Responsive design", "Auto-updates", "Fast loading"]
-  },
-  {
-    id: "svg-light",
-    title: "SVG Light",
-    subtitle: "Static Light Mode",
-    icon: <FaSun className="text-2xl" />,
-    color: "from-yellow-400 to-orange-500",
-    bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
-    borderColor: "border-yellow-200 dark:border-yellow-700",
-    features: ["Light backgrounds", "No JavaScript", "Fast loading", "SEO friendly"]
-  },
-  {
-    id: "svg-dark",
-    title: "SVG Dark",
-    subtitle: "Static Dark Mode",
-    icon: <FaMoon className="text-2xl" />,
-    color: "from-purple-500 to-indigo-600",
-    bgColor: "bg-purple-50 dark:bg-purple-900/20",
-    borderColor: "border-purple-200 dark:border-purple-700",
-    features: ["Dark backgrounds", "No JavaScript", "Fast loading", "SEO friendly"]
-  }
-];
-
-/* Shown in the UI preview; generation uses getCurrentCode() below */
-const codeSnippets = {
-  auto: `<div class="greentrace-badge" data-url="https://YOURDOMAIN.com" data-theme="auto"></div>
-<script src="https://api.greentracer.org/greentrace-badge.js" defer></script>`,
-  "svg-light": `<a href="https://greentracer.org?ref=badge" target="_blank" rel="noopener noreferrer">
-  <img src="https://api.greentracer.org/api/badge.svg?theme=light&url=https://YOURDOMAIN.com"
-       alt="GreenTracer Badge (Light)" width="160" />
-</a>`,
-  "svg-dark": `<a href="https://greentracer.org?ref=badge" target="_blank" rel="noopener noreferrer">
-  <img src="https://api.greentracer.org/api/badge.svg?theme=dark&url=https://YOURDOMAIN.com"
-       alt="GreenTracer Badge (Dark)" width="160" />
-</a>`
+const badgeType = {
+  id: "js-badge",
+  title: "GreenTracer Badge",
+  subtitle: "Responsive & Logo-Enabled",
+  icon: <FaRocket className="text-2xl" />,
+  color: "from-blue-500 to-cyan-500",
+  features: ["Logo included", "Auto light/dark detection", "Responsive design", "Custom colours", "Cached-only (no rescans)"]
 };
 
+
+
 export default function Badge() {
-  const [selectedBadge, setSelectedBadge] = useState("auto");
+
   const [websiteUrl, setWebsiteUrl] = useState("https://yoursite.com");
   const [copiedCode, setCopiedCode] = useState(false);
+  const [bgColor, setBgColor] = useState("#ffffff");
+  const [accentColor, setAccentColor] = useState("#16A34A");
+  const [textColor, setTextColor] = useState("");
 
   const howToSchema = {
     "@context": "https://schema.org",
@@ -116,8 +82,9 @@ export default function Badge() {
     }
   };
 
-  /* Robust generator: ensures https://, trims trailing slash, encodes for query strings */
+  /* Robust generator: ensures https://, trims trailing slash */
   const getCurrentCode = () => {
+    const isValidHexColor = (v) => /^#[0-9A-Fa-f]{6}$/.test((v || "").trim());
     const ensureHttps = (u) => {
       try {
         const url = new URL(u.includes("://") ? u : `https://${u}`);
@@ -128,30 +95,12 @@ export default function Badge() {
     };
 
     const target = ensureHttps(websiteUrl);
+    const normalizedTextColor = isValidHexColor(textColor) ? textColor.trim() : "";
+    const customAttrs = `${bgColor !== '#ffffff' ? ` data-bg-color="${bgColor}"` : ''}${accentColor !== '#16A34A' ? ` data-accent-color="${accentColor}"` : ''}${normalizedTextColor ? ` data-text-color="${normalizedTextColor}"` : ''}`;
 
-    if (selectedBadge === "auto") {
-      return `<div class="greentrace-badge" data-url="${target}" data-theme="auto"></div>
+    return `<div class="greentrace-badge" data-url="${target}" data-theme="auto"${customAttrs}></div>
 <script src="https://api.greentracer.org/greentrace-badge.js" defer></script>`;
-    }
-
-    if (selectedBadge === "svg-light") {
-      return `<a href="https://greentracer.org?ref=badge" target="_blank" rel="noopener noreferrer">
-  <img src="https://api.greentracer.org/api/badge.svg?theme=light&url=${encodeURIComponent(target)}"
-       alt="GreenTracer Badge (Light)" width="160" />
-</a>`;
-    }
-
-    if (selectedBadge === "svg-dark") {
-      return `<a href="https://greentracer.org?ref=badge" target="_blank" rel="noopener noreferrer">
-  <img src="https://api.greentracer.org/api/badge.svg?theme=dark&url=${encodeURIComponent(target)}"
-       alt="GreenTracer Badge (Dark)" width="160" />
-</a>`;
-    }
-
-    return "";
   };
-
-  const selectedBadgeInfo = badgeTypes.find((badge) => badge.id === selectedBadge);
 
   return (
     <>
@@ -249,67 +198,187 @@ export default function Badge() {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6 mb-12">
-              {badgeTypes.map((badge) => (
-                <div
-                  key={badge.id}
-                  onClick={() => setSelectedBadge(badge.id)}
-                  className={`relative cursor-pointer transition-all duration-300 transform hover:scale-105 ${
-                    selectedBadge === badge.id ? "scale-105" : ""
-                  }`}
-                >
-                  <div
-                    className={`bg-white dark:bg-slate-800 rounded-2xl border-2 ${
-                      selectedBadge === badge.id ? badge.borderColor : "border-slate-200 dark:border-slate-700"
-                    } shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden`}
-                  >
-                    {badge.recommended && (
-                      <div className="absolute top-4 right-4 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold z-10">
-                        Recommended
-                      </div>
-                    )}
-
-                    <div className="p-6">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className={`w-12 h-12 bg-gradient-to-r ${badge.color} rounded-xl flex items-center justify-center text-white shadow-lg`}>
-                          {badge.icon}
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-slate-900 dark:text-white">{badge.title}</h3>
-                          <p className="text-slate-600 dark:text-slate-400 text-sm">{badge.subtitle}</p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        {badge.features.map((feature) => (
-                          <div key={feature} className="flex items-center gap-2">
-                            <FaCheck className="text-green-600 dark:text-green-400 text-sm" />
-                            <span className="text-sm text-slate-600 dark:text-slate-400">{feature}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {selectedBadge === badge.id && (
-                      <div className={`absolute inset-0 border-4 ${badge.borderColor} rounded-2xl pointer-events-none`}>
-                        <div className="absolute top-2 left-2 w-6 h-6 bg-green-600 rounded-full flex items-center justify-center">
-                          <FaCheck className="text-white text-xs" />
-                        </div>
-                      </div>
-                    )}
+            {/* Customisation Section */}
+            <div className="max-w-2xl mx-auto mb-12 p-6 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
+                <FaPalette className="text-green-600 dark:text-green-400" />
+                Customize Your Badge
+              </h3>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">
+                    Background Colour
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={bgColor}
+                      onChange={(e) => setBgColor(e.target.value)}
+                      className="w-16 h-12 rounded-lg cursor-pointer border border-slate-300 dark:border-slate-600"
+                    />
+                    <input
+                      type="text"
+                      value={bgColor}
+                      onChange={(e) => setBgColor(e.target.value)}
+                      className="flex-1 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="#ffffff"
+                    />
+                    <button
+                      onClick={() => setBgColor('#ffffff')}
+                      className="px-3 py-2 text-xs font-medium bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-lg transition-colors"
+                    >
+                      Reset
+                    </button>
                   </div>
                 </div>
-              ))}
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">
+                    Accent Colour
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={accentColor}
+                      onChange={(e) => setAccentColor(e.target.value)}
+                      className="w-16 h-12 rounded-lg cursor-pointer border border-slate-300 dark:border-slate-600"
+                    />
+                    <input
+                      type="text"
+                      value={accentColor}
+                      onChange={(e) => setAccentColor(e.target.value)}
+                      className="flex-1 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="#16A34A"
+                    />
+                    <button
+                      onClick={() => setAccentColor('#16A34A')}
+                      className="px-3 py-2 text-xs font-medium bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-lg transition-colors"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">
+                    Text / Logo Colour (Optional)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={/^#[0-9A-Fa-f]{6}$/.test((textColor || "").trim()) ? textColor : "#0F172A"}
+                      onChange={(e) => setTextColor(e.target.value)}
+                      className="w-16 h-12 rounded-lg cursor-pointer border border-slate-300 dark:border-slate-600"
+                    />
+                    <input
+                      type="text"
+                      value={textColor}
+                      onChange={(e) => setTextColor(e.target.value)}
+                      className="flex-1 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="Leave blank for default"
+                    />
+                    <button
+                      onClick={() => setTextColor('')}
+                      className="px-3 py-2 text-xs font-medium bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-lg transition-colors"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Badge Info Card */}
+            <div className="max-w-2xl mx-auto mb-12 p-8 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-lg">
+              <div className="flex items-center gap-4 mb-4">
+                <div className={`w-12 h-12 bg-gradient-to-r ${badgeType.color} rounded-xl flex items-center justify-center text-white shadow-lg`}>
+                  {badgeType.icon}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">{badgeType.title}</h3>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm">{badgeType.subtitle}</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {badgeType.features.map((feature) => (
+                  <div key={feature} className="flex items-center gap-2">
+                    <FaCheck className="text-green-600 dark:text-green-400 text-sm" />
+                    <span className="text-sm text-slate-600 dark:text-slate-400">{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Live Preview Section */}
+            <div className="max-w-2xl mx-auto mb-12 p-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg">
+              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
+                <FaEye className="text-green-600 dark:text-green-400" />
+                Live Preview
+              </h3>
+              <div className="flex flex-col items-center gap-6">
+                <p className="text-sm text-slate-600 dark:text-slate-400">Your badge will look like this on your website:</p>
+                {/* HTML Badge Preview - matching the actual JS badge structure */}
+                <div
+                  className="inline-flex overflow-hidden rounded-md shadow-lg border"
+                  style={{
+                    borderColor: accentColor,
+                    backgroundColor: bgColor,
+                  }}
+                >
+                  <div
+                    className="px-4 py-2 text-sm font-semibold"
+                    style={{
+                      backgroundColor: bgColor,
+                      color: /^#[0-9A-Fa-f]{6}$/.test((textColor || "").trim()) ? textColor : '#0F172A',
+                      borderRight: `1px solid ${accentColor}`,
+                    }}
+                  >
+                    0.45g CO₂/view
+                  </div>
+                  <div
+                    className="flex items-center px-4 py-2"
+                    style={{
+                      backgroundColor: accentColor,
+                    }}
+                  >
+                    <picture>
+                      <source type="image/avif" srcSet="/GreenTraceLogo.avif" />
+                      <source type="image/webp" srcSet="/GreenTraceLogo.webp" />
+                      <img
+                        src="/GreenTraceLogo.png"
+                        alt="GreenTracer"
+                        className="h-5 w-auto"
+                        style={{
+                          filter: /^#[0-9A-Fa-f]{6}$/.test((textColor || "").trim())
+                            ? (() => {
+                                const hex = textColor.trim().slice(1);
+                                const r = parseInt(hex.slice(0, 2), 16) / 255;
+                                const g = parseInt(hex.slice(2, 4), 16) / 255;
+                                const b = parseInt(hex.slice(4, 6), 16) / 255;
+                                const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                                return luminance > 0.6 ? "brightness(0) invert(1)" : "brightness(0)";
+                              })()
+                            : "brightness(0) invert(1)",
+                        }}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </picture>
+                  </div>
+                </div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 text-center space-y-1">
+                  <p>Sample data shown. This is how your badge will appear on your website.</p>
+                  <p className="font-medium">Test your website first at the top of this page →</p>
+                </div>
+              </div>
             </div>
 
             <div className="max-w-4xl mx-auto">
               <div className="bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden">
-                <div className={`p-6 bg-gradient-to-r ${selectedBadgeInfo.color} text-white`}>
+                <div className={`p-6 bg-gradient-to-r ${badgeType.color} text-white`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      {selectedBadgeInfo.icon}
+                      {badgeType.icon}
                       <div>
-                        <h3 className="text-xl font-bold">{selectedBadgeInfo.title} Code</h3>
+                        <h3 className="text-xl font-bold">{badgeType.title} Code</h3>
                         <p className="opacity-90">Copy and paste into your HTML</p>
                       </div>
                     </div>
