@@ -45,10 +45,18 @@ app.get('/greentrace-badge.js', badgeCors, limiterBadge, (req,res) => {
   res.sendFile(path.join(__dirname,'public','greentrace-badge.js'));
 });
 
+// Helper: Validate hex colour
+function isValidHex(hex) {
+  return /^#[0-9A-Fa-f]{6}$/.test(hex);
+}
+
 // ⬇︎ New: truly static SVG badge
 app.get('/api/badge.svg', badgeCors, limiterBadge, async (req, res) => {
   const theme = (req.query.theme||'auto').toLowerCase();
   const site  = req.query.url;
+  const customBgColor = req.query.bgColor;
+  const customAccentColor = req.query.accentColor;
+  
   if (!site) {
     res.set('Content-Type','image/svg+xml');
     return res.status(400).send(`<svg><text x="0" y="15" fill="red">Missing url</text></svg>`);
@@ -77,11 +85,19 @@ app.get('/api/badge.svg', badgeCors, limiterBadge, async (req, res) => {
 
   const light = { fg:'#0F172A', bg:'#fff', border:'#16A34A', sub:'#475569' };
   const dark  = { fg:'#e5e7eb', bg:'#1f2937', border:'#16A34A', sub:'#94a3b8' };
-  const pick = theme==='dark'
+  let pick = theme==='dark'
     ? dark
     : theme==='light'
       ? light
       : (req.get('sec-ch-prefers-color-scheme')==='dark' ? dark : light);
+
+  // Apply custom colours if provided and valid
+  if (customBgColor && isValidHex(customBgColor)) {
+    pick.bg = customBgColor;
+  }
+  if (customAccentColor && isValidHex(customAccentColor)) {
+    pick.border = customAccentColor;
+  }
 
   const co2 = Number(data.carbonEstimate||0).toFixed(2);
   const pct = data.percentile!=null ? data.percentile : '--';
