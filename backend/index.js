@@ -138,13 +138,31 @@ app.get('/api/trace-or-check', badgeCors, limiterTraceOrCheck, async (req,res) =
   const site = req.query.site;
   if (!site) return res.status(400).json({ error:'Missing site.' });
 
-  const norm = site.startsWith('http') ? site : `https://${site}`;
+  const isUrl = /^https?:\/\//i.test(site);
+  const lookupKey = isUrl ? slugify(site) : site;
+  const cached = await getCached(lookupKey);
+  if (cached) {
+    if (hasAnyLighthouseScore(cached.lighthouseScores)) return res.json(cached);
+    if (cached.url) {
+      try {
+        const host = new URL(cached.url).hostname;
+        const refreshed = await performCarbonCheck(cached.url, host);
+        return res.json(refreshed);
+      } catch {
+        return res.json(cached);
+      }
+    }
+    return res.json(cached);
+  }
+
+  if (!isUrl) {
+    return res.status(404).json({ error:'No cached result for this slug. Run a fresh check first.' });
+  }
+
+  const norm = site;
   let host;
   try { host = new URL(norm).hostname; }
   catch { return res.status(400).json({ error:'Bad URL.' }); }
-
-  const cached = await getCached(slugify(norm));
-  if (cached) return res.json(cached);
 
   try {
     const data = await performCarbonCheck(norm, host);
@@ -210,7 +228,7 @@ async function getCached(slug) {
   if (error || !row) return null;
   if (TTL!==0 && Date.now() - new Date(row.created_at).getTime() > TTL) return null;
   const info = row.result_data || {};
-  const lighthouseScores = info.lighthouseScores || null;
+  const lighthouseScores = normalizeLighthouseScores(info.lighthouseScores);
   return {
     slug:           row.slug,
     url:            row.url,
@@ -220,6 +238,7 @@ async function getCached(slug) {
     reductionPct:   +row.reduction_pct,
     grade:          row.grade,
     lighthouseScores,
+    lighthouseStatus: hasAnyLighthouseScore(lighthouseScores) ? 'available' : (info.lighthouseMeta?.status || 'unavailable'),
     timestamp:      new Date(row.created_at).getTime()
   };
 }
@@ -232,7 +251,13 @@ async function performCarbonCheck(norm, host) {
   const reductionPct  = green ? totalGreenReductionPct() : 0;
   const slug          = slugify(sizeInfo.finalUrl||norm);
   const grade         = gradeFor(carbon);
-  const lighthouseScores = sizeInfo.lighthouseScores || null;
+  const lighthouseScores = normalizeLighthouseScores(sizeInfo.lighthouseScores);
+  const lighthouseStatus = hasAnyLighthouseScore(lighthouseScores) ? 'available' : 'unavailable';
+  const lighthouseMeta = {
+    status: lighthouseStatus,
+    source: sizeInfo.measurementSource || 'unknown',
+    reason: sizeInfo.lighthouseReason || null
+  };
 
   const { data: row, error } = await supabase
     .from('results')
@@ -244,7 +269,7 @@ async function performCarbonCheck(norm, host) {
       percentile,
       reduction_pct:   reductionPct,
       grade,
-      result_data:     { sizeInfo, carbon, percentile, reductionPct, grade, lighthouseScores }
+      result_data:     { sizeInfo, carbon, percentile, reductionPct, grade, lighthouseScores, lighthouseMeta }
     }, { onConflict:['slug'] })
     .select().single();
 
@@ -258,6 +283,7 @@ async function performCarbonCheck(norm, host) {
     reductionPct:   +row.reduction_pct,
     grade:          row.grade,
     lighthouseScores,
+    lighthouseStatus,
     timestamp:      new Date(row.created_at).getTime()
   };
 }
@@ -292,14 +318,13 @@ function calcCO2(sizeMB, isGreen) {
 }
 
 async function runPSI(url, strat, key) {
-  const api=`https://www.googleapis.com/pagespeedonline/v5/runPagespeed`
-    +`?url=${encodeURIComponent(url)}`
-    +`&strategy=${strat}`
-    +`&category=performance`
-    +`&category=accessibility`
-    +`&category=best-practices`
-    +`&category=seo`
-    +`&key=${key}`;
+  const params = new URLSearchParams({ url, strategy: strat });
+  params.append('category', 'performance');
+  params.append('category', 'accessibility');
+  params.append('category', 'best-practices');
+  params.append('category', 'seo');
+  if (key) params.append('key', key);
+  const api=`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?${params.toString()}`;
   const r=await axios.get(api,{timeout:30000});
   const lr=r.data.lighthouseResult;
   const b=lr?.audits?.['total-byte-weight']?.numericValue||0;
@@ -313,13 +338,46 @@ async function runPSI(url, strat, key) {
   return {
     bytes:Math.max(b,sum),
     finalUrl:lr.finalDisplayedUrl||url,
-    lighthouseScores: {
+    lighthouseScores: normalizeLighthouseScores({
       performance:   toPct(categories.performance?.score),
       accessibility: toPct(categories.accessibility?.score),
-      bestPractices: toPct(categories['best-practices']?.score),
+      'best-practices': toPct(categories['best-practices']?.score),
       seo:           toPct(categories.seo?.score)
-    }
+    })
   };
+}
+
+function mergeLighthouseScores(primary, secondary) {
+  const a = normalizeLighthouseScores(primary);
+  const b = normalizeLighthouseScores(secondary);
+  if (!a && !b) return null;
+  return normalizeLighthouseScores({
+    performance: a?.performance ?? b?.performance,
+    accessibility: a?.accessibility ?? b?.accessibility,
+    'best-practices': a?.['best-practices'] ?? b?.['best-practices'],
+    seo: a?.seo ?? b?.seo
+  });
+}
+
+function normalizeLighthouseScores(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const normalize = (v) =>
+    typeof v === 'number' && Number.isFinite(v)
+      ? Math.max(0, Math.min(100, Math.round(v)))
+      : null;
+  return {
+    performance: normalize(raw.performance),
+    accessibility: normalize(raw.accessibility),
+    'best-practices': normalize(raw['best-practices'] ?? raw.bestPractices),
+    bestPractices: normalize(raw.bestPractices ?? raw['best-practices']),
+    seo: normalize(raw.seo)
+  };
+}
+
+function hasAnyLighthouseScore(scores) {
+  if (!scores || typeof scores !== 'object') return false;
+  return ['performance', 'accessibility', 'best-practices', 'bestPractices', 'seo']
+    .some((k) => typeof scores[k] === 'number' && Number.isFinite(scores[k]));
 }
 
 async function htmlOnlyEstimateMB(url) {
@@ -335,22 +393,29 @@ async function htmlOnlyEstimateMB(url) {
 
 async function fetchSize(url) {
   const key = process.env.PAGESPEED_API_KEY;
-  if (!key) {
-    const mb=await htmlOnlyEstimateMB(url);
-    return { bytes:mb*1024*1024, finalUrl:url };
-  }
   try {
     const [d,m]=await Promise.allSettled([
       runPSI(url,'desktop',key),
       runPSI(url,'mobile', key)
     ]);
-    let best=d.status==='fulfilled'?d.value:null;
-    if(m.status==='fulfilled'&&(!best||m.value.bytes>best.bytes))best=m.value;
-    if(best)return best;
+    const desktop = d.status==='fulfilled' ? d.value : null;
+    const mobile = m.status==='fulfilled' ? m.value : null;
+    let best = desktop;
+    if(mobile && (!best || mobile.bytes > best.bytes)) best = mobile;
+    if(best){
+      const lighthouseScores = mergeLighthouseScores(desktop?.lighthouseScores, mobile?.lighthouseScores);
+      return { ...best, lighthouseScores, measurementSource: 'psi', lighthouseReason: null };
+    }
     throw new Error('PSI both failed');
   } catch {
     const mb=await htmlOnlyEstimateMB(url);
-    return { bytes:mb*1024*1024, finalUrl:url };
+    return {
+      bytes:mb*1024*1024,
+      finalUrl:url,
+      lighthouseScores:null,
+      measurementSource:'html-fallback',
+      lighthouseReason:'psi-unavailable'
+    };
   }
 }
 

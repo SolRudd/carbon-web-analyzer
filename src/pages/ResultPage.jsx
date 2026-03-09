@@ -9,6 +9,7 @@ import {
   FaChartLine,
   FaClipboardCheck,
   FaExternalLinkAlt,
+  FaFilePdf,
   FaLeaf,
   FaRedo,
   FaServer,
@@ -55,8 +56,140 @@ const getPerformanceInsight = (percentile) => {
 
 const formatScore = (value) => {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
-  const clamped = Math.max(0, Math.min(100, Math.round(value)));
-  return `${clamped}/100`;
+  return Math.max(0, Math.min(100, Math.round(value)));
+};
+
+const scoreToneClass = (score) => {
+  if (typeof score !== "number") return "text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600";
+  if (score >= 90) return "text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700";
+  if (score >= 75) return "text-lime-700 dark:text-lime-300 border-lime-300 dark:border-lime-700";
+  if (score >= 50) return "text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700";
+  return "text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700";
+};
+
+const pdfEscape = (value) =>
+  String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)");
+
+const wrapText = (value, maxLen = 88) => {
+  const words = String(value ?? "").split(" ");
+  const lines = [];
+  let current = "";
+
+  words.forEach((word) => {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length > maxLen) {
+      if (current) lines.push(current);
+      current = word;
+    } else {
+      current = next;
+    }
+  });
+
+  if (current) lines.push(current);
+  return lines.length ? lines : [""];
+};
+
+const createPdfBlob = (report) => {
+  const pageWidth = 595;
+  const pageHeight = 842;
+  const commands = [];
+  const toPdfY = (topY) => pageHeight - topY;
+  const drawRectTop = (x, topY, width, height, fillRgb) => {
+    const y = pageHeight - topY - height;
+    commands.push("q");
+    commands.push(`${fillRgb} rg`);
+    commands.push(`${x} ${y} ${width} ${height} re f`);
+    commands.push("Q");
+  };
+  const drawTextTop = (x, topY, text, options = {}) => {
+    const { size = 11, color = "0.07 0.11 0.16", font = "F1", maxLen = 90, lineGap = 14 } = options;
+    let currentY = topY;
+    wrapText(text, maxLen).forEach((line) => {
+      commands.push("BT");
+      commands.push(`${color} rg`);
+      commands.push(`/${font} ${size} Tf`);
+      commands.push(`1 0 0 1 ${x} ${toPdfY(currentY)} Tm`);
+      commands.push(`(${pdfEscape(line)}) Tj`);
+      commands.push("ET");
+      currentY += lineGap;
+    });
+    return currentY;
+  };
+  const scoreText = (score) => (typeof score === "number" ? `${score}/100` : "Unavailable");
+
+  drawRectTop(0, 0, pageWidth, 90, "0.06 0.50 0.26");
+  drawRectTop(0, 90, pageWidth, 26, "0.05 0.42 0.22");
+  drawTextTop(42, 36, "GreenTracer Website Intelligence Report", { size: 18, color: "1 1 1", font: "F2", lineGap: 20 });
+  drawTextTop(42, 64, `Generated on ${report.testedOn}`, { size: 10, color: "0.92 0.97 0.94" });
+  drawTextTop(430, 50, "greentracer.org", { size: 10, color: "0.92 0.97 0.94", font: "F2", maxLen: 20 });
+
+  drawRectTop(36, 136, 523, 95, "0.95 0.98 0.96");
+  drawTextTop(52, 160, "Report Context", { size: 12, font: "F2", color: "0.06 0.40 0.22" });
+  drawTextTop(52, 182, `Tested URL: ${report.url}`, { size: 10, maxLen: 80 });
+  drawTextTop(52, 198, `Hostname: ${report.hostname}`, { size: 10 });
+  drawTextTop(52, 214, `Date: ${report.testedOn}`, { size: 10 });
+
+  drawRectTop(36, 252, 255, 180, "0.98 0.99 0.99");
+  drawTextTop(52, 276, "Core Sustainability Metrics", { size: 12, font: "F2", color: "0.06 0.40 0.22" });
+  drawTextTop(52, 302, `Carbon Intensity: ${report.carbonIntensity}`, { size: 11, font: "F2" });
+  drawTextTop(52, 321, `Grade: ${report.grade}`, { size: 11 });
+  drawTextTop(52, 339, `Percentile: ${report.percentile}`, { size: 11 });
+  drawTextTop(52, 357, `Green Hosting: ${report.greenHosting}`, { size: 11 });
+
+  drawRectTop(304, 252, 255, 180, "0.98 0.99 0.99");
+  drawTextTop(320, 276, "Lighthouse Categories", { size: 12, font: "F2", color: "0.06 0.40 0.22" });
+  drawTextTop(320, 302, `Performance: ${scoreText(report.scores.performance)}`, { size: 11 });
+  drawTextTop(320, 320, `Accessibility: ${scoreText(report.scores.accessibility)}`, { size: 11 });
+  drawTextTop(320, 338, `SEO: ${scoreText(report.scores.seo)}`, { size: 11 });
+  drawTextTop(320, 356, `Best Practices: ${scoreText(report.scores.bestPractices)}`, { size: 11 });
+
+  drawRectTop(36, 448, 523, 110, "0.95 0.97 0.99");
+  drawTextTop(52, 472, "Hosting and Badge Status", { size: 12, font: "F2", color: "0.06 0.32 0.49" });
+  drawTextTop(52, 496, report.greenHost
+    ? "Green hosting is verified for this report. Green Hosting Verified badge eligibility is active."
+    : "Green hosting is not currently verified. Green Hosting Verified badge is unavailable until hosting is verified.", {
+    size: 10,
+    maxLen: 88,
+    lineGap: 13
+  });
+
+  drawRectTop(36, 574, 523, 92, "0.99 0.99 0.99");
+  drawTextTop(52, 598, "Method Notes", { size: 12, font: "F2", color: "0.28 0.33 0.38" });
+  drawTextTop(52, 622, "Only real saved result data is included in this export.", { size: 10, maxLen: 86 });
+  drawTextTop(52, 638, "Missing Lighthouse category values are labeled Unavailable.", { size: 10, maxLen: 86 });
+
+  drawTextTop(36, 792, "GreenTracer report export v1", { size: 9, color: "0.42 0.48 0.54", maxLen: 40 });
+
+  const stream = `${commands.join("\n")}\n`;
+
+  const objects = [
+    "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+    "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+    "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >>\nendobj\n",
+    `4 0 obj\n<< /Length ${stream.length} >>\nstream\n${stream}endstream\nendobj\n`,
+    "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+    "6 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n",
+  ];
+
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  objects.forEach((obj) => {
+    offsets.push(pdf.length);
+    pdf += obj;
+  });
+
+  const xrefOffset = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n`;
+  pdf += "0000000000 65535 f \n";
+  offsets.slice(1).forEach((offset) => {
+    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  });
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+  return new Blob([pdf], { type: "application/pdf" });
 };
 
 export default function ResultPage() {
@@ -124,7 +257,40 @@ export default function ResultPage() {
   const perfScore = formatScore(lighthouseScores.performance);
   const seoScore = formatScore(lighthouseScores.seo);
   const accessibilityScore = formatScore(lighthouseScores.accessibility);
-  const bestPracticesScore = formatScore(lighthouseScores.bestPractices);
+  const bestPracticesScore = formatScore(lighthouseScores["best-practices"] ?? lighthouseScores.bestPractices);
+  const trustScores = [
+    { label: "SEO", icon: FaChartLine, value: seoScore },
+    { label: "Accessibility", icon: FaShieldAlt, value: accessibilityScore },
+    { label: "Best practices", icon: FaCheckCircle, value: bestPracticesScore },
+  ];
+  const handleDownloadPdf = () => {
+    const blob = createPdfBlob({
+      url: result.url,
+      hostname,
+      testedOn,
+      carbonIntensity: `${Number(result.carbonEstimate || 0).toFixed(2)} g CO₂ per page view`,
+      grade: result.grade || "Unavailable",
+      percentile: `${percentileValue}% cleaner than tested pages`,
+      greenHost: !!result.greenHost,
+      greenHosting: result.greenHost ? "Verified" : "Not Verified",
+      scores: {
+        performance: perfScore,
+        accessibility: accessibilityScore,
+        seo: seoScore,
+        bestPractices: bestPracticesScore,
+      },
+    });
+    const fileHost = String(hostname || "website").replace(/[^a-z0-9.-]/gi, "-").toLowerCase();
+    const downloadName = `greentracer-report-${fileHost || "website"}.pdf`;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = downloadName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
   const reportSchema = shouldIndex
     ? {
         "@context": "https://schema.org",
@@ -246,6 +412,13 @@ export default function ResultPage() {
                   Configure Badges
                 </Link>
               <button
+                onClick={handleDownloadPdf}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 dark:border-slate-600 bg-white/85 dark:bg-slate-900/80 px-5 py-2.5 text-sm font-semibold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
+              >
+                <FaFilePdf className="text-xs" />
+                Download PDF Report
+              </button>
+              <button
                 onClick={fetchData}
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 dark:border-slate-600 bg-white/85 dark:bg-slate-900/80 px-5 py-2.5 text-sm font-semibold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
               >
@@ -307,37 +480,41 @@ export default function ResultPage() {
 
             <article className="rounded-2xl border border-slate-200/90 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 shadow-[0_8px_20px_-18px_rgba(15,23,42,0.45)]">
               <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Performance Insight</p>
-              <div className="mt-2.5 flex items-center gap-2 text-slate-900 dark:text-white">
+              <div className="mt-2.5 flex items-center justify-between gap-2 text-slate-900 dark:text-white">
+                <div className="inline-flex items-center gap-2">
                 <FaBolt className="text-green-600 dark:text-green-400" />
                 <p className="font-semibold">
-                  {perfScore ? `Lighthouse performance: ${perfScore}` : "Lighthouse performance: unavailable"}
+                    Lighthouse performance
                 </p>
+                </div>
+                <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${scoreToneClass(perfScore)}`}>
+                  {typeof perfScore === "number" ? `${perfScore}/100` : "Unavailable"}
+                </span>
               </div>
               <p className="mt-2.5 text-sm text-slate-600 dark:text-slate-300">
                 {perfScore
-                  ? "Pulled from the latest saved Lighthouse data in this report."
-                  : `Unavailable for this cached row. ${getPerformanceInsight(result.percentile)}`}
+                  ? `${getPerformanceInsight(result.percentile)}`
+                  : "This cached report predates Lighthouse category capture. Re-run a test to include it."}
               </p>
             </article>
 
             <article className="rounded-2xl border border-slate-200/90 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 shadow-[0_8px_20px_-18px_rgba(15,23,42,0.45)]">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Trust Signals</p>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Lighthouse Categories</p>
               <div className="mt-2.5 space-y-2.5">
-                <p className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                  <FaChartLine className="text-slate-400" />
-                  SEO: {seoScore || "unavailable"}
-                </p>
-                <p className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                  <FaShieldAlt className="text-slate-400" />
-                  Accessibility: {accessibilityScore || "unavailable"}
-                </p>
-                <p className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-                  <FaCheckCircle className="text-slate-400" />
-                  Best practices: {bestPracticesScore || "unavailable"}
-                </p>
+                {trustScores.map(({ label, icon, value }) => (
+                  <div key={label} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                      {React.createElement(icon, { className: "text-slate-400" })}
+                      {label}
+                    </span>
+                    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${scoreToneClass(value)}`}>
+                      {typeof value === "number" ? `${value}/100` : "Unavailable"}
+                    </span>
+                  </div>
+                ))}
               </div>
               <p className="mt-2.5 text-xs text-slate-500 dark:text-slate-400">
-                Values are shown only when saved in the cached Lighthouse payload.
+                Scores are shown only when present in the saved Lighthouse payload.
               </p>
             </article>
           </section>
