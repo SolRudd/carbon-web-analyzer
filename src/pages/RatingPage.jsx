@@ -108,7 +108,7 @@ export default function RatingPage() {
     "@type": "WebPage",
     "name": "GreenTracer Carbon Rating System",
     "description": "Learn how GreenTracer grades website environmental impact from A+ to F based on CO₂ emissions, and get tips to improve your score.",
-    "url": "https://www.greentracer.org/rating-system",
+    "url": "https://www.greentracer.org/rating",
     "keywords": "carbon rating system, website sustainability grade, CO₂ score, environmental impact rating"
   };
 
@@ -119,18 +119,18 @@ export default function RatingPage() {
         {/* -- Primary Meta Tags -- */}
         <title>Carbon Rating System | GreenTracer</title>
         <meta name="description" content="Understand how we grade your website's environmental impact from A+ (Ultra-Efficient) to F. See our science-based CO₂ rating scale and get optimization tips." />
-        <link rel="canonical" href="https://www.greentracer.org/rating-system" />
+        <link rel="canonical" href="https://www.greentracer.org/rating" />
 
         {/* -- Open Graph / Facebook -- */}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://www.greentracer.org/rating-system" />
+        <meta property="og:url" content="https://www.greentracer.org/rating" />
         <meta property="og:title" content="Carbon Rating System | GreenTracer" />
         <meta property="og:description" content="Understand how we grade your website's environmental impact from A+ to F and get optimization tips." />
         <meta property="og:image" content="https://www.greentracer.org/GreenFavi.png" />
 
         {/* -- Twitter -- */}
         <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content="https://www.greentracer.org/rating-system" />
+        <meta property="twitter:url" content="https://www.greentracer.org/rating" />
         <meta property="twitter:title" content="Carbon Rating System | GreenTracer" />
         <meta property="twitter:description" content="Understand how we grade your website's environmental impact from A+ to F and get optimization tips." />
         <meta property="twitter:image" content="https://www.greentracer.org/GreenFavi.png" />

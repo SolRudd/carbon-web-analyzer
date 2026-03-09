@@ -10,6 +10,7 @@ import {
   FaChartBar,
   FaLock
 } from "react-icons/fa";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import SEO from '../components/SEO'; // ✅ 1. Import our new SEO component
 
@@ -37,7 +38,8 @@ export default function PrivacyPolicy() {
       <SEO
         title="Privacy Policy"
         description="Your trust is important. This policy explains how GreenTracer collects, uses, and protects your personal data and information in accordance with privacy regulations."
-        imageUrl="https://www.greentracer.org/GreenFavi.png" 
+        imageUrl="https://www.greentracer.org/GreenFavi.png"
+        canonicalUrl="https://www.greentracer.org/privacy-policy"
       />
 
       <div 

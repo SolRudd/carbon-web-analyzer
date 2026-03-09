@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GreenTracer Badge Local Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 40px;
+        background: #f7f7f8;
+        color: #111827;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Local GreenTracer Badge Test</h1>
+
+    <div class="card">
+      <p><strong>Saved-data test:</strong></p>
+      <div
+        class="greentrace-badge"
+        data-url="https://www.greentracer.org"
+        data-theme="auto"
+        data-bg-color="#ffffff"
+        data-accent-color="#16a34a"
+      ></div>
+    </div>
+
+    <div class="card">
+      <p><strong>Uncached-site test:</strong></p>
+      <div
+        class="greentrace-badge"
+        data-url="https://this-domain-should-never-have-been-tested-123456-example.com"
+        data-theme="auto"
+        data-bg-color="#ffffff"
+        data-accent-color="#16a34a"
+      ></div>
+    </div>
+
+    <script src="http://localhost:8080/greentrace-badge.js" defer></script>
+  </body>
+</html>

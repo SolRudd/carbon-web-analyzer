@@ -1,4 +1,5 @@
 User-agent: *
+Disallow: /result/
 Disallow: /results/
 Allow: /
 

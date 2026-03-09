@@ -87,14 +87,14 @@ export default function Blog() {
         <meta property="og:url" content="https://www.greentracer.org/blog" />
         <meta property="og:title" content="GreenTracer Blog | Web Sustainability & Carbon Reduction" />
         <meta property="og:description" content="Expert insights on web sustainability, carbon reduction strategies, and environmental technology." />
-        <meta property="og:image" content="https://www.greentracer.org/your-social-share-image-for-blog.jpg" />
+        <meta property="og:image" content="https://www.greentracer.org/GreenFavi.png" />
 
         {/* -- Twitter -- */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://www.greentracer.org/blog" />
         <meta property="twitter:title" content="GreenTracer Blog | Web Sustainability & Carbon Reduction" />
         <meta property="twitter:description" content="Expert insights on web sustainability, carbon reduction strategies, and environmental technology." />
-        <meta property="twitter:image" content="https://www.greentracer.org/your-social-share-image-for-blog.jpg" />
+        <meta property="twitter:image" content="https://www.greentracer.org/GreenFavi.png" />
 
         {/* -- Schema.org Markup -- */}
         <script type="application/ld+json">

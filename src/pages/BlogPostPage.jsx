@@ -141,15 +141,6 @@ const ScrollToTop = () => {
   );
 };
 
-const calculateReadingTime = (PostContentComponent) => {
-    if (!PostContentComponent) return 0;
-    const div = document.createElement('div');
-    const root = ReactDOM.createRoot(div);
-    root.render(<PostContentComponent />);
-    const wordCount = div.innerText.split(/\s+/).length;
-    return Math.ceil(wordCount / 200);
-};
-
 export default function BlogPostPage() {
   const { slug } = useParams();
   const [tocOpen, setTocOpen] = useState(false);
@@ -188,7 +179,7 @@ export default function BlogPostPage() {
     "description": meta.excerpt,
     "image": `https://www.greentracer.org${meta.image}`,
     "author": { "@type": "Person", "name": meta.author },
-    "publisher": { "@type": "Organization", "name": "GreenTracer", "logo": { "@type": "ImageObject", "url": "https://www.greentracer.org/logo.png" } },
+    "publisher": { "@type": "Organization", "name": "GreenTracer", "logo": { "@type": "ImageObject", "url": "https://www.greentracer.org/GreenTraceLogo.png" } },
     "datePublished": meta.date,
     "dateModified": meta.date
   };

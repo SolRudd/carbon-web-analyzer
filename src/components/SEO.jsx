@@ -1,5 +1,5 @@
 import React from 'react';
-import { Helmet, HelmetProvider } from 'react-helmet-async';
+import { Helmet } from 'react-helmet-async';
 
 /**
  * A reusable component to manage all SEO-related head tags.
@@ -8,8 +8,9 @@ import { Helmet, HelmetProvider } from 'react-helmet-async';
  * @param {string} props.description - A brief description of the page content.
  * @param {string} [props.imageUrl] - The URL for the page's feature image (for social cards).
  * @param {string} [props.author] - The Twitter handle of the author (e.g., @GreenTracerOrg).
+ * @param {string} [props.canonicalUrl] - Absolute canonical URL for the current page.
  */
-export default function SEO({ title, description, imageUrl, author }) {
+export default function SEO({ title, description, imageUrl, author, canonicalUrl }) {
   // Use a default title and description if none are provided.
   const siteName = 'GreenTracer';
   const defaultDescription = 'Measure and analyze the carbon footprint of any website with our free, real-time carbon calculator. Understand your digital impact and learn how to build a greener web.';
@@ -22,15 +23,18 @@ export default function SEO({ title, description, imageUrl, author }) {
       {/* Standard metadata tags */}
       <title>{fullTitle}</title>
       <meta name='description' content={finalDescription} />
+      {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
       
       {/* Open Graph tags for Facebook, LinkedIn, etc. */}
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={finalDescription} />
       <meta property="og:type" content="website" />
+      {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
       {imageUrl && <meta property="og:image" content={imageUrl} />}
 
       {/* Twitter Card tags */}
       <meta name="twitter:card" content="summary_large_image" />
+      {canonicalUrl && <meta name="twitter:url" content={canonicalUrl} />}
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={finalDescription} />
       {author && <meta name="twitter:creator" content={author} />}

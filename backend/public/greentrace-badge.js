@@ -33,6 +33,15 @@
     }
   }
 
+  function hexToRgba(hex, alpha) {
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hex || '')) return null;
+    var clean = hex.slice(1);
+    var r = parseInt(clean.slice(0, 2), 16);
+    var g = parseInt(clean.slice(2, 4), 16);
+    var b = parseInt(clean.slice(4, 6), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+  }
+
   function getTheme(el) {
     var force = (el.getAttribute('data-theme') || 'auto').toLowerCase();
     var customBgColor = el.getAttribute('data-bg-color');
@@ -106,20 +115,23 @@
   }
 
   function renderBadgeFrame(el, t, href, leftText, subText) {
-    var padY = 8;
-    var padX = 16;
-    var radius = 6;
-    var fontSize = 14;
+    var padY = 7;
+    var padX = 14;
+    var radius = 10;
+    var fontSize = 13;
     var logoFilter = getLogoFilter(t);
+    var borderColor = hexToRgba(t.border, 0.38) || t.border;
+    var dividerColor = hexToRgba(t.border, 0.22) || t.divider;
+    var shadowColor = hexToRgba('#0F172A', 0.16) || 'rgba(15,23,42,0.16)';
 
     var badgeHTML =
       '<a href="' + href + '" target="_blank" rel="noopener noreferrer" ' +
          'style="text-decoration:none;display:inline-block">' +
         '<div style="' +
           'display:inline-flex;align-items:center;overflow:hidden;' +
-          'border:1px solid ' + t.border + ';' +
+          'border:1px solid ' + borderColor + ';' +
           'border-radius:' + radius + 'px;' +
-          'box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);' +
+          'box-shadow:0 6px 16px -10px ' + shadowColor + ';' +
           'font-family:Inter,system-ui;transform:translateZ(0);' +
         '">' +
           '<div style="' +
@@ -127,21 +139,21 @@
             'color:' + t.leftText + ';' +
             'padding:' + padY + 'px ' + padX + 'px;' +
             'font-size:' + fontSize + 'px;' +
-            'font-weight:700;white-space:nowrap;' +
-            'border-right:1px solid ' + t.divider + ';' +
+            'font-weight:600;letter-spacing:0.01em;white-space:nowrap;' +
           '">' +
             leftText +
           '</div>' +
           '<div style="' +
             'background:' + t.rightBg + ';' +
-            'padding:' + (padY - 1) + 'px ' + padX + 'px;' +
+            'padding:' + (padY - 1) + 'px ' + (padX + 1) + 'px;' +
             'display:flex;align-items:center;justify-content:center;' +
+            'border-left:1px solid ' + dividerColor + ';' +
           '">' +
             '<picture>' +
               '<source type="image/avif" srcset="' + LOGO_AVIF + '" />' +
               '<source type="image/webp" srcset="' + LOGO_WEBP + '" />' +
               '<img src="' + LOGO_PNG + '" alt="GreenTrace" ' +
-                   'style="height:20px;filter:' + logoFilter + ';" ' +
+                   'style="height:18px;filter:' + logoFilter + ';display:block;" ' +
                    'loading="lazy" decoding="async" />' +
             '</picture>' +
           '</div>' +
@@ -150,8 +162,10 @@
 
     var textHTML =
       '<div style="' +
-        'margin-top:6px;' +
-        'font-size:14px;' +
+        'margin-top:5px;' +
+        'font-size:12px;' +
+        'font-weight:500;' +
+        'letter-spacing:0.01em;' +
         'color:' + t.subText + ';' +
         'text-align:center;' +
       '">' + subText + '</div>';
@@ -173,10 +187,10 @@
 
   function renderHostingBadge(data, pageUrl, el, t) {
     if (!data.greenHost) {
-      var text = t.customTextColor || '#92400e';
+      var text = t.customTextColor || '#475569';
       el.innerHTML =
-        '<div style="display:inline-block;border:1px solid #f59e0b;border-radius:6px;padding:8px 12px;' +
-        'font-family:Inter,system-ui;font-size:13px;background:#fffbeb;color:' + text + ';">' +
+        '<div style="display:inline-block;border:1px solid rgba(100,116,139,0.28);border-radius:10px;padding:8px 12px;' +
+        'font-family:Inter,system-ui;font-size:12px;font-weight:500;letter-spacing:0.01em;background:#f8fafc;color:' + text + ';">' +
         'Green hosting is not verified in the latest saved result for this site.' +
         '</div>';
       return;

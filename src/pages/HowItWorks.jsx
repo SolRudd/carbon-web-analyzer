@@ -2,146 +2,221 @@
 
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Helmet } from 'react-helmet-async';
-import { 
-  FaGlobe, 
-  FaLeaf, 
-  FaRuler, 
-  FaBolt, 
-  FaSmog, 
+import { Helmet } from "react-helmet-async";
+import {
+  FaGlobe,
+  FaLeaf,
+  FaRuler,
+  FaBolt,
+  FaSmog,
   FaTrophy,
   FaDatabase,
-  FaExternalLinkAlt,
-  FaCog,
-  FaChartLine,
   FaServer,
-  FaNetworkWired
+  FaNetworkWired,
+  FaCogs,
+  FaArrowRight,
 } from "react-icons/fa";
+import { ChevronDown, ExternalLink, Activity, Cpu, Layers } from "lucide-react";
 
+// --- DESIGN SYSTEM ---
+const pageStyles = `
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --gt-green: #15803d;
+    --gt-neon: #4ade80;
+  }
+
+  .gt-page { font-family: 'Inter', sans-serif; }
+  .gt-display { font-family: 'Fraunces', serif; letter-spacing: -0.03em; }
+  .gt-mono { font-family: 'JetBrains Mono', monospace; }
+
+  @keyframes gt-reveal {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .gt-bg-data {
+    background-image:
+      linear-gradient(
+        0deg,
+        transparent 24%,
+        rgba(34, 197, 94, .05) 25%,
+        rgba(34, 197, 94, .05) 26%,
+        transparent 27%,
+        transparent 74%,
+        rgba(34, 197, 94, .05) 75%,
+        rgba(34, 197, 94, .05) 76%,
+        transparent 77%,
+        transparent
+      ),
+      linear-gradient(
+        90deg,
+        transparent 24%,
+        rgba(34, 197, 94, .05) 25%,
+        rgba(34, 197, 94, .05) 26%,
+        transparent 27%,
+        transparent 74%,
+        rgba(34, 197, 94, .05) 75%,
+        rgba(34, 197, 94, .05) 76%,
+        transparent 77%,
+        transparent
+      );
+    background-size: 50px 50px;
+  }
+
+  .gt-grid-faint {
+    background-size: 40px 40px;
+    background-image:
+      linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px);
+  }
+
+  .dark .gt-grid-faint {
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+  }
+
+  .gt-panel {
+    background: rgba(255, 255, 255, 0.74);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0,0,0,0.08);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .gt-panel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+    border-color: rgba(22, 163, 74, 0.3);
+  }
+
+  .dark .gt-panel {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .dark .gt-panel:hover {
+    box-shadow: 0 10px 30px -10px rgba(22, 163, 74, 0.1);
+  }
+
+  .gt-step-card {
+    transition: all 0.3s ease;
+  }
+
+  .gt-step-card:hover {
+    border-color: rgba(22, 163, 74, 0.45);
+    transform: translateX(4px);
+  }
+
+  .gt-soft-ring:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px rgba(34,197,94,0.9),
+      0 0 0 5px rgba(34,197,94,0.18);
+  }
+`;
+
+// --- DATA ---
 const steps = [
-  // ... (Steps array is perfect, no changes needed)
   {
     title: "URL Parsing & Domain Extraction",
-    description: "We intelligently parse your URL, clean trailing slashes, and extract the hostname for precise analysis. Our system handles all URL formats automatically.",
-    icon: <FaGlobe className="text-2xl" />,
+    description:
+      "We intelligently parse your URL, clean trailing slashes, and extract the hostname for precise analysis. Our system handles all URL formats automatically.",
+    icon: <FaGlobe />,
     color: "from-blue-500 to-cyan-500",
-    bgColor: "bg-blue-50 dark:bg-blue-900/20",
-    borderColor: "border-blue-200 dark:border-blue-700",
     details: [
-      "Automatic protocol detection (http/https)",
-      "Trailing slash normalization", 
-      "Subdomain and path handling",
-      "Invalid URL error protection"
-    ]
+      "Automatic protocol detection",
+      "Trailing slash normalization",
+      "Subdomain handling",
+      "Invalid URL protection",
+    ],
   },
   {
     title: "Green Hosting Verification",
-    description: "We check the Green Web Foundation to verify renewable-energy hosting. Green hosts receive an overall ~8% reduction by applying a 25% improvement to the data-centre portion only.",
-    icon: <FaLeaf className="text-2xl" />,
+    description:
+      "We check the Green Web Foundation API to verify renewable-energy hosting. Green hosts receive a reduction coefficient in the final carbon calculation.",
+    icon: <FaLeaf />,
     color: "from-green-500 to-emerald-500",
-    bgColor: "bg-green-50 dark:bg-green-900/20",
-    borderColor: "border-green-200 dark:border-green-700",
     details: [
-      "Real-time Green Web Foundation API call",
-      "Renewable energy certification check",
-      "25% cleaner data-centre → ~8% overall reduction",
-      "Global hosting provider database"
-    ]
+      "Real-time GWF API call",
+      "Renewable energy cert check",
+      "25% cleaner DC portion",
+      "Global provider database",
+    ],
   },
   {
     title: "Page Weight Analysis",
-    description: "Using Google's PageSpeed Insights API, we measure total page weight across all resources: images, CSS, JavaScript, fonts, and third-party content.",
-    icon: <FaRuler className="text-2xl" />,
+    description:
+      "Using Google's PageSpeed Insights API, we measure total page weight across all resources: images, CSS, JavaScript, fonts, and third-party content.",
+    icon: <FaRuler />,
     color: "from-orange-500 to-red-500",
-    bgColor: "bg-orange-50 dark:bg-orange-900/20",
-    borderColor: "border-orange-200 dark:border-orange-700",
     details: [
-      "Google PageSpeed Insights integration",
-      "Takes the larger of desktop & mobile",
-      "All resource types included",
-      "HTML-only fallback estimator if PSI is unavailable"
-    ]
+      "Lighthouse engine",
+      "Desktop & mobile weighting",
+      "Resource breakdown",
+      "HTML fallback estimator",
+    ],
   },
   {
     title: "Energy Consumption Calculation",
-    description: "We convert page size to energy using the SWDM split: total 0.197 kWh/GB made up of data-centre, network, and user-device portions.",
-    icon: <FaBolt className="text-2xl" />,
+    description:
+      "We convert page size to energy using the SWDM split: total 0.197 kWh/GB made up of data-centre, network, and user-device portions.",
+    icon: <FaBolt />,
     color: "from-yellow-500 to-orange-500",
-    bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
-    borderColor: "border-yellow-200 dark:border-yellow-700",
     details: [
-      "SWDM total: 0.197 kWh/GB",
-      "Breakdown: 0.060 DC, 0.014 Network, 0.123 User",
-      "Megabytes → kilowatt-hours conversion",
-      "Green-host saving applied to DC portion only"
-    ]
+      "0.197 kWh/GB total",
+      "Breakdown: DC, network, user",
+      "Megabytes → kWh conversion",
+      "Green-host saving applied",
+    ],
   },
   {
     title: "CO₂ Emissions Estimation",
-    description: "Energy consumption is multiplied by the global electricity carbon intensity (442 g CO₂/kWh) to calculate grams of CO₂ per page view.",
-    icon: <FaSmog className="text-2xl" />,
+    description:
+      "Energy consumption is multiplied by global electricity carbon intensity (442 g CO₂/kWh) to calculate grams of CO₂ per page view.",
+    icon: <FaSmog />,
     color: "from-purple-500 to-pink-500",
-    bgColor: "bg-purple-50 dark:bg-purple-900/20",
-    borderColor: "border-purple-200 dark:border-purple-700",
     details: [
-      "442 g CO₂/kWh global average intensity",
-      "Per-page-view carbon calculation",
-      "Green hosting reflected in DC share",
-      "Rounded to 2 decimals for readability"
-    ]
+      "442 g CO₂/kWh global avg",
+      "Per-page-view calculation",
+      "Rounded to 2 decimals",
+      "Weighted against traffic",
+    ],
   },
   {
-    title: "Performance Grading & Benchmarking",
-    description: "Your CO₂ result is assigned a grade (A+ to F) and compared against our dataset to show how you rank versus other websites tested.",
-    icon: <FaTrophy className="text-2xl" />,
+    title: "Performance Grading",
+    description:
+      "Your CO₂ result is assigned a grade (A+ to F) and compared against our global dataset to show how you rank versus other websites.",
+    icon: <FaTrophy />,
     color: "from-indigo-500 to-purple-500",
-    bgColor: "bg-indigo-50 dark:bg-indigo-900/20",
-    borderColor: "border-indigo-200 dark:border-indigo-700",
     details: [
-      "A+ to F grade assignment",
-      "Percentile ranking calculation",
-      "Comparison with global results",
-      "Actionable performance suggestions"
-    ]
+      "A+ to F grading scale",
+      "Percentile ranking",
+      "Global benchmarks",
+      "Actionable suggestions",
+    ],
   },
   {
     title: "Persistent Data Storage",
-    description: "Results are stored in PostgreSQL (Supabase) with a 24-hour cache window for re-checks, enabling badge generation, historical views, and API access for your carbon data.",
-    icon: <FaDatabase className="text-2xl" />,
+    description:
+      "Results are stored in PostgreSQL (Supabase) with a 24-hour cache window, enabling badge generation and historical tracking.",
+    icon: <FaDatabase />,
     color: "from-teal-500 to-green-500",
-    bgColor: "bg-teal-50 dark:bg-teal-900/20",
-    borderColor: "border-teal-200 dark:border-teal-700",
     details: [
-      "PostgreSQL (Supabase) persistent storage",
-      "24-hour caching to avoid noisy re-tests",
-      "Historical trend tracking (roadmap)",
-      "Badge & public API integration"
-    ]
-  }
+      "PostgreSQL storage",
+      "24h cache window",
+      "Badge API integration",
+      "Historical trends",
+    ],
+  },
 ];
 
 const techSpecs = [
-  // ... (Your techSpecs array is perfect, no changes needed)
-  { 
-    label: "Energy Intensity", 
-    value: "0.197 kWh/GB (SWDM)", 
-    description: "0.060 DC • 0.014 Network • 0.123 User" 
-  },
-  { 
-    label: "Carbon Intensity", 
-    value: "442 g CO₂/kWh", 
-    description: "Global average electricity carbon intensity" 
-  },
-  { 
-    label: "Green Host Effect", 
-    value: "~8% Overall", 
-    description: "25% cleaner data-centre portion → ~8% overall" 
-  },
-  { 
-    label: "Data Retention", 
-    value: "24 Hours", 
-    description: "Cache window before fresh re-check" 
-  }
+  { label: "Energy Intensity", value: "0.197 kWh/GB", sub: "SWDM Standard" },
+  { label: "Carbon Intensity", value: "442 g CO₂/kWh", sub: "Global Average" },
+  { label: "Green Host Impact", value: "~8% Reduction", sub: "DC Portion Only" },
+  { label: "Cache Window", value: "24 Hours", sub: "Re-scan Limit" },
 ];
 
 export default function HowItWorks() {
@@ -150,103 +225,96 @@ export default function HowItWorks() {
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": steps.map(step => ({
+    mainEntity: steps.map((step) => ({
       "@type": "Question",
-      "name": step.title,
-      "acceptedAnswer": {
+      name: step.title,
+      acceptedAnswer: {
         "@type": "Answer",
-        "text": step.description
-      }
-    }))
+        text: step.description,
+      },
+    })),
   };
 
   return (
     <>
-      {/* ✅ SEO: Final Helmet setup with all tags */}
       <Helmet>
-        {/* -- Primary Meta Tags -- */}
-        <title>How It Works | GreenTracer's Methodology</title>
-        <meta name="description" content="A transparent look at our 7-step scientific process for measuring website carbon emissions, from hosting verification to CO₂ calculation." />
+        <title>How It Works | GreenTracer Methodology</title>
+        <meta
+          name="description"
+          content="A transparent look at our 7-step scientific process for measuring website carbon emissions."
+        />
         <link rel="canonical" href="https://www.greentracer.org/how-it-works" />
-        
-        {/* -- Open Graph / Facebook -- */}
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://www.greentracer.org/how-it-works" />
-        <meta property="og:title" content="How It Works | GreenTracer's Methodology" />
-        <meta property="og:description" content="A transparent look at our 7-step scientific process for measuring website carbon emissions." />
-        <meta property="og:image" content="https://www.greentracer.org/GreenFavi.png" />
-
-        {/* -- Twitter -- */}
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content="https://www.greentracer.org/how-it-works" />
-        <meta property="twitter:title" content="How It Works | GreenTracer's Methodology" />
-        <meta property="twitter:description" content="A transparent look at our 7-step scientific process for measuring website carbon emissions." />
-        <meta property="twitter:image" content="https://www.greentracer.org/GreenFavi.png" />
-
-        {/* -- Schema.org Markup -- */}
-        <script type="application/ld+json">
-          {JSON.stringify(faqSchema)}
-        </script>
+        <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
       </Helmet>
 
-      <div className="bg-white dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
-        <section className="relative overflow-hidden py-20 px-4">
-          <div className="absolute inset-0 pointer-events-none">
-            {/* ✅ Performance: Added 'motion-safe' to respect user settings */}
-            <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-glow-green transform -translate-x-1/2 -translate-y-1/2 blur-3xl opacity-30 motion-safe:animate-pulse" />
-            <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-blue-400/20 transform rotate-12 blur-2xl opacity-25 motion-safe:animate-pulse motion-safe:delay-1000" />
-          </div>
+      <div className="gt-page bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300 min-h-screen">
+        <style>{pageStyles}</style>
 
-          <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8">
-            <div className="inline-flex items-center gap-3 bg-greenbuzz/10 dark:bg-green-400/10 px-6 py-3 rounded-full border border-greenbuzz/20 dark:border-green-400/20">
-              {/* ✅ Performance: Added 'motion-safe' to respect user settings */}
-              <FaCog className="text-greenbuzz dark:text-green-400 motion-safe:animate-spin" />
-              <span className="text-greenbuzz dark:text-green-400 font-semibold">Behind the Scenes</span>
+        {/* --- HERO SECTION --- */}
+        <section className="relative pt-32 pb-20 px-6 overflow-hidden bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-900">
+          <div className="absolute inset-0 gt-bg-data opacity-30 pointer-events-none" />
+
+          <div className="relative z-10 max-w-5xl mx-auto text-center space-y-8 animate-[gt-reveal_0.8s_ease-out]">
+            <div className="flex justify-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded shadow-sm">
+                <Activity className="w-3 h-3 text-green-600 dark:text-green-400" />
+                <span className="gt-mono text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                  Transparency Protocol
+                </span>
+              </div>
             </div>
-            {/* ... The rest of your JSX is perfect, no other changes needed ... */}
-            <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-slate-900 via-greenbuzz to-green-600 dark:from-white dark:via-green-400 dark:to-blue-400 bg-clip-text text-transparent leading-tight">
-              How GreenTrace Works
+
+            <h1 className="gt-display text-5xl sm:text-7xl font-semibold tracking-tight text-slate-900 dark:text-white leading-[1.05]">
+              How GreenTracer <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-400 italic font-light">
+                works.
+              </span>
             </h1>
-            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
-              A transparent, scientific approach to measuring your website's environmental impact. 
-              Every calculation is based on industry standards and real-world data.
+
+            <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto leading-relaxed font-light">
+              A transparent, scientific workflow for measuring website carbon impact.
+              We use open standards and verified data to calculate your digital footprint.
             </p>
-            <div className="flex flex-wrap justify-center gap-4 mt-8">
-              <div className="flex items-center gap-2 bg-white/70 dark:bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-slate-200 dark:border-white/20">
-                <FaServer className="text-greenbuzz dark:text-green-400" />
-                <span className="text-sm font-medium">Google PageSpeed API</span>
+
+            <div className="flex flex-wrap justify-center gap-4 pt-4 text-xs font-bold uppercase tracking-wider text-slate-500">
+              <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800">
+                <FaServer className="text-green-500" /> PageSpeed API
               </div>
-              <div className="flex items-center gap-2 bg-white/70 dark:bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-slate-200 dark:border-white/20">
-                <FaLeaf className="text-greenbuzz dark:text-green-400" />
-                <span className="text-sm font-medium">Green Web Foundation</span>
+              <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800">
+                <FaLeaf className="text-green-500" /> Green Web Foundation
               </div>
-              <div className="flex items-center gap-2 bg-white/70 dark:bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-slate-200 dark:border-white/20">
-                <FaDatabase className="text-greenbuzz dark:text-green-400" />
-                <span className="text-sm font-medium">PostgreSQL (Supabase)</span>
+              <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-900 rounded-full border border-slate-200 dark:border-slate-800">
+                <FaDatabase className="text-green-500" /> PostgreSQL
               </div>
             </div>
           </div>
         </section>
 
-        <section className="py-16 px-4 bg-slate-50 dark:bg-slate-900/50">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12 text-slate-900 dark:text-white">
-              Technical Specifications
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {techSpecs.map((spec, index) => (
-                <div 
-                  key={index}
-                  className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 text-center hover:shadow-lg transition-all duration-300 hover:scale-105"
-                >
-                  <div className="text-2xl font-bold text-greenbuzz dark:text-green-400 mb-2">
+        {/* --- TECH SPECS GRID --- */}
+        <section className="relative py-20 px-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-900 overflow-hidden">
+          <div className="absolute inset-0 gt-grid-faint pointer-events-none opacity-50" />
+
+          <div className="relative z-10 max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="gt-display text-3xl font-bold mb-4 text-slate-900 dark:text-white">
+                Technical Specifications
+              </h2>
+              <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+                The constants and assumptions powering our calculation engine.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {techSpecs.map((spec) => (
+                <div key={spec.label} className="gt-panel p-6 rounded-2xl text-center">
+                  <div className="gt-mono text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 mb-2">
                     {spec.value}
                   </div>
-                  <div className="text-sm font-semibold text-slate-900 dark:text-white mb-1">
+                  <div className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-1">
                     {spec.label}
                   </div>
-                  <div className="text-xs text-slate-600 dark:text-slate-400">
-                    {spec.description}
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                    {spec.sub}
                   </div>
                 </div>
               ))}
@@ -254,149 +322,196 @@ export default function HowItWorks() {
           </div>
         </section>
 
-        <section className="py-20 px-4">
-          <div className="max-w-6xl mx-auto space-y-12">
+        {/* --- PROCESS ACCORDION --- */}
+        <section className="py-20 px-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-900">
+          <div className="max-w-4xl mx-auto space-y-12">
             <div className="text-center space-y-4">
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
-                Our 7-Step Analysis Process
+              <h2 className="gt-display text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white">
+                Analysis Workflow
               </h2>
-              <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
-                Each website analysis follows this precise methodology to ensure accurate, 
-                consistent carbon footprint measurements.
+              <p className="text-lg text-slate-600 dark:text-slate-300">
+                Our 7-step process for every URL submitted.
               </p>
             </div>
-            <div className="space-y-8">
-              {steps.map((step, index) => (
-                <div
-                  key={index}
-                  className={`relative bg-white dark:bg-slate-800 rounded-2xl border-2 ${step.borderColor} p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer`}
-                  onClick={() => setExpandedStep(expandedStep === index ? null : index)}
-                >
-                  <div className="flex items-start gap-6">
-                    <div className="flex-shrink-0 relative">
-                      <div className={`w-16 h-16 bg-gradient-to-r ${step.color} rounded-2xl flex items-center justify-center text-white shadow-lg`}>
+
+            <div className="space-y-4">
+              {steps.map((step, index) => {
+                const isOpen = expandedStep === index;
+                const panelId = `step-panel-${index}`;
+
+                return (
+                  <article
+                    key={step.title}
+                    className="gt-step-card bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setExpandedStep(isOpen ? null : index)}
+                      aria-expanded={isOpen}
+                      aria-controls={panelId}
+                      className="gt-soft-ring w-full text-left p-6 flex items-start gap-6"
+                    >
+                      <div
+                        className={`shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center text-white text-lg shadow-md`}
+                      >
                         {step.icon}
                       </div>
-                      <div className="absolute -top-2 -right-2 w-8 h-8 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full flex items-center justify-center text-sm font-bold">
-                        {index + 1}
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">
-                        {step.title}
-                      </h3>
-                      <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
-                        {step.description}
-                      </p>
-                      {expandedStep === index && (
-                        <div className={`mt-6 p-4 ${step.bgColor} rounded-xl border ${step.borderColor}`}>
-                          <h4 className="font-semibold text-slate-900 dark:text-white mb-3">
-                            Key Features:
-                          </h4>
-                          <ul className="space-y-2">
-                            {step.details.map((detail, i) => (
-                              <li key={i} className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                                <div className={`w-2 h-2 bg-gradient-to-r ${step.color} rounded-full`} />
-                                {detail}
-                              </li>
-                            ))}
-                          </ul>
+
+                      <div className="flex-1">
+                        <div className="flex justify-between items-center mb-2 gap-4">
+                          <div className="gt-mono text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            STEP {index + 1}
+                          </div>
+                          <ChevronDown
+                            className={`w-5 h-5 text-slate-400 transition-transform ${
+                              isOpen ? "rotate-180" : ""
+                            }`}
+                            aria-hidden="true"
+                          />
                         </div>
-                      )}
-                      <button className="mt-4 text-greenbuzz dark:text-green-400 font-medium hover:underline flex items-center gap-2">
-                        {expandedStep === index ? 'Show Less' : 'Learn More'}
-                        <FaChartLine className={`transform transition-transform duration-200 ${expandedStep === index ? 'rotate-180' : ''}`} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                          {step.title}
+                        </h3>
+
+                        <p
+                          className={`text-slate-600 dark:text-slate-400 leading-relaxed ${
+                            !isOpen ? "line-clamp-2" : ""
+                          }`}
+                        >
+                          {step.description}
+                        </p>
+
+                        <div className="mt-4 text-green-600 dark:text-green-400 font-medium inline-flex items-center gap-2">
+                          {isOpen ? "Show Less" : "Learn More"}
+                        </div>
+
+                        <div
+                          id={panelId}
+                          className={`grid transition-all duration-300 ease-in-out overflow-hidden ${
+                            isOpen
+                              ? "grid-rows-[1fr] opacity-100 mt-6"
+                              : "grid-rows-[0fr] opacity-0"
+                          }`}
+                        >
+                          <div className="min-h-0 bg-white dark:bg-slate-950 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3">
+                              Technical Detail
+                            </h4>
+                            <ul className="grid sm:grid-cols-2 gap-2">
+                              {step.details.map((d) => (
+                                <li
+                                  key={d}
+                                  className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2"
+                                >
+                                  <div
+                                    className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${step.color}`}
+                                    aria-hidden="true"
+                                  />
+                                  {d}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  </article>
+                );
+              })}
             </div>
           </div>
         </section>
 
-        {/* The rest of the page components are unchanged */}
-        <section className="py-16 px-4 bg-slate-50 dark:bg-slate-900/50">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
-              Data Flow & Integration
+        {/* --- SYSTEM ARCHITECTURE --- */}
+        <section className="relative py-20 px-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-900 overflow-hidden">
+          <div className="absolute inset-0 gt-grid-faint pointer-events-none opacity-50" />
+
+          <div className="relative z-10 max-w-5xl mx-auto text-center space-y-12">
+            <h2 className="gt-display text-3xl font-bold text-slate-900 dark:text-white">
+              Data Architecture
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700">
-                <FaNetworkWired className="text-3xl text-blue-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">External APIs</h3>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">
-                  Google PageSpeed Insights & Green Web Foundation provide real-time data
+
+            <div className="grid md:grid-cols-3 gap-8 text-left">
+              <div className="gt-panel p-8 rounded-2xl relative">
+                <div className="absolute top-0 right-0 p-4 opacity-10" aria-hidden="true">
+                  <ExternalLink size={40} />
+                </div>
+                <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+                  <FaNetworkWired className="text-blue-500" />
+                  Sources
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  We query Google PSI for performance metrics and Green Web Foundation
+                  for hosting data.
                 </p>
               </div>
-              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700">
-                <FaCog className="text-3xl text-greenbuzz mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Processing Engine</h3>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">
-                  Node.js backend using SWDM (0.197 kWh/GB) and 442 g CO₂/kWh; green-host effect applied to the DC share
+
+              <div className="gt-panel p-8 rounded-2xl relative">
+                <div className="absolute top-0 right-0 p-4 opacity-10" aria-hidden="true">
+                  <Cpu size={40} />
+                </div>
+                <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+                  <FaCogs className="text-green-500" />
+                  Engine
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Our Node.js backend processes the raw data, applies SWDM math, and
+                  assigns a grade.
                 </p>
               </div>
-              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700">
-                <FaDatabase className="text-3xl text-purple-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Data Storage</h3>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">
-                  PostgreSQL (Supabase) with a 24-hour cache; powers public badges and result pages
+
+              <div className="gt-panel p-8 rounded-2xl relative">
+                <div className="absolute top-0 right-0 p-4 opacity-10" aria-hidden="true">
+                  <Layers size={40} />
+                </div>
+                <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+                  <FaDatabase className="text-purple-500" />
+                  Storage
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Results persist in Supabase for 24 hours to serve badges and
+                  historical lookups.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="py-20 px-4">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
-            <div className="bg-gradient-to-r from-greenbuzz/10 to-green-600/10 border border-greenbuzz/20 dark:border-green-400/20 rounded-2xl p-8">
-              <h2 className="text-3xl font-bold mb-6 text-slate-900 dark:text-white">
-                Ready to Test Your Website?
-              </h2>
-              <p className="text-lg text-slate-600 dark:text-slate-300 mb-8">
-                Get your detailed carbon footprint analysis in under 30 seconds. 
-                See exactly how our process works with your own website.
-              </p>
-              <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Link
-                  to="/#input-form"
-                  className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-greenbuzz to-green-600 hover:from-greenbuzz-light hover:to-green-500 text-white font-semibold rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                >
-                  <FaChartLine className="mr-2" />
-                  Analyze My Website
-                </Link>
-                <Link
-                  to="/badge"
-                  className="inline-flex items-center justify-center px-8 py-4 border-2 border-greenbuzz text-greenbuzz hover:bg-greenbuzz hover:text-white dark:border-green-400 dark:text-green-400 dark:hover:bg-green-400 dark:hover:text-slate-900 rounded-full font-semibold transition-all duration-300"
-                >
-                  <FaLeaf className="mr-2" />
-                  Get the Badge
-                </Link>
-              </div>
-            </div>
-            <div className="text-center space-y-4">
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Questions about our methodology? Check out our{" "}
-                <Link to="/blog" className="text-greenbuzz dark:text-green-400 hover:underline font-semibold">
-                  detailed blog posts
-                </Link>{" "}
-                or view our{" "}
-                <a 
-                  href="https://github.com/solrudd/greentracer" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-greenbuzz dark:text-green-400 hover:underline font-semibold inline-flex items-center"
-                >
-                  open source code <FaExternalLinkAlt className="ml-1 text-xs" />
-                </a>
-              </p>
+        {/* --- CTA --- */}
+        <section className="py-20 px-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-900 text-center">
+          <div className="max-w-3xl mx-auto gt-panel p-10 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <h2 className="gt-display text-3xl font-bold text-slate-900 dark:text-white mb-6">
+              See the engine in action.
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-300 mb-8">
+              Run your own analysis now to see this methodology applied to your site.
+            </p>
+
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link
-                to="/"
-                className="inline-block text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                to="/#top"
+                className="gt-soft-ring px-8 py-4 bg-slate-900 dark:bg-green-600 text-white font-bold rounded-full hover:-translate-y-1 transition-transform shadow-lg"
               >
-                ← Back to Homepage
+                Analyze Website
+              </Link>
+
+              <Link
+                to="/badge"
+                className="gt-soft-ring px-8 py-4 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-full hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+              >
+                Get Badge
               </Link>
             </div>
+          </div>
+
+          <div className="mt-12">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-green-600 transition-colors"
+            >
+              <FaArrowRight className="rotate-180" /> Back to Home
+            </Link>
           </div>
         </section>
       </div>

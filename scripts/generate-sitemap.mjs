@@ -72,7 +72,7 @@ async function fetchResultSlugs() {
 
 async function generateSitemap() {
   // 1. Static Pages
-  const staticPages = ['/', '/how-it-works', '/rating-system', '/blog', '/badge', '/faq', '/api', '/privacy'];
+  const staticPages = ['/', '/how-it-works', '/rating', '/blog', '/badge', '/faq', '/api-access', '/privacy-policy'];
   const staticXml = staticPages
     .map(p => urlTag(`${SITE_URL}${p}`, today, 'monthly', p === '/' ? '1.0' : '0.8'))
     .join('\n');
@@ -90,7 +90,7 @@ async function generateSitemap() {
   // 3. API Results
   const resultSlugs = await fetchResultSlugs();
   const resultsXml = resultSlugs
-    .map(slug => urlTag(`${SITE_URL}/results/${slug}`, today, 'weekly', '0.6'))
+    .map(slug => urlTag(`${SITE_URL}/result/${slug}`, today, 'weekly', '0.6'))
     .join('\n');
 
   // 4. Combine and Write File
@@ -112,7 +112,7 @@ ${resultsXml}
 generateSitemap().catch(err => {
   console.error('❌ Unexpected error generating sitemap:', err);
   // Fallback logic remains the same
-  const fallbackPages = ['/', '/how-it-works', '/rating-system', '/blog', '/badge', '/faq', '/api', '/privacy'];
+  const fallbackPages = ['/', '/how-it-works', '/rating', '/blog', '/badge', '/faq', '/api-access', '/privacy-policy'];
   const fallbackXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${fallbackPages.map(p => urlTag(`${SITE_URL}${p}`, today, 'monthly', p === '/' ? '1.0' : '0.8')).join('\n')}
