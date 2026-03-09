@@ -1,75 +1,103 @@
-// src/components/CookieConsentBanner.jsx
-import React, { useState, useEffect } from 'react';
-import { FaCookieBite, FaTimes } from 'react-icons/fa';
-import { motion, AnimatePresence } from 'framer-motion'; // Import motion and AnimatePresence
-import { Link } from 'react-router-dom'; // <--- ADD THIS LINE
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+
+const CONSENT_STORAGE_KEY = "greentracer_cookie_consent";
+
+const getConsentPayload = (analyticsGranted) => ({
+  analytics_storage: analyticsGranted ? "granted" : "denied",
+  ad_storage: "denied",
+  ad_user_data: "denied",
+  ad_personalization: "denied",
+});
+
+const updateGoogleConsent = (analyticsGranted) => {
+  if (typeof window === "undefined") return;
+
+  const payload = getConsentPayload(analyticsGranted);
+
+  if (typeof window.gtag !== "function") {
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function gtag() {
+      window.dataLayer.push(arguments);
+    };
+  }
+
+  try {
+    window.gtag("consent", "update", payload);
+  } catch (error) {
+    console.warn("Consent update failed:", error);
+  }
+};
 
 export default function CookieConsentBanner() {
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    // Check if user has already accepted cookies
-    const consent = localStorage.getItem('cookieConsent');
-    if (consent !== 'accepted') {
-      setShowBanner(true);
+    if (typeof window === "undefined") return;
+
+    const savedChoice = window.localStorage.getItem(CONSENT_STORAGE_KEY);
+
+    if (savedChoice === "accepted") {
+      updateGoogleConsent(true);
+      return;
     }
+
+    if (savedChoice === "rejected") {
+      updateGoogleConsent(false);
+      return;
+    }
+
+    setShowBanner(true);
   }, []);
 
+  const saveConsentChoice = (choice) => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(CONSENT_STORAGE_KEY, choice);
+    }
+  };
+
   const handleAccept = () => {
-    localStorage.setItem('cookieConsent', 'accepted');
+    saveConsentChoice("accepted");
+    updateGoogleConsent(true);
     setShowBanner(false);
   };
 
-  const handleDecline = () => {
-    // For a simple banner, decline just closes it without setting consent.
-    // In a real-world scenario, you might want to set a 'declined' status
-    // and disable non-essential cookies.
+  const handleReject = () => {
+    saveConsentChoice("rejected");
+    updateGoogleConsent(false);
     setShowBanner(false);
-    // Optionally, you could redirect to a privacy policy or show more options
   };
 
-  const bannerVariants = {
-    hidden: { opacity: 0, y: 100 },
-    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 10 } },
-    exit: { opacity: 0, y: 100, transition: { duration: 0.3, ease: "easeOut" } }
-  };
+  if (!showBanner) return null;
 
   return (
-    <AnimatePresence>
-      {showBanner && (
-        <motion.div
-          variants={bannerVariants}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          className="fixed bottom-0 left-0 right-0 z-50 bg-slate-800/90 backdrop-blur-md text-white p-6 shadow-2xl rounded-t-2xl md:flex md:items-center md:justify-between space-y-4 md:space-y-0 md:space-x-6 border-t border-greenbuzz dark:border-green-400"
-        >
-          <div className="flex items-start md:items-center space-x-4">
-            <FaCookieBite className="text-greenbuzz dark:text-green-400 text-3xl flex-shrink-0" />
-            <div>
-              <p className="font-semibold text-lg mb-1">We use cookies to improve your experience.</p>
-              <p className="text-sm text-slate-300">
-                This website uses cookies to ensure you get the best experience on our website. By clicking "Accept", you consent to the use of all cookies. You can learn more by reading our{" "}
-                <Link to="/privacy-policy" className="text-greenbuzz dark:text-green-400 hover:underline font-medium" onClick={() => setShowBanner(false)}>Privacy Policy</Link>.
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 w-full md:w-auto">
-            <button
-              onClick={handleAccept}
-              className="w-full sm:w-auto px-6 py-3 bg-greenbuzz hover:bg-green-600 text-white rounded-full font-semibold transition-colors duration-300 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
-            >
-              Accept
-            </button>
-            <button
-              onClick={handleDecline}
-              className="w-full sm:w-auto px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-full font-semibold transition-colors duration-300 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center"
-            >
-              <FaTimes className="mr-2" /> Decline
-            </button>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white/95 px-4 py-4 shadow-[0_-10px_30px_-20px_rgba(15,23,42,0.45)] backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+          We use analytics cookies to improve GreenTracer. You can accept or reject non-essential cookies.
+          See our{" "}
+          <Link to="/privacy-policy" className="font-medium text-green-700 underline hover:text-green-800 dark:text-green-400 dark:hover:text-green-300">
+            Privacy Policy
+          </Link>
+          .
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <button
+            type="button"
+            onClick={handleReject}
+            className="rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            Reject Non-Essential
+          </button>
+          <button
+            type="button"
+            onClick={handleAccept}
+            className="rounded-full bg-green-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700"
+          >
+            Accept Analytics
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

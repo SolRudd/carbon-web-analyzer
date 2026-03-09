@@ -210,6 +210,7 @@ async function getCached(slug) {
   if (error || !row) return null;
   if (TTL!==0 && Date.now() - new Date(row.created_at).getTime() > TTL) return null;
   const info = row.result_data || {};
+  const lighthouseScores = info.lighthouseScores || null;
   return {
     slug:           row.slug,
     url:            row.url,
@@ -218,6 +219,7 @@ async function getCached(slug) {
     percentile:     +row.percentile,
     reductionPct:   +row.reduction_pct,
     grade:          row.grade,
+    lighthouseScores,
     timestamp:      new Date(row.created_at).getTime()
   };
 }
@@ -230,6 +232,7 @@ async function performCarbonCheck(norm, host) {
   const reductionPct  = green ? totalGreenReductionPct() : 0;
   const slug          = slugify(sizeInfo.finalUrl||norm);
   const grade         = gradeFor(carbon);
+  const lighthouseScores = sizeInfo.lighthouseScores || null;
 
   const { data: row, error } = await supabase
     .from('results')
@@ -241,7 +244,7 @@ async function performCarbonCheck(norm, host) {
       percentile,
       reduction_pct:   reductionPct,
       grade,
-      result_data:     { sizeInfo, carbon, percentile, reductionPct, grade }
+      result_data:     { sizeInfo, carbon, percentile, reductionPct, grade, lighthouseScores }
     }, { onConflict:['slug'] })
     .select().single();
 
@@ -254,6 +257,7 @@ async function performCarbonCheck(norm, host) {
     percentile:     +row.percentile,
     reductionPct:   +row.reduction_pct,
     grade:          row.grade,
+    lighthouseScores,
     timestamp:      new Date(row.created_at).getTime()
   };
 }
@@ -289,13 +293,33 @@ function calcCO2(sizeMB, isGreen) {
 
 async function runPSI(url, strat, key) {
   const api=`https://www.googleapis.com/pagespeedonline/v5/runPagespeed`
-    +`?url=${encodeURIComponent(url)}&strategy=${strat}&category=performance&key=${key}`;
+    +`?url=${encodeURIComponent(url)}`
+    +`&strategy=${strat}`
+    +`&category=performance`
+    +`&category=accessibility`
+    +`&category=best-practices`
+    +`&category=seo`
+    +`&key=${key}`;
   const r=await axios.get(api,{timeout:30000});
   const lr=r.data.lighthouseResult;
   const b=lr?.audits?.['total-byte-weight']?.numericValue||0;
   const items=lr?.audits?.['resource-summary']?.details?.items||[];
   const sum=items.reduce((s,i)=>s+(i.transferSize||0),0);
-  return { bytes:Math.max(b,sum), finalUrl:lr.finalDisplayedUrl||url };
+  const categories = lr?.categories || {};
+  const toPct = (score) =>
+    typeof score === 'number' && Number.isFinite(score)
+      ? Math.max(0, Math.min(100, Math.round(score * 100)))
+      : null;
+  return {
+    bytes:Math.max(b,sum),
+    finalUrl:lr.finalDisplayedUrl||url,
+    lighthouseScores: {
+      performance:   toPct(categories.performance?.score),
+      accessibility: toPct(categories.accessibility?.score),
+      bestPractices: toPct(categories['best-practices']?.score),
+      seo:           toPct(categories.seo?.score)
+    }
+  };
 }
 
 async function htmlOnlyEstimateMB(url) {

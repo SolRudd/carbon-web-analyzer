@@ -45,6 +45,19 @@
     />
     <link rel="stylesheet" href="/src/index.css" />
     <link rel="icon" type="image/svg+xml" href="/GreenFavi.png" />
+    <!-- Consent Mode v2 default (must run before GTM) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = window.gtag || function gtag() {
+        window.dataLayer.push(arguments);
+      };
+      window.gtag("consent", "default", {
+        analytics_storage: "denied",
+        ad_storage: "denied",
+        ad_user_data: "denied",
+        ad_personalization: "denied",
+      });
+    </script>
     <!-- Google Tag Manager -->
     <script>
       (function (w, d, s, l, i) {

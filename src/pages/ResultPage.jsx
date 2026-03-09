@@ -53,6 +53,12 @@ const getPerformanceInsight = (percentile) => {
   return "Lower-than-average efficiency signal. Prioritize performance optimization opportunities.";
 };
 
+const formatScore = (value) => {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  const clamped = Math.max(0, Math.min(100, Math.round(value)));
+  return `${clamped}/100`;
+};
+
 export default function ResultPage() {
   const { slug } = useParams();
   const location = useLocation();
@@ -114,6 +120,11 @@ export default function ResultPage() {
   const gradeColor = gradeColorMap[result.grade] || "text-slate-500";
   const percentileValue = Math.max(0, Math.min(100, Math.round(Number(result.percentile || 0))));
   const progressAngle = Math.round((percentileValue / 100) * 360);
+  const lighthouseScores = result.lighthouseScores || {};
+  const perfScore = formatScore(lighthouseScores.performance);
+  const seoScore = formatScore(lighthouseScores.seo);
+  const accessibilityScore = formatScore(lighthouseScores.accessibility);
+  const bestPracticesScore = formatScore(lighthouseScores.bestPractices);
   const reportSchema = shouldIndex
     ? {
         "@context": "https://schema.org",
@@ -298,21 +309,36 @@ export default function ResultPage() {
               <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Performance Insight</p>
               <div className="mt-2.5 flex items-center gap-2 text-slate-900 dark:text-white">
                 <FaBolt className="text-green-600 dark:text-green-400" />
-                <p className="font-semibold">{getPerformanceInsight(result.percentile)}</p>
+                <p className="font-semibold">
+                  {perfScore ? `Lighthouse performance: ${perfScore}` : "Lighthouse performance: unavailable"}
+                </p>
               </div>
               <p className="mt-2.5 text-sm text-slate-600 dark:text-slate-300">
-                Based on current carbon intensity percentile ({Number(result.percentile || 0)}%).
+                {perfScore
+                  ? "Pulled from the latest saved Lighthouse data in this report."
+                  : `Unavailable for this cached row. ${getPerformanceInsight(result.percentile)}`}
               </p>
             </article>
 
             <article className="rounded-2xl border border-slate-200/90 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 shadow-[0_8px_20px_-18px_rgba(15,23,42,0.45)]">
               <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Trust Signals</p>
               <div className="mt-2.5 space-y-2.5">
-                <p className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><FaChartLine className="text-slate-400" /> SEO: unavailable in current payload</p>
-                <p className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><FaShieldAlt className="text-slate-400" /> Accessibility: unavailable in current payload</p>
-                <p className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"><FaCheckCircle className="text-slate-400" /> Best practices: unavailable in current payload</p>
+                <p className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                  <FaChartLine className="text-slate-400" />
+                  SEO: {seoScore || "unavailable"}
+                </p>
+                <p className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                  <FaShieldAlt className="text-slate-400" />
+                  Accessibility: {accessibilityScore || "unavailable"}
+                </p>
+                <p className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                  <FaCheckCircle className="text-slate-400" />
+                  Best practices: {bestPracticesScore || "unavailable"}
+                </p>
               </div>
-              <p className="mt-2.5 text-xs text-slate-500 dark:text-slate-400">Source required: stored Lighthouse category scores from PageSpeed response.</p>
+              <p className="mt-2.5 text-xs text-slate-500 dark:text-slate-400">
+                Values are shown only when saved in the cached Lighthouse payload.
+              </p>
             </article>
           </section>
 
