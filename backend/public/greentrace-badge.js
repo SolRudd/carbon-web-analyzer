@@ -146,11 +146,9 @@
   }
 
   // ── Badge renderer ──────────────────────────────────
-  function renderBadgeFrame(el, t, href, labelText, metricText, subText) {
+  function renderBadgeFrame(el, t, href, labelText, metricText) {
     var radius       = 10;
-    var attrBg       = hexToRgba(t.accent, 0.04) || 'rgba(22,163,74,0.04)';
-    var attrColor    = hexToRgba(t.leftText, 0.4) || (t.isDark ? 'rgba(226,232,240,0.4)' : 'rgba(30,41,59,0.4)');
-    var labelColor   = hexToRgba(t.leftText, 0.5) || attrColor;
+    var labelColor   = hexToRgba(t.leftText, 0.5) || (t.isDark ? 'rgba(226,232,240,0.5)' : 'rgba(30,41,59,0.5)');
 
     var checkmark =
       '<svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 12 12" ' +
@@ -196,24 +194,12 @@
         '</div>' +
       '</div>';
 
-    var attrRow =
-      '<div style="' +
-        'background:' + attrBg + ';' +
-        'border-top:1px solid ' + t.border + ';' +
-        'text-align:center;padding:3px 13px;' +
-        'font-family:JetBrains Mono,Courier New,monospace;' +
-        'font-size:6.5px;letter-spacing:0.1em;text-transform:uppercase;' +
-        'color:' + attrColor + ';white-space:nowrap;' +
-      '">' +
-        '\u00a9 GreenTracer \u00b7 Licensed \u00b7 greentracer.org' +
-      '</div>';
-
     var badgeHTML =
       '<a href="' + href + '" target="_blank" rel="noopener noreferrer" ' +
          'style="text-decoration:none;display:inline-block;" ' +
          'aria-label="GreenTracer carbon report">' +
         '<div style="' +
-          'display:inline-flex;flex-direction:column;overflow:hidden;' +
+          'display:inline-flex;overflow:hidden;' +
           'border:1.5px solid ' + t.border + ';' +
           'border-radius:' + radius + 'px;' +
           'box-shadow:0 4px 18px -6px rgba(0,0,0,0.14);' +
@@ -221,22 +207,12 @@
           'transform:translateZ(0);' +
         '">' +
           mainRow +
-          attrRow +
         '</div>' +
       '</a>';
 
-    var textHTML = subText
-      ? '<div style="' +
-          'margin-top:4px;font-size:10px;font-weight:400;' +
-          'letter-spacing:0.01em;color:' + t.subText + ';' +
-          'text-align:center;font-family:Inter,-apple-system,system-ui,sans-serif;' +
-        '">' + subText + '</div>'
-      : '';
-
     el.innerHTML =
-      '<div style="display:inline-block;text-align:center;">' +
+      '<div style="display:inline-block;">' +
         badgeHTML +
-        textHTML +
       '</div>';
   }
 
@@ -246,8 +222,8 @@
     var slug = data.slug ? String(data.slug).trim() : slugifyFromUrl(pageUrl);
     var href = RESULTS_BASE + '/' + encodeURIComponent(slug);
     renderBadgeFrame(el, t, href,
-      co2 + 'g CO₂ / view',
-      'Cleaner than ' + pct + '% of pages tested'
+      'Cleaner than ' + pct + '%',
+      co2 + 'g CO₂/view'
     );
   }
 
@@ -266,7 +242,7 @@
     var href = RESULTS_BASE + '/' + encodeURIComponent(slug);
     renderBadgeFrame(el, t, href,
       'Green Hosting Verified',
-      'Verified via GreenTracer audit'
+      'Renewable energy host'
     );
   }
 
@@ -297,19 +273,11 @@
       trial:    'GreenTracer Trial',
       internal: 'GreenTracer Internal'
     };
-    var subs = {
-      active:   'License verified by GreenTracer',
-      charity:  'Charity licence · GreenTracer',
-      partner:  'Partner licence · GreenTracer',
-      trial:    'Trial licence · GreenTracer',
-      internal: 'Internal licence · GreenTracer'
-    };
-
     var slug = data.slug ? String(data.slug).trim() : slugifyFromUrl(pageUrl);
     var href = RESULTS_BASE + '/' + encodeURIComponent(slug);
     renderBadgeFrame(el, t, href,
       labels[status] || 'GreenTracer Member',
-      subs[status]   || 'License verified by GreenTracer'
+      'Licensed by GreenTracer'
     );
   }
 

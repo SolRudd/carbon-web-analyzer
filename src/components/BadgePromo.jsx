@@ -3,6 +3,7 @@ import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaCheckCircle, FaLeaf, FaShieldAlt, FaCopy } from "react-icons/fa";
 import CarbonBadge from "./CarbonBadge";
+import CompactTrustBadge from "./CompactTrustBadge";
 
 const normalizeSiteUrl = (raw) => {
   try {
@@ -114,19 +115,11 @@ export default function BadgePromo({ siteUrl, greenHost = false }) {
 
             <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-[#020f1e]/40 p-4 flex items-center justify-center min-h-[92px]">
               {greenHost ? (
-                <div className="inline-flex flex-col items-center">
-                  <div className="inline-flex overflow-hidden border rounded-[10px] shadow-[0_6px_16px_-10px_rgba(15,23,42,0.16)]" style={{ borderColor: "rgba(22,163,74,0.38)" }}>
-                    <div className="px-3.5 py-[7px] text-[13px] font-semibold tracking-[0.01em] bg-white text-slate-900">
-                      Green Hosting Verified
-                    </div>
-                    <div className="px-[15px] py-[6px] bg-[#16A34A] border-l" style={{ borderColor: "rgba(22,163,74,0.22)" }}>
-                      <img src="/GreenTraceLogo.png" alt="GreenTracer" className="h-[18px] w-auto block filter brightness-0 invert" loading="lazy" decoding="async" />
-                    </div>
-                  </div>
-                  <div className="mt-[5px] text-[12px] font-medium tracking-[0.01em] text-slate-600 dark:text-slate-400">
-                    Verified from latest saved GreenTracer result
-                  </div>
-                </div>
+                <CompactTrustBadge
+                  label="Green Hosting Verified"
+                  value="Renewable energy host"
+                  ariaLabel="GreenTracer hosting badge preview"
+                />
               ) : (
                 <p className="text-sm text-slate-600 dark:text-slate-300 text-center max-w-sm">
                   Hosting badge is unavailable for this result because green hosting is not currently verified.

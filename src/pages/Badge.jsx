@@ -14,6 +14,7 @@ import {
   FaTerminal,
 } from "react-icons/fa";
 import { ArrowRight, Check, Copy } from "lucide-react";
+import CompactTrustBadge from "../components/CompactTrustBadge";
 
 const pageStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap');
@@ -151,26 +152,6 @@ const normalizeSiteUrl = (u) => {
   }
 };
 
-const getLogoFilterForColor = (hexColor, hasCustomColor) => {
-  if (!hasCustomColor) return "brightness(0) invert(1)";
-  const hex = hexColor.slice(1);
-  const r = parseInt(hex.slice(0, 2), 16) / 255;
-  const g = parseInt(hex.slice(2, 4), 16) / 255;
-  const b = parseInt(hex.slice(4, 6), 16) / 255;
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.6
-    ? "brightness(0) invert(1)"
-    : "brightness(0)";
-};
-
-const hexToRgba = (hex, alpha) => {
-  if (!isValidHexColor(hex)) return null;
-  const clean = hex.trim().slice(1);
-  const r = parseInt(clean.slice(0, 2), 16);
-  const g = parseInt(clean.slice(2, 4), 16);
-  const b = parseInt(clean.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
-
 const howToSchema = {
   "@context": "https://schema.org",
   "@type": "HowTo",
@@ -289,11 +270,20 @@ export default function Badge() {
 
   const hasCustomTextColor = isValidHexColor(textColor);
   const previewTextColor = hasCustomTextColor ? textColor.trim() : "#1e293b";
-  const previewLogoFilter = "none";
-  const previewBorderColor = hexToRgba(accentColor, 0.28) || accentColor;
-  const previewRightBg = hexToRgba(accentColor, 0.08) || "rgba(34,197,94,0.08)";
   const memberPreviewLabel = getMemberBadgeLabel(hostingStatus.licenseStatus);
   const memberPreviewState = getMemberStatusTag(hostingStatus.licenseStatus);
+  const previewBadgeLabel =
+    selectedBadgeType === "member"
+      ? memberPreviewLabel
+      : selectedBadgeType === "hosting"
+        ? "Green Hosting Verified"
+        : "Cleaner than 84%";
+  const previewBadgeValue =
+    selectedBadgeType === "hosting"
+      ? "Renewable energy host"
+      : selectedBadgeType === "member"
+        ? "Licensed by GreenTracer"
+        : "0.45g CO₂/view";
 
   return (
     <>
@@ -527,106 +517,14 @@ export default function Badge() {
                 </div>
 
                 <div className="gt-badge-preview scale-100 sm:scale-110">
-                  <div
-                    style={{
-                      display: "inline-flex",
-                      flexDirection: "column",
-                      borderRadius: "10px",
-                      border: `1.5px solid ${previewBorderColor}`,
-                      overflow: "hidden",
-                      boxShadow: "0 4px 18px -6px rgba(0,0,0,0.14)",
-                      transition: "all 0.3s ease",
-                    }}
-                  >
-                    {/* Main row */}
-                    <div style={{ display: "flex", alignItems: "stretch" }}>
-                      {/* Left: label + metric */}
-                      <div
-                        style={{
-                          backgroundColor: bgColor,
-                          color: previewTextColor,
-                          display: "flex",
-                          flexDirection: "column",
-                          padding: "9px 13px 8px",
-                          gap: "2px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontFamily: "JetBrains Mono, monospace",
-                            fontSize: "7.5px",
-                            letterSpacing: "0.14em",
-                            textTransform: "uppercase",
-                            opacity: 0.5,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {selectedBadgeType === "member"
-                            ? "Licensed Member"
-                            : selectedBadgeType === "hosting"
-                              ? "Green Hosting"
-                              : "Verified Carbon Score"}
-                        </span>
-                        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
-                            <path d="M2 6.5L4.8 9.3L10 3" stroke={accentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                          <span
-                            style={{
-                              fontSize: "12px",
-                              fontWeight: 500,
-                              letterSpacing: "-0.01em",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {selectedBadgeType === "hosting"
-                              ? "Verified"
-                              : selectedBadgeType === "member"
-                                ? memberPreviewLabel
-                                : "0.45g CO₂ · per view"}
-                          </span>
-                        </div>
-                      </div>
-                      {/* Right: logo */}
-                      <div
-                        style={{
-                          backgroundColor: previewRightBg,
-                          borderLeft: `1px solid ${previewBorderColor}`,
-                          display: "flex",
-                          alignItems: "center",
-                          padding: "0 11px",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <img
-                          src="/GreenTraceLogo.png"
-                          alt="GreenTracer"
-                          style={{
-                            filter: previewLogoFilter,
-                            height: "14px",
-                            display: "block",
-                            opacity: 0.9,
-                          }}
-                        />
-                      </div>
-                    </div>
-                    {/* Licence attribution row */}
-                    <div
-                      style={{
-                        backgroundColor: hexToRgba(accentColor, 0.04) || "rgba(34,197,94,0.04)",
-                        borderTop: `1px solid ${previewBorderColor}`,
-                        textAlign: "center",
-                        padding: "3px 13px",
-                        fontFamily: "JetBrains Mono, monospace",
-                        fontSize: "6.5px",
-                        letterSpacing: "0.1em",
-                        textTransform: "uppercase",
-                        color: previewTextColor,
-                      }}
-                    >
-                      <span style={{ opacity: 0.4 }}>© GreenTracer · Licensed · greentracer.org</span>
-                    </div>
-                  </div>
+                  <CompactTrustBadge
+                    label={previewBadgeLabel}
+                    value={previewBadgeValue}
+                    accentColor={accentColor}
+                    bgColor={bgColor}
+                    textColor={previewTextColor}
+                    ariaLabel="GreenTracer badge preview"
+                  />
                 </div>
 
                 <p className="mt-8 text-xs text-slate-500 font-medium gt-mono">

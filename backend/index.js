@@ -14,6 +14,7 @@ const axios      = require('axios');
 const { createClient } = require('@supabase/supabase-js');
 const { inspectBadgeHtml } = require('./lib/badge-verification');
 const { parseLeadCapturePayload } = require('./lib/lead-capture');
+const { getLeadCaptureErrorMessage } = require('./lib/lead-capture-error');
 const {
   calcCO2,
   gradeFor,
@@ -34,6 +35,7 @@ if (process.env.NODE_ENV !== 'production') {
     cwd: process.cwd(),
     envFilePath: ENV_FILE_PATH,
     hasSupabaseUrl: Boolean((process.env.SUPABASE_URL || '').trim()),
+    hasSupabaseServiceKey: Boolean((process.env.SUPABASE_SERVICE_KEY || '').trim()),
     hasSupabaseAnonKey: Boolean((process.env.SUPABASE_ANON_KEY || '').trim()),
     hasSupabasePublishableKey: Boolean((process.env.SUPABASE_PUBLISHABLE_KEY || '').trim()),
     hasSupabasePublishable: Boolean((process.env.SUPABASE_PUBLISHABLE || '').trim()),
@@ -776,6 +778,12 @@ function normalizeDomain(input) {
 async function captureContactLead({ lead, siteUrl, domain, resultSlug }) {
   if (!lead?.shouldCapture || !lead.email || !domain || !siteUrl) return;
 
+  if (!(process.env.SUPABASE_URL || '').trim() || !(process.env.SUPABASE_SERVICE_KEY || '').trim()) {
+    const configError = new Error('Lead capture backend is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_KEY.');
+    configError.code = 'CONFIG_MISSING';
+    throw configError;
+  }
+
   const payload = {
     email: lead.email,
     domain,
@@ -791,7 +799,12 @@ async function captureContactLead({ lead, siteUrl, domain, resultSlug }) {
     .upsert(payload, { onConflict: 'email,domain,source' });
 
   if (error) {
-    throw error;
+    const wrappedError = new Error(getLeadCaptureErrorMessage(error));
+    wrappedError.code = error.code || null;
+    wrappedError.details = error.details || null;
+    wrappedError.hint = error.hint || null;
+    wrappedError.cause = error;
+    throw wrappedError;
   }
 }
 

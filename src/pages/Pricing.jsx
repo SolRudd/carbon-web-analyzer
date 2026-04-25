@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useSearchParams } from "react-router-dom";
-import { API_BASE } from "../config";
+import { Link } from "react-router-dom";
 import {
   ArrowRight,
   Building2,
@@ -14,6 +13,7 @@ import {
   Sparkles,
   Terminal,
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 const pageStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap');
@@ -388,49 +388,10 @@ const prices = {
 };
 
 export default function Pricing() {
-  const [params] = useSearchParams();
+  const { user } = useAuth();
   const [billing, setBilling] = useState("monthly");
-  const [checkoutDomain, setCheckoutDomain] = useState(String(params.get("domain") || ""));
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [checkoutError, setCheckoutError] = useState("");
-  const checkoutCanceled = params.get("checkout") === "cancel";
-
-  const normalizeDomain = (value) =>
-    String(value || "")
-      .trim()
-      .replace(/^https?:\/\//i, "")
-      .replace(/^www\./i, "")
-      .split("/")[0]
-      .toLowerCase();
-
-  const startCheckout = async () => {
-    const domain = normalizeDomain(checkoutDomain);
-    if (!domain) {
-      setCheckoutError("Enter a valid domain (for example: example.com) before checkout.");
-      return;
-    }
-
-    setCheckoutLoading(true);
-    setCheckoutError("");
-    try {
-      const res = await fetch(`${API_BASE}/api/stripe/create-checkout-session`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const detailText = data.details ? ` Details: ${data.details}` : "";
-        const modeText = data.checkoutMode ? ` (mode: ${data.checkoutMode})` : "";
-        throw new Error(`${data.error || "Unable to start checkout."}${modeText}${detailText}`);
-      }
-      if (!data.url) throw new Error("Stripe checkout URL was not returned.");
-      window.location.assign(data.url);
-    } catch (err) {
-      setCheckoutError(err.message || "Unable to start checkout.");
-      setCheckoutLoading(false);
-    }
-  };
+  const accountHref = user ? "/dashboard" : "/login";
+  const accountLabel = user ? "Open Dashboard" : "Sign In To Continue";
 
   const tiers = useMemo(() => {
     const starter = prices[billing].starter;
@@ -447,8 +408,9 @@ export default function Pricing() {
         suffix: starter.suffix,
         helper: starter.helper,
         icon: ShieldCheck,
-        ctaLabel: "Get Starter Access",
-        ctaType: "button",
+        ctaLabel: accountLabel,
+        ctaType: "internal",
+        href: accountHref,
         ctaClass: "gt-btn--light",
         featured: false,
         features: [
@@ -470,8 +432,9 @@ export default function Pricing() {
         suffix: agency.suffix,
         helper: agency.helper,
         icon: Building2,
-        ctaLabel: "Choose Agency",
-        ctaType: "button",
+        ctaLabel: accountLabel,
+        ctaType: "internal",
+        href: accountHref,
         ctaClass: "gt-btn--green",
         featured: true,
         badge: "Most Popular",
@@ -495,7 +458,7 @@ export default function Pricing() {
         helper: "Talk to us for tailored licensing",
         icon: Sparkles,
         ctaLabel: "Talk to Us",
-        ctaType: "link",
+        ctaType: "external",
         href: "https://buzzboost.co.uk/contact/",
         ctaClass: "gt-btn--ghost",
         featured: false,
@@ -509,7 +472,7 @@ export default function Pricing() {
         ],
       },
     ];
-  }, [billing]);
+  }, [accountHref, accountLabel, billing]);
 
   const valueBlocks = [
     {
@@ -626,36 +589,13 @@ export default function Pricing() {
             <div className="gt-toggle-wrap">
               <div className="w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] p-4 sm:p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-green-600 dark:text-green-400">
-                  Checkout Domain
+                  Account-First Setup
                 </p>
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                  Enter the domain to license before selecting Starter or Agency checkout.
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                  Choose your plan here, then add and verify domains from your dashboard after sign-in.
                 </p>
-                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                  <input
-                    type="text"
-                    value={checkoutDomain}
-                    onChange={(e) => setCheckoutDomain(e.target.value)}
-                    placeholder="example.com"
-                    className="h-11 flex-1 rounded-xl border border-slate-200 dark:border-white/15 bg-white dark:bg-[#04111f] px-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={startCheckout}
-                    disabled={checkoutLoading}
-                    className="gt-btn gt-btn--green inline-flex items-center justify-center gap-2 px-5 py-3 text-sm disabled:opacity-60"
-                  >
-                    {checkoutLoading ? "Starting..." : "Start Test Checkout"}
-                  </button>
-                </div>
-                {checkoutCanceled && (
-                  <p className="mt-3 text-sm text-amber-300">
-                    Checkout was canceled. You can retry with the same or a different domain.
-                  </p>
-                )}
-                {checkoutError && <p className="mt-3 text-sm text-rose-300">{checkoutError}</p>}
-                <p className="mt-3 text-xs text-slate-500">
-                  Current Stripe integration provisions the Verified Badge License SKU in test mode.
+                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                  Public pricing no longer asks for a domain before account setup.
                 </p>
               </div>
 
@@ -756,7 +696,7 @@ export default function Pricing() {
                       </div>
 
                       <div className="mt-auto pt-8">
-                        {tier.ctaType === "link" ? (
+                        {tier.ctaType === "external" ? (
                           <a
                             href={tier.href}
                             target="_blank"
@@ -766,15 +706,22 @@ export default function Pricing() {
                             {tier.ctaLabel}
                             <ExternalLink className="h-4 w-4" />
                           </a>
+                        ) : tier.ctaType === "internal" ? (
+                          <Link
+                            to={tier.href}
+                            className={`gt-link-btn ${tier.ctaClass} inline-flex w-full items-center justify-center gap-2 px-6 py-4 text-base`}
+                            aria-label={`${tier.ctaLabel} for the ${tier.name} plan`}
+                          >
+                            {tier.ctaLabel}
+                            <ArrowRight className="h-4 w-4" />
+                          </Link>
                         ) : (
                           <button
                             type="button"
-                            onClick={startCheckout}
-                            disabled={checkoutLoading}
                             className={`gt-btn ${tier.ctaClass} inline-flex w-full items-center justify-center gap-2 px-6 py-4 text-base`}
                             aria-label={`${tier.ctaLabel} for the ${tier.name} plan`}
                           >
-                            {checkoutLoading ? "Starting..." : tier.ctaLabel}
+                            {tier.ctaLabel}
                             <ArrowRight className="h-4 w-4" />
                           </button>
                         )}
@@ -840,11 +787,12 @@ export default function Pricing() {
               <div className="mt-6 space-y-5 text-base leading-relaxed text-slate-400">
                 <p>
                   <strong className="text-white">Starter</strong> is for one website that wants a
-                  credible GreenTracer presence.
+                  credible GreenTracer presence, with domain setup handled later inside the dashboard.
                 </p>
                 <p>
                   <strong className="text-white">Agency</strong> is for people managing multiple
-                  domains, such as agencies, freelancers, or internal teams running several sites.
+                  domains, such as agencies, freelancers, or internal teams running several sites,
+                  all managed after sign-in.
                 </p>
                 <p>
                   <strong className="text-white">Custom</strong> is for larger opportunities,
@@ -872,8 +820,8 @@ export default function Pricing() {
                   Ready to make GreenTracer a real product?
                 </h2>
                 <p className="mx-auto mt-4 max-w-2xl text-slate-300">
-                  This pricing structure is now in a much stronger place for proper
-                  checkout, account upgrades, directory access, and future reporting workflows.
+                  The public pricing page now stays focused on plan choice, while domain linking
+                  and verification happen where they belong: inside the account dashboard.
                 </p>
 
                 <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
