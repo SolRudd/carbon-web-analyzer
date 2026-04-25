@@ -1,14 +1,12 @@
 ;(function () {
   'use strict';
 
-  // Hardcode API and Results domains for consistency
   var API_BASE     = 'https://api.greentracer.org';
-  var RESULTS_BASE = API_BASE.replace(/^(https?:\/\/)api\./, '$1') + '/result';
+  var RESULTS_BASE = 'https://www.greentracer.org/result';
 
-  // Logo variants (hosted on same domain as badge script)
-  var LOGO_AVIF = API_BASE.replace('api.', 'www.') + '/GreenTraceLogo.avif';
-  var LOGO_WEBP = API_BASE.replace('api.', 'www.') + '/GreenTraceLogo.webp';
-  var LOGO_PNG  = API_BASE.replace('api.', 'www.') + '/GreenTraceLogo.png';
+  var LOGO_AVIF = 'https://www.greentracer.org/GreenTraceLogo.avif';
+  var LOGO_WEBP = 'https://www.greentracer.org/GreenTraceLogo.webp';
+  var LOGO_PNG  = 'https://www.greentracer.org/GreenTraceLogo.png';
 
   function cleanUrl(url) {
     try {
@@ -18,7 +16,7 @@
       return p.protocol + '//' +
              p.hostname.toLowerCase() +
              p.pathname.replace(/\/+$/, '');
-    } catch (e) {
+    } catch {
       return url;
     }
   }
@@ -28,7 +26,7 @@
       var u = new URL(url);
       var base = (u.hostname + u.pathname).replace(/\/$/, '');
       return base.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-    } catch (e) {
+    } catch {
       return '';
     }
   }
@@ -42,136 +40,201 @@
     return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
   }
 
+  function isValidHex(h) {
+    return /^#[0-9A-Fa-f]{6}$/.test(h || '');
+  }
+
+  // Convert hex accent to a very subtle background tint
+  function accentToTintBg(hex, isDark) {
+    var alpha = isDark ? 0.14 : 0.08;
+    return hexToRgba(hex, alpha) || (isDark ? 'rgba(34,197,94,0.14)' : 'rgba(34,197,94,0.08)');
+  }
+
   function getTheme(el) {
     var force = (el.getAttribute('data-theme') || 'auto').toLowerCase();
-    var customBgColor = el.getAttribute('data-bg-color');
+    var customBgColor     = el.getAttribute('data-bg-color');
     var customAccentColor = el.getAttribute('data-accent-color');
-    var customTextColor = el.getAttribute('data-text-color');
-    
-    // Helper to validate hex
-    function isValidHex(h) {
-      return /^#[0-9A-Fa-f]{6}$/.test(h);
-    }
-    
+    var customTextColor   = el.getAttribute('data-text-color');
+
     var isDark =
-      force === 'dark' ? true :
+      force === 'dark'  ? true  :
       force === 'light' ? false :
       document.documentElement.classList.contains('dark') ||
-      (window.matchMedia &&
-       window.matchMedia('(prefers-color-scheme: dark)').matches);
+      (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-    var base = isDark
-      ? { leftBg:'#1f2937', leftText:'#e5e7eb', rightBg:'#16A34A',
-          border:'#16A34A', subText:'#94a3b8', divider:'#111827', customTextColor:null }
-      : { leftBg:'#ffffff', leftText:'#0F172A', rightBg:'#16A34A',
-          border:'#16A34A', subText:'#475569', divider:'#e2e8f0', customTextColor:null };
+    var accent = '#16A34A'; // default green-700
 
-    // Apply custom colours if provided and valid
+    // Apply custom accent before building theme
+    if (customAccentColor && isValidHex(customAccentColor)) {
+      accent = customAccentColor;
+    }
+
+    var base;
+    if (isDark) {
+      base = {
+        leftBg:          '#1a2332',
+        leftText:        '#e2e8f0',
+        rightBg:         accentToTintBg(accent, true),
+        border:          hexToRgba(accent, 0.30) || accent,
+        subText:         '#64748b',
+        accent:          accent,
+        logoFilter:      'brightness(0) invert(1) opacity(0.8)',
+        isDark:          true,
+        customTextColor: null,
+      };
+    } else {
+      base = {
+        leftBg:          '#ffffff',
+        leftText:        '#1e293b',
+        rightBg:         accentToTintBg(accent, false),
+        border:          hexToRgba(accent, 0.28) || accent,
+        subText:         '#64748b',
+        accent:          accent,
+        logoFilter:      'none',
+        isDark:          false,
+        customTextColor: null,
+      };
+    }
+
     if (customBgColor && isValidHex(customBgColor)) {
       base.leftBg = customBgColor;
     }
-    if (customAccentColor && isValidHex(customAccentColor)) {
-      base.rightBg = customAccentColor;
-      base.border = customAccentColor;
-    }
     if (customTextColor && isValidHex(customTextColor)) {
       base.leftText = customTextColor;
-      base.subText = customTextColor;
       base.customTextColor = customTextColor;
     }
-    
+
     return base;
+  }
+
+  // Ping endpoint: fire-and-forget tracking (never blocks rendering)
+  function pingInstall(siteUrl, badgeType) {
+    try {
+      var hostDomain = window.location.hostname || '';
+      fetch(API_BASE + '/api/badge/ping', {
+        method:    'POST',
+        mode:      'cors',
+        keepalive: true,
+        headers:   { 'Content-Type': 'application/json' },
+        body:      JSON.stringify({ site: siteUrl, host: hostDomain, type: badgeType })
+      }).catch(function () { /* ignore */ });
+    } catch (e) { /* ignore */ }
   }
 
   function fetchOrCreateBadge(siteUrl, el) {
     var badgeType = (el.getAttribute('data-badge-type') || 'carbon').toLowerCase();
-    fetch(API_BASE + '/api/trace?site=' + encodeURIComponent(siteUrl), { mode:'cors' })
-      .then(function(res) {
-        if (!res.ok) throw new Error('status '+res.status);
+    fetch(API_BASE + '/api/trace?site=' + encodeURIComponent(siteUrl), { mode: 'cors' })
+      .then(function (res) {
+        if (!res.ok) throw new Error('status ' + res.status);
         return res.json();
       })
-      .then(function(data) {
+      .then(function (data) {
         renderBadge(data, siteUrl, el, badgeType);
+        pingInstall(siteUrl, badgeType);
       })
-      .catch(function() {
-        var fallbackText = badgeType === 'hosting'
-          ? 'Hosting badge unavailable. Run a site check first at '
-          : 'Run a carbon check first at ';
+      .catch(function () {
+        var msg = badgeType === 'hosting'
+          ? 'Run a site check at '
+          : badgeType === 'member'
+            ? 'Check license at '
+            : 'Run a carbon check at ';
         el.innerHTML =
-          '<div style="color:#dc2626;font-size:12px;">' + fallbackText +
-          '<a href="https://www.greentracer.org" target="_blank" rel="noopener noreferrer">' +
-          'greentracer.org</a></div>';
+          '<div style="font-size:11px;color:#94a3b8;">' + msg +
+          '<a href="https://www.greentracer.org" target="_blank" rel="noopener noreferrer" ' +
+          'style="color:#4ade80;">greentracer.org</a></div>';
       });
   }
 
-  function getLogoFilter(t) {
-    if (!t.customTextColor) return 'brightness(0) invert(1)';
-    var hex = t.customTextColor.slice(1);
-    var r = parseInt(hex.slice(0, 2), 16) / 255;
-    var g = parseInt(hex.slice(2, 4), 16) / 255;
-    var b = parseInt(hex.slice(4, 6), 16) / 255;
-    var luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    return luminance > 0.6 ? 'brightness(0) invert(1)' : 'brightness(0)';
-  }
+  // ── Badge renderer ──────────────────────────────────
+  function renderBadgeFrame(el, t, href, labelText, metricText, subText) {
+    var radius       = 10;
+    var attrBg       = hexToRgba(t.accent, 0.04) || 'rgba(22,163,74,0.04)';
+    var attrColor    = hexToRgba(t.leftText, 0.4) || (t.isDark ? 'rgba(226,232,240,0.4)' : 'rgba(30,41,59,0.4)');
+    var labelColor   = hexToRgba(t.leftText, 0.5) || attrColor;
 
-  function renderBadgeFrame(el, t, href, leftText, subText) {
-    var padY = 7;
-    var padX = 14;
-    var radius = 10;
-    var fontSize = 13;
-    var logoFilter = getLogoFilter(t);
-    var borderColor = hexToRgba(t.border, 0.38) || t.border;
-    var dividerColor = hexToRgba(t.border, 0.22) || t.divider;
-    var shadowColor = hexToRgba('#0F172A', 0.16) || 'rgba(15,23,42,0.16)';
+    var checkmark =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 12 12" ' +
+      'fill="none" style="display:inline-block;vertical-align:middle;margin-right:5px;flex-shrink:0;" ' +
+      'aria-hidden="true">' +
+      '<path d="M2 6.5L4.8 9.3L10 3" stroke="' + t.accent + '" stroke-width="1.8" ' +
+      'stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg>';
+
+    var mainRow =
+      '<div style="display:flex;align-items:stretch;">' +
+        '<div style="' +
+          'background:' + t.leftBg + ';' +
+          'color:' + t.leftText + ';' +
+          'padding:9px 13px 8px;' +
+          'display:flex;flex-direction:column;gap:2px;' +
+        '">' +
+          '<span style="' +
+            'font-family:JetBrains Mono,Courier New,monospace;' +
+            'font-size:7.5px;letter-spacing:0.14em;text-transform:uppercase;' +
+            'white-space:nowrap;color:' + labelColor + ';' +
+          '">' + labelText + '</span>' +
+          '<div style="display:flex;align-items:center;">' +
+            checkmark +
+            '<span style="font-size:12px;font-weight:500;letter-spacing:-0.01em;white-space:nowrap;">' +
+              metricText +
+            '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div style="' +
+          'background:' + t.rightBg + ';' +
+          'border-left:1px solid ' + t.border + ';' +
+          'display:flex;align-items:center;justify-content:center;' +
+          'padding:0 11px;' +
+        '">' +
+          '<picture>' +
+            '<source type="image/avif" srcset="' + LOGO_AVIF + '" />' +
+            '<source type="image/webp" srcset="' + LOGO_WEBP + '" />' +
+            '<img src="' + LOGO_PNG + '" alt="GreenTracer" ' +
+                 'style="height:14px;filter:' + t.logoFilter + ';display:block;opacity:0.9;" ' +
+                 'loading="lazy" decoding="async" />' +
+          '</picture>' +
+        '</div>' +
+      '</div>';
+
+    var attrRow =
+      '<div style="' +
+        'background:' + attrBg + ';' +
+        'border-top:1px solid ' + t.border + ';' +
+        'text-align:center;padding:3px 13px;' +
+        'font-family:JetBrains Mono,Courier New,monospace;' +
+        'font-size:6.5px;letter-spacing:0.1em;text-transform:uppercase;' +
+        'color:' + attrColor + ';white-space:nowrap;' +
+      '">' +
+        '\u00a9 GreenTracer \u00b7 Licensed \u00b7 greentracer.org' +
+      '</div>';
 
     var badgeHTML =
       '<a href="' + href + '" target="_blank" rel="noopener noreferrer" ' +
-         'style="text-decoration:none;display:inline-block">' +
+         'style="text-decoration:none;display:inline-block;" ' +
+         'aria-label="GreenTracer carbon report">' +
         '<div style="' +
-          'display:inline-flex;align-items:center;overflow:hidden;' +
-          'border:1px solid ' + borderColor + ';' +
+          'display:inline-flex;flex-direction:column;overflow:hidden;' +
+          'border:1.5px solid ' + t.border + ';' +
           'border-radius:' + radius + 'px;' +
-          'box-shadow:0 6px 16px -10px ' + shadowColor + ';' +
-          'font-family:Inter,system-ui;transform:translateZ(0);' +
+          'box-shadow:0 4px 18px -6px rgba(0,0,0,0.14);' +
+          'font-family:Inter,-apple-system,system-ui,sans-serif;' +
+          'transform:translateZ(0);' +
         '">' +
-          '<div style="' +
-            'background:' + t.leftBg + ';' +
-            'color:' + t.leftText + ';' +
-            'padding:' + padY + 'px ' + padX + 'px;' +
-            'font-size:' + fontSize + 'px;' +
-            'font-weight:600;letter-spacing:0.01em;white-space:nowrap;' +
-          '">' +
-            leftText +
-          '</div>' +
-          '<div style="' +
-            'background:' + t.rightBg + ';' +
-            'padding:' + (padY - 1) + 'px ' + (padX + 1) + 'px;' +
-            'display:flex;align-items:center;justify-content:center;' +
-            'border-left:1px solid ' + dividerColor + ';' +
-          '">' +
-            '<picture>' +
-              '<source type="image/avif" srcset="' + LOGO_AVIF + '" />' +
-              '<source type="image/webp" srcset="' + LOGO_WEBP + '" />' +
-              '<img src="' + LOGO_PNG + '" alt="GreenTrace" ' +
-                   'style="height:18px;filter:' + logoFilter + ';display:block;" ' +
-                   'loading="lazy" decoding="async" />' +
-            '</picture>' +
-          '</div>' +
+          mainRow +
+          attrRow +
         '</div>' +
       '</a>';
 
-    var textHTML =
-      '<div style="' +
-        'margin-top:5px;' +
-        'font-size:12px;' +
-        'font-weight:500;' +
-        'letter-spacing:0.01em;' +
-        'color:' + t.subText + ';' +
-        'text-align:center;' +
-      '">' + subText + '</div>';
+    var textHTML = subText
+      ? '<div style="' +
+          'margin-top:4px;font-size:10px;font-weight:400;' +
+          'letter-spacing:0.01em;color:' + t.subText + ';' +
+          'text-align:center;font-family:Inter,-apple-system,system-ui,sans-serif;' +
+        '">' + subText + '</div>'
+      : '';
 
     el.innerHTML =
-      '<div style="display:inline-block; text-align:center;">' +
+      '<div style="display:inline-block;text-align:center;">' +
         badgeHTML +
         textHTML +
       '</div>';
@@ -182,35 +245,83 @@
     var pct  = data.percentile != null ? data.percentile : '--';
     var slug = data.slug ? String(data.slug).trim() : slugifyFromUrl(pageUrl);
     var href = RESULTS_BASE + '/' + encodeURIComponent(slug);
-    renderBadgeFrame(el, t, href, co2 + 'g CO₂/view', 'Cleaner than ' + pct + '% of pages tested');
+    renderBadgeFrame(el, t, href,
+      co2 + 'g CO₂ / view',
+      'Cleaner than ' + pct + '% of pages tested'
+    );
   }
 
   function renderHostingBadge(data, pageUrl, el, t) {
     if (!data.greenHost) {
-      var text = t.customTextColor || '#475569';
       el.innerHTML =
-        '<div style="display:inline-block;border:1px solid rgba(100,116,139,0.28);border-radius:10px;padding:8px 12px;' +
-        'font-family:Inter,system-ui;font-size:12px;font-weight:500;letter-spacing:0.01em;background:#f8fafc;color:' + text + ';">' +
-        'Green hosting is not verified in the latest saved result for this site.' +
+        '<div style="display:inline-block;border:1.5px solid rgba(100,116,139,0.22);' +
+        'border-radius:12px;padding:6px 12px;' +
+        'font-family:Inter,-apple-system,system-ui,sans-serif;' +
+        'font-size:11.5px;font-weight:400;background:' + t.leftBg + ';color:' + t.subText + ';">' +
+        'Green hosting not yet verified for this site.' +
         '</div>';
       return;
     }
     var slug = data.slug ? String(data.slug).trim() : slugifyFromUrl(pageUrl);
     var href = RESULTS_BASE + '/' + encodeURIComponent(slug);
-    renderBadgeFrame(el, t, href, 'Green Hosting Verified', 'Verified from latest saved GreenTracer result');
+    renderBadgeFrame(el, t, href,
+      'Green Hosting Verified',
+      'Verified via GreenTracer audit'
+    );
+  }
+
+  function renderMemberBadge(data, pageUrl, el, t) {
+    var license = data && data.license ? data.license : null;
+    var status  = String((license && license.status) || 'none').toLowerCase();
+    var isLicensed = !!(license && license.licensed);
+    var activeStates = { active: true, charity: true, partner: true, trial: true, internal: true };
+
+    if (!isLicensed || !activeStates[status]) {
+      var fallback = status === 'suspended'
+        ? 'License suspended — contact GreenTracer support.'
+        : 'Member badge requires an active GreenTracer license.';
+      el.innerHTML =
+        '<div style="display:inline-block;border:1.5px solid rgba(100,116,139,0.22);' +
+        'border-radius:12px;padding:6px 12px;' +
+        'font-family:Inter,-apple-system,system-ui,sans-serif;' +
+        'font-size:11.5px;font-weight:400;background:' + t.leftBg + ';color:' + t.subText + ';">' +
+        fallback +
+        '</div>';
+      return;
+    }
+
+    var labels = {
+      active:   'GreenTracer Member',
+      charity:  'GreenTracer Charity',
+      partner:  'GreenTracer Partner',
+      trial:    'GreenTracer Trial',
+      internal: 'GreenTracer Internal'
+    };
+    var subs = {
+      active:   'License verified by GreenTracer',
+      charity:  'Charity licence · GreenTracer',
+      partner:  'Partner licence · GreenTracer',
+      trial:    'Trial licence · GreenTracer',
+      internal: 'Internal licence · GreenTracer'
+    };
+
+    var slug = data.slug ? String(data.slug).trim() : slugifyFromUrl(pageUrl);
+    var href = RESULTS_BASE + '/' + encodeURIComponent(slug);
+    renderBadgeFrame(el, t, href,
+      labels[status] || 'GreenTracer Member',
+      subs[status]   || 'License verified by GreenTracer'
+    );
   }
 
   function renderBadge(data, pageUrl, el, badgeType) {
     var t = getTheme(el);
-    if (badgeType === 'hosting') {
-      renderHostingBadge(data, pageUrl, el, t);
-      return;
-    }
+    if (badgeType === 'hosting') { renderHostingBadge(data, pageUrl, el, t); return; }
+    if (badgeType === 'member')  { renderMemberBadge(data, pageUrl, el, t);  return; }
     renderCarbonBadge(data, pageUrl, el, t);
   }
 
   function initBadges() {
-    document.querySelectorAll('.greentrace-badge').forEach(function(el) {
+    document.querySelectorAll('.greentrace-badge').forEach(function (el) {
       var siteUrl = cleanUrl(el.getAttribute('data-url') || window.location.href);
       fetchOrCreateBadge(siteUrl, el);
     });

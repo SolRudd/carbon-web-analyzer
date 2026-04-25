@@ -16,6 +16,7 @@ export const meta = {
   title: "Case Study: How One Business Cut Website Carbon Emissions by 66% in 30 Days",
   author: "Sol Rudd",
   date: "2025-07-20",
+  readingMinutes: 10,
   tags: ["Case Study", "Eco Web", "Carbon Badge", "Web Performance"],
   slug: "case-study-greening-website",
    image: "/assets/blog/case-study-greentrace.webp",

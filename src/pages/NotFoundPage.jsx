@@ -56,7 +56,7 @@ export default function NotFoundPage() {
         <meta name="robots" content="noindex" />
       </Helmet>
 
-      <section className="relative flex min-h-[calc(100vh-80px)] items-center justify-center overflow-hidden bg-white px-4 py-20 text-center dark:bg-slate-950 transition-colors duration-300">
+      <section className="relative flex min-h-[calc(100vh-80px)] items-center justify-center overflow-hidden bg-white px-4 py-20 text-center dark:bg-[#020f1e] transition-colors duration-300">
         
         <div className="absolute inset-0 pointer-events-none">
           {/* ✅ Performance: Added 'motion-safe' to respect user settings */}

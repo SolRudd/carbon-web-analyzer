@@ -21,6 +21,7 @@ export const meta = {
   title: "Why Your Website's Carbon Footprint Matters in 2025: A Complete Guide",
   author: "Sol Rudd",
   date: "2025-07-27",
+  readingMinutes: 5,
   tags: ["Web Sustainability", "Digital Carbon", "Green Hosting", "Web Performance"],
   slug: "why-website-carbon-matters-2025",
   image: "/assets/blog/web-carbon-2025.webp",

@@ -9,6 +9,8 @@
     "minify-badge": "node scripts/minify-badge.js",
     "build": "npx puppeteer browsers install chrome && npm run sitemap && npm run minify-badge && vite build",
     "lint": "eslint .",
+    "test": "npm run test:frontend && npm --prefix backend test",
+    "test:frontend": "node --test src/lib/url.test.js src/lib/readingTime.test.js",
     "preview": "vite preview",
     "img:webp": "node scripts/convert-images.mjs webp",
     "img:avif": "node scripts/convert-images.mjs avif",

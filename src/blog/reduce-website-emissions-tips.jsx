@@ -26,6 +26,7 @@ export const meta = {
   title: "How to Reduce Website Emissions: 5 Practical Tips That Cut Carbon by 60%",
   author: "Sol Rudd",
   date: "2025-07-25",
+  readingMinutes: 4,
   tags: ["Green Web", "Performance", "Sustainability", "Carbon Reduction"],
   slug: "reduce-website-emissions-tips",
   image: "/assets/blog/reduce-website-emissions.webp",

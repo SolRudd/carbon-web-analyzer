@@ -247,11 +247,11 @@ export default function HowItWorks() {
         <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
       </Helmet>
 
-      <div className="gt-page bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300 min-h-screen">
+      <div className="gt-page bg-slate-50 dark:bg-[#020f1e] text-slate-900 dark:text-white transition-colors duration-300 min-h-screen">
         <style>{pageStyles}</style>
 
         {/* --- HERO SECTION --- */}
-        <section className="relative pt-32 pb-20 px-6 overflow-hidden bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-900">
+        <section className="relative pt-32 pb-20 px-6 overflow-hidden bg-white dark:bg-[#020f1e] border-b border-slate-200 dark:border-slate-900">
           <div className="absolute inset-0 gt-bg-data opacity-30 pointer-events-none" />
 
           <div className="relative z-10 max-w-5xl mx-auto text-center space-y-8 animate-[gt-reveal_0.8s_ease-out]">
@@ -291,7 +291,7 @@ export default function HowItWorks() {
         </section>
 
         {/* --- TECH SPECS GRID --- */}
-        <section className="relative py-20 px-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-900 overflow-hidden">
+        <section className="relative py-20 px-6 bg-slate-50 dark:bg-[#020f1e] border-t border-slate-100 dark:border-slate-900 overflow-hidden">
           <div className="absolute inset-0 gt-grid-faint pointer-events-none opacity-50" />
 
           <div className="relative z-10 max-w-6xl mx-auto">
@@ -323,7 +323,7 @@ export default function HowItWorks() {
         </section>
 
         {/* --- PROCESS ACCORDION --- */}
-        <section className="py-20 px-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-900">
+        <section className="py-20 px-6 bg-white dark:bg-[#020f1e] border-t border-slate-100 dark:border-slate-900">
           <div className="max-w-4xl mx-auto space-y-12">
             <div className="text-center space-y-4">
               <h2 className="gt-display text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white">
@@ -394,7 +394,7 @@ export default function HowItWorks() {
                               : "grid-rows-[0fr] opacity-0"
                           }`}
                         >
-                          <div className="min-h-0 bg-white dark:bg-slate-950 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
+                          <div className="min-h-0 bg-white dark:bg-[#020f1e] p-6 rounded-xl border border-slate-200 dark:border-slate-800">
                             <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3">
                               Technical Detail
                             </h4>
@@ -424,7 +424,7 @@ export default function HowItWorks() {
         </section>
 
         {/* --- SYSTEM ARCHITECTURE --- */}
-        <section className="relative py-20 px-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-900 overflow-hidden">
+        <section className="relative py-20 px-6 bg-slate-50 dark:bg-[#020f1e] border-t border-slate-100 dark:border-slate-900 overflow-hidden">
           <div className="absolute inset-0 gt-grid-faint pointer-events-none opacity-50" />
 
           <div className="relative z-10 max-w-5xl mx-auto text-center space-y-12">
@@ -479,7 +479,7 @@ export default function HowItWorks() {
         </section>
 
         {/* --- CTA --- */}
-        <section className="py-20 px-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-900 text-center">
+        <section className="py-20 px-6 bg-white dark:bg-[#020f1e] border-t border-slate-100 dark:border-slate-900 text-center">
           <div className="max-w-3xl mx-auto gt-panel p-10 rounded-2xl border border-slate-200 dark:border-slate-800">
             <h2 className="gt-display text-3xl font-bold text-slate-900 dark:text-white mb-6">
               See the engine in action.

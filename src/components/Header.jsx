@@ -6,10 +6,12 @@ import logoWebp from "../assets/GreenTraceLogo.webp";
 import logoAvif from "../assets/GreenTraceLogo.avif";
 import { Menu, X, Sun, Moon } from "lucide-react";
 import useTheme from "../hooks/useTheme";
+import { useAuth } from "../context/AuthContext";
 
 const navLinks = [
   { to: "/", label: "Home" },
   { to: "/how-it-works", label: "How It Works" },
+  { to: "/pricing", label: "Pricing" },
   { to: "/faq", label: "FAQ" },
   { to: "/blog", label: "Blog" },
 ];
@@ -17,7 +19,9 @@ const navLinks = [
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isDark, toggle } = useTheme();
+  const { user } = useAuth();
   const location = useLocation();
+  const accountCta = user ? { to: "/dashboard", label: "Dashboard" } : { to: "/login", label: "Login" };
 
   return (
     <>
@@ -32,7 +36,7 @@ export default function Header() {
         aria-label="Announcement"
       >
         <span className="block md:hidden">
-          New rating system — 
+          New rating system -
           <Link to="/rating" className="underline font-semibold hover:text-green-200">
             learn more
           </Link>
@@ -67,7 +71,7 @@ export default function Header() {
                 height="48"
                 className="h-[48px] w-auto"
                 decoding="async"
-                fetchPriority="high"
+                fetchpriority="high"
               />
             </picture>
           </Link>
@@ -112,7 +116,7 @@ export default function Header() {
                 height="60"
                 className="h-[60px] w-auto"
                 decoding="async"
-                fetchPriority="high"
+                fetchpriority="high"
               />
             </picture>
           </Link>
@@ -122,24 +126,30 @@ export default function Header() {
             {/* Theme toggle */}
             <button
               onClick={toggle}
-              aria-label="Toggle theme"
+              type="button"
+              role="switch"
+              aria-checked={isDark}
+              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
               className="p-2 rounded-full text-slate-700 dark:text-slate-300
                          hover:bg-slate-100 dark:hover:bg-slate-800
                          transition-colors duration-200"
             >
-              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              <span className="flex h-5 w-5 items-center justify-center">
+                {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </span>
             </button>
 
             {/* Desktop: CTAs */}
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-3">
               <Link
-                to="/badge"
+                to={accountCta.to}
                 className="relative inline-flex items-center px-3 py-2 text-sm font-medium
                            text-greenbuzz border border-greenbuzz rounded-full
                            hover:bg-greenbuzz hover:text-white
                            transition-colors duration-200"
               >
-                Get Badge
+                {accountCta.label}
                 <span
                   className="absolute inset-0 rounded-full
                                  shadow-[0_0_12px_rgba(0,196,113,0.2)]
@@ -148,14 +158,16 @@ export default function Header() {
                   aria-hidden="true"
                 />
               </Link>
-              <Link
-                to="/api-access"
+              <a
+                href="https://buzzboost.co.uk/contact/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="bg-greenbuzz hover:bg-greenbuzz/90 text-white
                            px-3 py-2 rounded-full text-sm shadow-md
                            transition-colors duration-200"
               >
-                API Access
-              </Link>
+                Contact Sales
+              </a>
             </div>
 
             {/* Mobile: menu toggle */}
@@ -184,7 +196,10 @@ export default function Header() {
           >
             <div className="px-6 py-5 space-y-3">
               {navLinks
-                .concat({ to: "/badge", label: "Get Badge" }, { to: "/api-access", label: "API Access" })
+                .concat(
+                  { to: accountCta.to, label: accountCta.label },
+                  { to: "/badge", label: "Badge Setup" }
+                )
                 .map(({ to, label }) => (
                   <Link
                     key={to}
@@ -197,7 +212,17 @@ export default function Header() {
                     {label}
                   </Link>
                 ))}
+              <a
+                href="https://buzzboost.co.uk/contact/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-base font-medium text-slate-900 dark:text-slate-300
+                           px-4 py-2 rounded-md"
+              >
+                Contact Sales
+              </a>
               <button
+                type="button"
                 onClick={() => {
                   toggle();
                   setMenuOpen(false);
@@ -205,6 +230,9 @@ export default function Header() {
                 className="mt-4 w-full flex justify-center items-center gap-2
                            bg-greenbuzz hover:bg-greenbuzz/90 text-white
                            px-3 py-2 rounded-md transition-colors duration-200"
+                role="switch"
+                aria-checked={isDark}
+                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
               >
                 {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                 Toggle Theme

@@ -323,7 +323,7 @@ export default function ResultPage() {
         {reportSchema && <script type="application/ld+json">{JSON.stringify(reportSchema)}</script>}
       </Helmet>
 
-      <section className="relative min-h-screen bg-slate-100/70 dark:bg-slate-950 py-12 sm:py-14 px-4 sm:px-6">
+      <section className="relative min-h-screen bg-slate-100/70 dark:bg-[#020f1e] py-12 sm:py-14 px-4 sm:px-6">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-44 left-1/3 h-[30rem] w-[30rem] rounded-full bg-green-500/10 blur-3xl" />
           <div className="absolute bottom-0 right-1/4 h-[24rem] w-[24rem] rounded-full bg-cyan-500/10 blur-3xl" />
@@ -370,7 +370,7 @@ export default function ResultPage() {
                       background: `conic-gradient(#16a34a ${progressAngle}deg, rgba(148,163,184,0.25) ${progressAngle}deg 360deg)`,
                     }}
                   >
-                    <div className="grid h-14 w-14 place-items-center rounded-full bg-white dark:bg-slate-950 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                    <div className="grid h-14 w-14 place-items-center rounded-full bg-white dark:bg-[#020f1e] text-xs font-semibold text-slate-700 dark:text-slate-200">
                       {percentileValue}%
                     </div>
                   </div>

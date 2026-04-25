@@ -74,7 +74,7 @@ export default function CompanyInfoSection() {
   return (
     <section
       id="company-info"
-      className="gt-section relative bg-white dark:bg-slate-950 py-24 sm:py-28 px-5 sm:px-6 transition-colors duration-300 overflow-hidden border-t border-slate-100 dark:border-slate-900"
+      className="gt-section relative bg-white dark:bg-[#020f1e] py-24 sm:py-28 px-5 sm:px-6 transition-colors duration-300 overflow-hidden border-t border-slate-100 dark:border-slate-900"
       aria-labelledby="company-info-heading"
     >
       <style>{sectionStyles}</style>

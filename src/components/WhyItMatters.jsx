@@ -75,7 +75,7 @@ export default function WhyItMatters() {
   return (
     <section
       id="impact"
-      className="gt-section relative bg-slate-50 dark:bg-slate-950 py-24 sm:py-28 px-5 sm:px-6 transition-colors duration-300 overflow-hidden"
+      className="gt-section relative bg-slate-50 dark:bg-[#020f1e] py-24 sm:py-28 px-5 sm:px-6 transition-colors duration-300 overflow-hidden"
     >
       <style>{sectionStyles}</style>
 

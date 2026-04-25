@@ -75,7 +75,7 @@ export default function LoadingOverlay() {
   const StageIcon = analysisStages[stageIdx].icon;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/90 dark:bg-slate-950/90 p-4 backdrop-blur-xl" aria-live="polite" aria-busy="true">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/90 dark:bg-[#020f1e]/90 p-4 backdrop-blur-xl" aria-live="polite" aria-busy="true">
       {/* Background */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div

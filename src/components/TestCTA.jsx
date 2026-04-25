@@ -32,7 +32,7 @@ export default function TestCTA() {
 
         {/* CTA Button */}
         <Link
-          to="/#input-form"
+          to="/calculator"
           className="
             inline-flex items-center justify-center gap-2
             px-8 py-4

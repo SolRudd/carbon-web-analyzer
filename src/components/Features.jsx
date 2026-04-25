@@ -24,7 +24,7 @@ const Features = () => (
   <section
     className="
       w-full 
-      bg-white dark:bg-slate-950 
+      bg-white dark:bg-[#020f1e] 
       text-slate-900 dark:text-slate-100 
       py-16 px-4 
       transition-colors duration-300

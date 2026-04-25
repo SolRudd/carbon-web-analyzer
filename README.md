@@ -29,6 +29,8 @@ A lightweight, open-source web carbon footprint estimator. Enter any public URL 
 - [Deployment](#-deployment)
 - [Environment Variables](#-environment-variables)
 - [Badge Integration](#-badge-integration)
+- [Auth Dashboard Setup](docs/auth-dashboard-local-setup.md)
+- [Stripe Test-Mode Sign-Off](docs/stripe-test-mode-signoff.md)
 - [Contributing](#-contributing)
 - [License](#-license)
 

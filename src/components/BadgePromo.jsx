@@ -73,7 +73,7 @@ export default function BadgePromo({ siteUrl, greenHost = false }) {
               </span>
             </div>
 
-            <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-950/40 p-4 flex justify-center">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-[#020f1e]/40 p-4 flex justify-center">
               <CarbonBadge url={normalized} />
             </div>
 
@@ -88,7 +88,7 @@ export default function BadgePromo({ siteUrl, greenHost = false }) {
                   {copiedKey === "carbon" ? "Copied" : "Copy"}
                 </button>
               </div>
-              <pre className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100/85 dark:bg-slate-950/75 p-3 text-xs text-slate-800 dark:text-slate-200 whitespace-pre-wrap break-all leading-relaxed">
+              <pre className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100/85 dark:bg-[#020f1e]/75 p-3 text-xs text-slate-800 dark:text-slate-200 whitespace-pre-wrap break-all leading-relaxed">
                 {carbonSnippet}
               </pre>
             </div>
@@ -112,7 +112,7 @@ export default function BadgePromo({ siteUrl, greenHost = false }) {
               </span>
             </div>
 
-            <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-950/40 p-4 flex items-center justify-center min-h-[92px]">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-[#020f1e]/40 p-4 flex items-center justify-center min-h-[92px]">
               {greenHost ? (
                 <div className="inline-flex flex-col items-center">
                   <div className="inline-flex overflow-hidden border rounded-[10px] shadow-[0_6px_16px_-10px_rgba(15,23,42,0.16)]" style={{ borderColor: "rgba(22,163,74,0.38)" }}>
@@ -145,7 +145,7 @@ export default function BadgePromo({ siteUrl, greenHost = false }) {
                   {copiedKey === "hosting" ? "Copied" : "Copy"}
                 </button>
               </div>
-              <pre className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100/85 dark:bg-slate-950/75 p-3 text-xs text-slate-800 dark:text-slate-200 whitespace-pre-wrap break-all leading-relaxed">
+              <pre className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100/85 dark:bg-[#020f1e]/75 p-3 text-xs text-slate-800 dark:text-slate-200 whitespace-pre-wrap break-all leading-relaxed">
                 {hostingSnippet}
               </pre>
             </div>

@@ -43,7 +43,7 @@ export default function PrivacyPolicy() {
       />
 
       <div 
-        className="bg-white dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300 min-h-screen flex flex-col"
+        className="bg-white dark:bg-[#020f1e] text-slate-900 dark:text-white transition-colors duration-300 min-h-screen flex flex-col"
       >
         <section className="relative overflow-hidden py-20 px-4 text-center bg-gradient-to-br from-greenbuzz/5 to-blue-400/5">
           <div className="relative z-10 max-w-4xl mx-auto space-y-6">

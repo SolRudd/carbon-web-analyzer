@@ -9,6 +9,7 @@ export const meta = {
   title: "The Digital Carbon Paradox: Why Green Energy Companies Have the Dirtiest Websites",
   author: "Sol Rudd",
   date: "2025-07-29",
+  readingMinutes: 6,
   tags: ["Eco-friendly", "Energy", "Web Sustainability", "Carbon Tracking"],
   slug: "carbon-footprints-energy-providers",
     image: "/assets/blog/energy-carbon.webp",

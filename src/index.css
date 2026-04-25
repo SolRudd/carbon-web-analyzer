@@ -3,6 +3,20 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.theme-changing *,
+html.theme-changing *::before,
+html.theme-changing *::after {
+  transition: none !important;
+}
+
 /* 🌱 Custom Scrollbar for ALL SCROLLABLE ELEMENTS */
 body::-webkit-scrollbar,
 *::-webkit-scrollbar {

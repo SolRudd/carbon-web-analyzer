@@ -16,5 +16,23 @@ services:
         fromEnvironmentVar: SECRET_SUPABASE_URL
       - key: SUPABASE_SERVICE_KEY
         fromEnvironmentVar: SECRET_SUPABASE_SERVICE_KEY
+      - key: SUPABASE_ANON_KEY
+        fromEnvironmentVar: SECRET_SUPABASE_ANON_KEY
       - key: PAGESPEED_API_KEY
         fromEnvironmentVar: SECRET_PAGESPEED_API_KEY
+      # Stripe — required for checkout and webhooks
+      - key: STRIPE_SECRET_KEY
+        fromEnvironmentVar: SECRET_STRIPE_SECRET_KEY
+      - key: STRIPE_WEBHOOK_SECRET
+        fromEnvironmentVar: SECRET_STRIPE_WEBHOOK_SECRET
+      - key: STRIPE_PRICE_ID_VERIFIED_BADGE
+        fromEnvironmentVar: SECRET_STRIPE_PRICE_ID_VERIFIED_BADGE
+      # Optional: set to "subscription" for recurring billing, "payment" for one-off
+      - key: STRIPE_CHECKOUT_MODE
+        value: payment
+      # Admin API key for /api/admin/* endpoints
+      - key: LICENSE_ADMIN_KEY
+        fromEnvironmentVar: SECRET_LICENSE_ADMIN_KEY
+      # Frontend URL for Stripe redirect — must match your deployed frontend
+      - key: SITE_URL
+        value: https://www.greentracer.org

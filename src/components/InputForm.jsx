@@ -4,25 +4,7 @@ import LoadingOverlay from "./LoadingOverlay";
 import { FaLeaf } from "react-icons/fa";
 import { Loader2 } from "lucide-react";
 import { API_BASE } from "../config";
-
-// THIS IS THE FIX: A helper function to clean and standardize URLs before testing.
-// It removes 'www.' to ensure consistency.
-function normalizeUrl(inputUrl) {
-  let url = inputUrl.trim();
-  if (!url) return '';
-  if (!/^(https?:\/\/)/i.test(url)) {
-    url = `https://${url}`;
-  }
-  try {
-    const urlObject = new URL(url);
-    if (urlObject.hostname.startsWith('www.')) {
-      urlObject.hostname = urlObject.hostname.substring(4);
-    }
-    return urlObject.origin + urlObject.pathname.replace(/\/+$/, '');
-  } catch {
-    return inputUrl; // Fallback for any invalid URLs
-  }
-}
+import { normalizeWebsiteUrl } from "../lib/url";
 
 
 export default function InputForm() {
@@ -33,7 +15,7 @@ export default function InputForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     // We use the new helper function here to clean the URL
-    const cleanUrl = normalizeUrl(url);
+    const cleanUrl = normalizeWebsiteUrl(url);
     if (!cleanUrl) {
       alert("Please enter a valid URL.");
       return;
@@ -75,7 +57,7 @@ export default function InputForm() {
   return (
     <section
       id="input-form"
-      className="relative overflow-hidden bg-white dark:bg-slate-950 py-20 sm:py-24 px-4 transition-colors duration-300"
+      className="relative overflow-hidden bg-white dark:bg-[#020f1e] py-20 sm:py-24 px-4 transition-colors duration-300"
     >
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 h-[760px] w-[760px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-green-500/10 blur-3xl" />
@@ -142,7 +124,7 @@ export default function InputForm() {
           </div>
 
           <p className="text-center text-xs text-slate-500 dark:text-slate-400 opacity-90">
-            By using this carbon calculator, you agree to have your submitted data processed for analysis and potentially published in our public database for transparency.
+            By using this calculator, you agree to our analysis terms and privacy policy for the submitted URL.
           </p>
         </form>
 

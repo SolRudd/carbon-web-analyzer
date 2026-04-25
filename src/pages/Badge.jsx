@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { API_BASE } from "../config";
 import {
@@ -111,21 +112,32 @@ const pageStyles = `
   }
 `;
 
-const badgeTypes = {
-  carbon: {
-    id: "carbon",
-    title: "Carbon Impact Badge",
-    subtitle: "Responsive & Logo-Enabled",
-    icon: <FaRocket />,
-    features: ["CO₂ per view", "Percentile score", "Dark mode ready"],
-  },
-  hosting: {
-    id: "hosting",
-    title: "Green Hosting Verified",
-    subtitle: "Trust Signal Badge",
-    icon: <FaShieldAlt />,
-    features: ["Verified host check", "Cached result", "No false positives"],
-  },
+const MEMBER_ACTIVE_STATUSES = new Set(["active", "trial", "charity", "partner", "internal"]);
+
+const getMemberBadgeLabel = (status) => {
+  const key = String(status || "none").toLowerCase();
+  const labels = {
+    active: "GreenTracer Licensed Member",
+    charity: "GreenTracer Charity Member",
+    partner: "GreenTracer Partner Member",
+    trial: "GreenTracer Trial Member",
+    internal: "GreenTracer Internal Member",
+  };
+  return labels[key] || "GreenTracer Licensed Member";
+};
+
+const getMemberStatusTag = (status) => {
+  const key = String(status || "none").toLowerCase();
+  const tags = {
+    active: "LICENSE_ACTIVE",
+    charity: "LICENSE_CHARITY",
+    partner: "LICENSE_PARTNER",
+    trial: "LICENSE_TRIAL",
+    internal: "LICENSE_INTERNAL",
+    suspended: "LICENSE_SUSPENDED",
+    inactive: "LICENSE_INACTIVE",
+  };
+  return tags[key] || "LICENSE_UNAVAILABLE";
 };
 
 const isValidHexColor = (v) => /^#[0-9A-Fa-f]{6}$/.test((v || "").trim());
@@ -171,7 +183,9 @@ const howToSchema = {
 };
 
 export default function Badge() {
-  const [websiteUrl, setWebsiteUrl] = useState("yoursite.com");
+  const [searchParams] = useSearchParams();
+  const initialSiteFromQuery = String(searchParams.get("site") || "").trim();
+  const [websiteUrl, setWebsiteUrl] = useState(initialSiteFromQuery || "yoursite.com");
   const [selectedBadgeType, setSelectedBadgeType] = useState("carbon");
   const [copiedCode, setCopiedCode] = useState(false);
   const [bgColor, setBgColor] = useState("#ffffff");
@@ -182,7 +196,15 @@ export default function Badge() {
     checkedUrl: "",
     hasSavedData: false,
     isGreenHost: false,
+    licenseStatus: "none",
+    hasMemberLicense: false,
   });
+
+  useEffect(() => {
+    if (initialSiteFromQuery) {
+      setWebsiteUrl(initialSiteFromQuery);
+    }
+  }, [initialSiteFromQuery]);
 
   const copyToClipboard = async (text) => {
     try {
@@ -203,6 +225,8 @@ export default function Badge() {
         checkedUrl: "",
         hasSavedData: false,
         isGreenHost: false,
+        licenseStatus: "none",
+        hasMemberLicense: false,
       });
       return;
     }
@@ -220,11 +244,16 @@ export default function Badge() {
       })
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
+          const licenseStatus = String(data?.license?.status || "none").toLowerCase();
+          const hasMemberLicense =
+            MEMBER_ACTIVE_STATUSES.has(licenseStatus) && !!data?.license?.licensed;
           setHostingStatus({
             loading: false,
             checkedUrl: normalizedUrl,
             hasSavedData: !!data,
             isGreenHost: !!data?.greenHost,
+            licenseStatus,
+            hasMemberLicense,
           });
         })
         .catch((err) => {
@@ -249,7 +278,8 @@ export default function Badge() {
   const getCurrentCode = () => {
     const target = normalizeSiteUrl(websiteUrl) || "https://yoursite.com";
     const cleanText = isValidHexColor(textColor) ? textColor.trim() : "";
-    const typeAttr = selectedBadgeType === "hosting" ? ` data-badge-type="hosting"` : "";
+    const typeAttr =
+      selectedBadgeType !== "carbon" ? ` data-badge-type="${selectedBadgeType}"` : "";
     const customAttrs = `${bgColor !== "#ffffff" ? ` data-bg-color="${bgColor}"` : ""}${
       accentColor !== "#16A34A" ? ` data-accent-color="${accentColor}"` : ""
     }${cleanText ? ` data-text-color="${cleanText}"` : ""}`;
@@ -257,12 +287,13 @@ export default function Badge() {
     return `<div class="greentrace-badge" data-url="${target}" data-theme="auto"${typeAttr}${customAttrs}></div>\n<script src="https://api.greentracer.org/greentrace-badge.js" defer></script>`;
   };
 
-  const selectedBadge = badgeTypes[selectedBadgeType];
   const hasCustomTextColor = isValidHexColor(textColor);
-  const previewTextColor = hasCustomTextColor ? textColor.trim() : "#0F172A";
-  const previewLogoFilter = getLogoFilterForColor(previewTextColor, hasCustomTextColor);
-  const previewBorderColor = hexToRgba(accentColor, 0.38) || accentColor;
-  const previewDividerColor = hexToRgba(accentColor, 0.22) || accentColor;
+  const previewTextColor = hasCustomTextColor ? textColor.trim() : "#1e293b";
+  const previewLogoFilter = "none";
+  const previewBorderColor = hexToRgba(accentColor, 0.28) || accentColor;
+  const previewRightBg = hexToRgba(accentColor, 0.08) || "rgba(34,197,94,0.08)";
+  const memberPreviewLabel = getMemberBadgeLabel(hostingStatus.licenseStatus);
+  const memberPreviewState = getMemberStatusTag(hostingStatus.licenseStatus);
 
   return (
     <>
@@ -276,10 +307,10 @@ export default function Badge() {
         <script type="application/ld+json">{JSON.stringify(howToSchema)}</script>
       </Helmet>
 
-      <div className="gt-page bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300 min-h-screen">
+      <div className="gt-page bg-slate-50 dark:bg-[#020f1e] text-slate-900 dark:text-white transition-colors duration-300 min-h-screen">
         <style>{pageStyles}</style>
 
-        <section className="relative pt-28 sm:pt-32 pb-20 px-5 sm:px-6 overflow-hidden bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-900">
+        <section className="relative pt-28 sm:pt-32 pb-20 px-5 sm:px-6 overflow-hidden bg-white dark:bg-[#020f1e] border-b border-slate-200 dark:border-slate-900">
           <div className="absolute inset-0 gt-bg-data opacity-30 pointer-events-none" />
 
           <div className="relative z-10 max-w-5xl mx-auto text-center space-y-8 animate-[gt-reveal_0.8s_ease-out]">
@@ -344,7 +375,7 @@ export default function Badge() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-3 gap-4">
                 <button
                   type="button"
                   onClick={() => setSelectedBadgeType("carbon")}
@@ -387,6 +418,25 @@ export default function Badge() {
                       Checking...
                     </span>
                   )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedBadgeType("member")}
+                  className={`gt-panel p-4 rounded-xl text-left border-2 transition-all ${
+                    selectedBadgeType === "member"
+                      ? "border-green-500 ring-1 ring-green-500/20"
+                      : "border-transparent hover:border-slate-300 dark:hover:border-slate-700"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2 text-emerald-700 dark:text-emerald-300 font-bold gt-mono text-xs">
+                    <FaCertificate /> LICENSED_MEMBER
+                  </div>
+                  <p className="text-xs text-slate-500 leading-snug">
+                    {hostingStatus.hasMemberLicense
+                      ? "Active member license detected."
+                      : "Requires active paid, trial, charity, partner, or internal license."}
+                  </p>
                 </button>
               </div>
 
@@ -478,41 +528,103 @@ export default function Badge() {
 
                 <div className="gt-badge-preview scale-100 sm:scale-110">
                   <div
-                    className="inline-flex overflow-hidden border transition-all duration-300"
                     style={{
-                      borderColor: previewBorderColor,
-                      backgroundColor: bgColor,
+                      display: "inline-flex",
+                      flexDirection: "column",
                       borderRadius: "10px",
-                      boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
+                      border: `1.5px solid ${previewBorderColor}`,
+                      overflow: "hidden",
+                      boxShadow: "0 4px 18px -6px rgba(0,0,0,0.14)",
+                      transition: "all 0.3s ease",
                     }}
                   >
+                    {/* Main row */}
+                    <div style={{ display: "flex", alignItems: "stretch" }}>
+                      {/* Left: label + metric */}
+                      <div
+                        style={{
+                          backgroundColor: bgColor,
+                          color: previewTextColor,
+                          display: "flex",
+                          flexDirection: "column",
+                          padding: "9px 13px 8px",
+                          gap: "2px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: "JetBrains Mono, monospace",
+                            fontSize: "7.5px",
+                            letterSpacing: "0.14em",
+                            textTransform: "uppercase",
+                            opacity: 0.5,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {selectedBadgeType === "member"
+                            ? "Licensed Member"
+                            : selectedBadgeType === "hosting"
+                              ? "Green Hosting"
+                              : "Verified Carbon Score"}
+                        </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+                            <path d="M2 6.5L4.8 9.3L10 3" stroke={accentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          <span
+                            style={{
+                              fontSize: "12px",
+                              fontWeight: 500,
+                              letterSpacing: "-0.01em",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {selectedBadgeType === "hosting"
+                              ? "Verified"
+                              : selectedBadgeType === "member"
+                                ? memberPreviewLabel
+                                : "0.45g CO₂ · per view"}
+                          </span>
+                        </div>
+                      </div>
+                      {/* Right: logo */}
+                      <div
+                        style={{
+                          backgroundColor: previewRightBg,
+                          borderLeft: `1px solid ${previewBorderColor}`,
+                          display: "flex",
+                          alignItems: "center",
+                          padding: "0 11px",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <img
+                          src="/GreenTraceLogo.png"
+                          alt="GreenTracer"
+                          style={{
+                            filter: previewLogoFilter,
+                            height: "14px",
+                            display: "block",
+                            opacity: 0.9,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    {/* Licence attribution row */}
                     <div
-                      className="px-3.5 py-[7px] text-[13px] font-semibold tracking-[0.01em]"
                       style={{
-                        backgroundColor: bgColor,
+                        backgroundColor: hexToRgba(accentColor, 0.04) || "rgba(34,197,94,0.04)",
+                        borderTop: `1px solid ${previewBorderColor}`,
+                        textAlign: "center",
+                        padding: "3px 13px",
+                        fontFamily: "JetBrains Mono, monospace",
+                        fontSize: "6.5px",
+                        letterSpacing: "0.1em",
+                        textTransform: "uppercase",
                         color: previewTextColor,
                       }}
                     >
-                      {selectedBadgeType === "hosting"
-                        ? "Green Hosting Verified"
-                        : "0.45g CO₂/view"}
-                    </div>
-                    <div
-                      className="flex items-center px-[15px] py-[6px]"
-                      style={{
-                        backgroundColor: accentColor,
-                        borderLeft: `1px solid ${previewDividerColor}`,
-                      }}
-                    >
-                      <img
-                        src="/GreenTraceLogo.png"
-                        alt="GreenTracer"
-                        style={{
-                          filter: previewLogoFilter,
-                          height: "18px",
-                          display: "block",
-                        }}
-                      />
+                      <span style={{ opacity: 0.4 }}>© GreenTracer · Licensed · greentracer.org</span>
                     </div>
                   </div>
                 </div>
@@ -521,6 +633,8 @@ export default function Badge() {
                   STATUS:{" "}
                   {selectedBadgeType === "hosting"
                     ? "VERIFIED_HOST"
+                    : selectedBadgeType === "member"
+                      ? memberPreviewState
                     : "CARBON_CALCULATED"}
                 </p>
               </div>
@@ -553,7 +667,7 @@ export default function Badge() {
           </div>
         </section>
 
-        <section className="relative py-20 px-5 sm:px-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-900 overflow-hidden">
+        <section className="relative py-20 px-5 sm:px-6 bg-white dark:bg-[#020f1e] border-t border-slate-100 dark:border-slate-900 overflow-hidden">
           <div className="absolute inset-0 gt-grid-faint pointer-events-none opacity-50" />
 
           <div className="relative z-10 max-w-6xl mx-auto grid md:grid-cols-3 gap-6">

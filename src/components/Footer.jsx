@@ -40,7 +40,7 @@ export default function Footer() {
                 className="h-10 md:h-12 w-auto"
                 loading="lazy"
                 decoding="async"
-                fetchPriority="low"
+                fetchpriority="low"
               />
             </picture>
           </Link>
@@ -66,10 +66,10 @@ export default function Footer() {
               How It Works
             </Link>
             <Link
-              to="/api-access"
+              to="/license-status"
               className="hover:underline text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 transition-colors"
             >
-              API
+              License Status
             </Link>
             <Link
               to="/blog"
@@ -82,6 +82,12 @@ export default function Footer() {
               className="hover:underline text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 transition-colors"
             >
               FAQ
+            </Link>
+            <Link
+              to="/pricing"
+              className="hover:underline text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 transition-colors"
+            >
+              Pricing
             </Link>
             <Link
               to="/privacy-policy"

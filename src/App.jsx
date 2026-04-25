@@ -7,17 +7,22 @@ import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import HowItWorks from "./pages/HowItWorks";
 import Faq from "./pages/Faq";
-import ApiAccess from "./pages/ApiAccess";
 import Badge from "./pages/Badge";
 import ResultPage from "./pages/ResultPage";
 import RatingPage from "./pages/RatingPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import Blog from "./pages/Blog";
 import BlogPostPage from "./pages/BlogPostPage";
+import Calculator from "./pages/Calculator";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Pricing from "./pages/Pricing";
+import LicenseStatus from "./pages/LicenseStatus";
 import CookieConsentBanner from "./components/CookieConsentBanner";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-console.log("⚡️ API_BASE is:", API_BASE);
+if (import.meta.env.DEV) console.log("⚡️ API_BASE is:", API_BASE);
 
 function App() {
   return (
@@ -27,10 +32,21 @@ function App() {
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/calculator" element={<Calculator />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/faq" element={<Faq />} />
-          <Route path="/api-access" element={<ApiAccess />} />
           <Route path="/badge" element={<Badge />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/license-status" element={<LicenseStatus />} />
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Blog Routes */}
           <Route path="/blog" element={<Blog />} />

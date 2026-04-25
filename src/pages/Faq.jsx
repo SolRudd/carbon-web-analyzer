@@ -366,11 +366,11 @@ export default function Faq() {
         <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
       </Helmet>
 
-      <div className="gt-page bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300 min-h-screen">
+      <div className="gt-page bg-slate-50 dark:bg-[#020f1e] text-slate-900 dark:text-white transition-colors duration-300 min-h-screen">
         <style>{pageStyles}</style>
 
         {/* HERO */}
-        <section className="relative pt-32 pb-20 px-6 overflow-hidden bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-900">
+        <section className="relative pt-32 pb-20 px-6 overflow-hidden bg-white dark:bg-[#020f1e] border-b border-slate-200 dark:border-slate-900">
           <div className="absolute inset-0 gt-bg-data opacity-30 pointer-events-none" />
 
           <div className="relative z-10 max-w-6xl mx-auto text-center space-y-8 animate-[gt-reveal_0.8s_ease-out]">
@@ -425,7 +425,7 @@ export default function Faq() {
         </section>
 
         {/* SEARCH + FILTERS */}
-        <section className="relative py-10 px-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-900 overflow-hidden">
+        <section className="relative py-10 px-6 bg-slate-50 dark:bg-[#020f1e] border-t border-slate-100 dark:border-slate-900 overflow-hidden">
           <div className="absolute inset-0 gt-grid-faint pointer-events-none opacity-50" />
 
           <div className="relative z-10 max-w-6xl mx-auto space-y-6">
@@ -487,7 +487,7 @@ export default function Faq() {
         </section>
 
         {/* FAQ LIST */}
-        <section className="py-16 px-6 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-900">
+        <section className="py-16 px-6 bg-white dark:bg-[#020f1e] border-t border-slate-100 dark:border-slate-900">
           <div className="max-w-6xl mx-auto">
             {filteredFaqs.length === 0 ? (
               <div className="text-center py-16">
@@ -618,7 +618,7 @@ export default function Faq() {
         </section>
 
         {/* SUPPORT CTA */}
-        <section className="relative py-20 px-6 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-900 overflow-hidden">
+        <section className="relative py-20 px-6 bg-slate-50 dark:bg-[#020f1e] border-t border-slate-100 dark:border-slate-900 overflow-hidden">
           <div className="absolute inset-0 gt-grid-faint pointer-events-none opacity-50" />
 
           <div className="relative z-10 max-w-4xl mx-auto text-center">
@@ -654,7 +654,7 @@ export default function Faq() {
         </section>
 
         {/* BACK LINK */}
-        <div className="text-center py-10 border-t border-slate-100 dark:border-slate-900 bg-white dark:bg-slate-950">
+        <div className="text-center py-10 border-t border-slate-100 dark:border-slate-900 bg-white dark:bg-[#020f1e]">
           <Link
             to="/"
             className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition-colors gt-mono text-xs font-bold uppercase tracking-wider"

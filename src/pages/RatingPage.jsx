@@ -1,80 +1,468 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Helmet } from 'react-helmet-async'; // ✅ Import Helmet
+import { Helmet } from "react-helmet-async";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Area, AreaChart
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Cell,
+  AreaChart,
+  Area,
 } from "recharts";
-import { 
-  FaChartBar, FaLeaf, FaAward, FaGlobe, FaRocket, FaBolt, FaShieldAlt, FaLightbulb, 
-  FaExternalLinkAlt, FaQuestionCircle, FaTrophy, FaChartLine, FaArrowRight, FaStar, 
-  FaUsers, FaHeart, FaEye
+import {
+  FaArrowRight,
+  FaChartBar,
+  FaChartLine,
+  FaDatabase,
+  FaGlobe,
+  FaLeaf,
+  FaQuestionCircle,
+  FaRocket,
+  FaTerminal,
+  FaTrophy,
 } from "react-icons/fa";
+
+const pageStyles = `
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap');
+
+  .gt-page {
+    --gt-bg: #04111f;
+    --gt-bg-soft: #071827;
+    --gt-panel: rgba(7, 24, 39, 0.9);
+    --gt-panel-2: rgba(9, 29, 46, 0.96);
+    --gt-border: rgba(255,255,255,0.08);
+    --gt-border-strong: rgba(74, 222, 128, 0.24);
+    --gt-text: #f8fafc;
+    --gt-muted: #94a3b8;
+    --gt-muted-2: #64748b;
+    --gt-green: #22c55e;
+    --gt-green-2: #16a34a;
+    --gt-green-3: #4ade80;
+    --gt-white-btn: #f8fafc;
+    --gt-dark-btn: #0f172a;
+    font-family: 'Inter', sans-serif;
+    background:
+      radial-gradient(circle at top center, rgba(34,197,94,0.06), transparent 24%),
+      linear-gradient(180deg, #03101d 0%, #04111f 35%, #04111f 100%);
+    color: var(--gt-text);
+  }
+
+  html:not(.dark) .gt-page {
+    --gt-bg: #ffffff;
+    --gt-bg-soft: #f8fafc;
+    --gt-panel: rgba(255, 255, 255, 0.85);
+    --gt-panel-2: rgba(248, 250, 252, 0.95);
+    --gt-border: rgba(0,0,0,0.07);
+    --gt-border-strong: rgba(22, 163, 74, 0.22);
+    --gt-text: #0f172a;
+    --gt-muted: #475569;
+    --gt-muted-2: #64748b;
+    --gt-green: #16a34a;
+    --gt-green-2: #15803d;
+    --gt-green-3: #16a34a;
+    --gt-white-btn: #0f172a;
+    --gt-dark-btn: #f8fafc;
+    background:
+      radial-gradient(circle at top center, rgba(34,197,94,0.04), transparent 24%),
+      linear-gradient(180deg, #f8fafc 0%, #ffffff 35%, #ffffff 100%);
+    color: var(--gt-text);
+  }
+
+  .gt-display {
+    font-family: 'Fraunces', serif;
+    letter-spacing: -0.03em;
+  }
+
+  .gt-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .gt-hero-grid {
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.10));
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.10));
+  }
+
+  .gt-panel {
+    background: linear-gradient(180deg, var(--gt-panel) 0%, var(--gt-panel-2) 100%);
+    border: 1px solid var(--gt-border);
+    border-radius: 28px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 18px 60px -32px rgba(0,0,0,0.6);
+  }
+
+  .gt-card {
+    position: relative;
+    overflow: hidden;
+    transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+  }
+
+  .gt-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255,255,255,0.12);
+  }
+
+  .gt-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--gt-border);
+    background: rgba(5, 19, 31, 0.7);
+  }
+
+  .gt-icon-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+    border: 1px solid var(--gt-border);
+    background: rgba(255,255,255,0.04);
+    color: var(--gt-green-3);
+    flex: 0 0 auto;
+  }
+
+  .gt-stat {
+    min-width: 120px;
+  }
+
+  .gt-stat__value {
+    color: var(--gt-green-3);
+  }
+
+  .gt-grade-btn {
+    min-width: 72px;
+    min-height: 56px;
+    border-radius: 16px;
+    border: 1px solid var(--gt-border);
+    background: rgba(255,255,255,0.04);
+    color: var(--gt-text);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease, color .18s ease;
+  }
+
+  .gt-grade-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255,255,255,0.14);
+  }
+
+  .gt-grade-btn.is-active {
+    color: white;
+    box-shadow: 0 14px 28px -18px rgba(0,0,0,0.55);
+  }
+
+  .gt-toggle {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px;
+    border-radius: 999px;
+    border: 1px solid var(--gt-border);
+    background: rgba(6, 22, 35, 0.84);
+  }
+
+  .gt-toggle__btn {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--gt-muted);
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .18s ease, color .18s ease;
+  }
+
+  .gt-toggle__btn:hover {
+    color: var(--gt-text);
+  }
+
+  .gt-toggle__btn.is-active {
+    background: linear-gradient(135deg, var(--gt-green-2) 0%, var(--gt-green) 100%);
+    color: white;
+    box-shadow: 0 12px 24px -14px rgba(34,197,94,0.65);
+  }
+
+  .gt-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--gt-border);
+    background: rgba(255,255,255,0.04);
+    color: var(--gt-muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .gt-divider {
+    border-top: 1px solid var(--gt-border);
+  }
+
+  .gt-btn,
+  .gt-link-btn {
+    min-height: 54px;
+    border-radius: 999px;
+    font-weight: 800;
+    transition: transform .18s ease, filter .18s ease, background .18s ease;
+  }
+
+  .gt-btn:hover,
+  .gt-link-btn:hover {
+    transform: translateY(-1px);
+  }
+
+  .gt-btn--light {
+    background: var(--gt-white-btn);
+    color: var(--gt-dark-btn);
+  }
+
+  .gt-btn--green {
+    background: linear-gradient(135deg, var(--gt-green-2) 0%, var(--gt-green) 100%);
+    color: white;
+  }
+
+  .gt-btn--ghost {
+    background: rgba(255,255,255,0.06);
+    color: white;
+    border: 1px solid var(--gt-border);
+  }
+
+  .gt-btn--light:hover,
+  .gt-btn--green:hover,
+  .gt-btn--ghost:hover {
+    filter: brightness(1.03);
+  }
+
+  .gt-btn:focus-visible,
+  .gt-link-btn:focus-visible,
+  .gt-grade-btn:focus-visible,
+  .gt-toggle__btn:focus-visible {
+    outline: 2px solid var(--gt-green-3);
+    outline-offset: 2px;
+  }
+
+  .gt-table-wrap {
+    overflow-x: auto;
+  }
+
+  .gt-table-wrap table {
+    min-width: 760px;
+  }
+
+  .gt-chart-panel {
+    height: 420px;
+  }
+
+  .gt-threshold-box {
+    border: 1px solid var(--gt-border);
+    background: rgba(255,255,255,0.04);
+  }
+
+  .gt-row-selected {
+    background: rgba(255,255,255,0.04);
+  }
+
+  .gt-row-hover:hover {
+    background: rgba(255,255,255,0.03);
+  }
+
+  @media (max-width: 767px) {
+    .gt-chart-panel {
+      height: 340px;
+    }
+  }
+
+  /* Light mode typography */
+  html:not(.dark) .gt-page h1,
+  html:not(.dark) .gt-page h2,
+  html:not(.dark) .gt-page h3,
+  html:not(.dark) .gt-page h4 {
+    color: #0f172a;
+  }
+
+  html:not(.dark) .gt-page .text-slate-300 {
+    color: #475569;
+  }
+
+  html:not(.dark) .gt-page section {
+    border-color: rgba(0,0,0,0.06) !important;
+  }
+
+  html:not(.dark) .gt-hero-grid {
+    background-image:
+      linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px);
+  }
+
+  html:not(.dark) .gt-panel {
+    background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.98) 100%);
+    border-color: rgba(0,0,0,0.07);
+    box-shadow: 0 4px 24px -8px rgba(0,0,0,0.08);
+  }
+
+  html:not(.dark) .gt-card:hover {
+    border-color: rgba(0,0,0,0.10);
+  }
+
+  html:not(.dark) .gt-chip {
+    background: rgba(255,255,255,0.9);
+    border-color: rgba(0,0,0,0.08);
+  }
+
+  html:not(.dark) .gt-icon-box {
+    background: rgba(0,0,0,0.03);
+    border-color: rgba(0,0,0,0.08);
+    color: var(--gt-green);
+  }
+
+  html:not(.dark) .gt-stat__value {
+    color: var(--gt-green);
+  }
+
+  html:not(.dark) .gt-grade-btn {
+    background: rgba(0,0,0,0.03);
+    border-color: rgba(0,0,0,0.08);
+    color: #0f172a;
+  }
+
+  html:not(.dark) .gt-grade-btn:hover {
+    border-color: rgba(0,0,0,0.14);
+  }
+
+  html:not(.dark) .gt-toggle {
+    background: rgba(255,255,255,0.85);
+    border-color: rgba(0,0,0,0.08);
+  }
+
+  html:not(.dark) .gt-badge {
+    background: rgba(0,0,0,0.03);
+    border-color: rgba(0,0,0,0.08);
+    color: #475569;
+  }
+
+  html:not(.dark) .gt-divider {
+    border-top-color: rgba(0,0,0,0.07);
+  }
+
+  html:not(.dark) .gt-btn--ghost {
+    background: rgba(0,0,0,0.04);
+    color: #0f172a;
+    border-color: rgba(0,0,0,0.10);
+  }
+
+  html:not(.dark) .gt-threshold-box {
+    background: rgba(0,0,0,0.03);
+    border-color: rgba(0,0,0,0.08);
+  }
+
+  html:not(.dark) .gt-row-selected {
+    background: rgba(0,0,0,0.02);
+  }
+
+  html:not(.dark) .gt-row-hover:hover {
+    background: rgba(0,0,0,0.02);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gt-card,
+    .gt-btn,
+    .gt-link-btn,
+    .gt-grade-btn,
+    .gt-toggle__btn {
+      transition: none !important;
+    }
+
+    .gt-card:hover,
+    .gt-btn:hover,
+    .gt-link-btn:hover,
+    .gt-grade-btn:hover {
+      transform: none !important;
+    }
+  }
+`;
 
 const chartData = [
   { grade: "A+", value: 0.095, label: "Ultra-Efficient", count: 12 },
-  { grade: "A",  value: 0.186, label: "Efficient", count: 18 },
-  { grade: "B",  value: 0.341, label: "Good", count: 25 },
-  { grade: "C",  value: 0.493, label: "Average", count: 20 },
-  { grade: "D",  value: 0.656, label: "Below Average", count: 15 },
-  { grade: "E",  value: 0.846, label: "Less Efficient", count: 8 },
-  { grade: "F",  value: 1.0,   label: "Above Global Average", count: 2 },
+  { grade: "A", value: 0.186, label: "Efficient", count: 18 },
+  { grade: "B", value: 0.341, label: "Good", count: 25 },
+  { grade: "C", value: 0.493, label: "Average", count: 20 },
+  { grade: "D", value: 0.656, label: "Below Average", count: 15 },
+  { grade: "E", value: 0.846, label: "Less Efficient", count: 8 },
+  { grade: "F", value: 1.0, label: "Above Global Average", count: 2 },
 ];
 
 const gradeColors = {
-  "A+": "#10b981", "A": "#22c55e", "B": "#84cc16", "C": "#eab308",
-  "D": "#f59e0b", "E": "#f97316", "F": "#ef4444",
+  "A+": "#10b981",
+  A: "#22c55e",
+  B: "#84cc16",
+  C: "#eab308",
+  D: "#f59e0b",
+  E: "#f97316",
+  F: "#ef4444",
 };
 
 const gradeDetails = [
   {
-    grade: "A+", title: "Ultra-Efficient",
-    description: "Exceptional performance! Your site is in the top 5% for sustainability.",
-    tips: ["Optimized images", "Minimal JavaScript", "Green hosting", "CDN usage"],
-    color: "from-green-500 to-green-600", bgColor: "bg-green-50 dark:bg-green-900/20",
-    borderColor: "border-green-200 dark:border-green-700"
+    grade: "A+",
+    title: "Ultra-Efficient",
+    description:
+      "Exceptional performance. Your site sits in the highest-performing sustainability tier and reflects a very low-impact page experience.",
+    tips: ["Optimised images", "Minimal JavaScript", "Green hosting", "Efficient delivery"],
   },
   {
-    grade: "A", title: "Efficient",
-    description: "Great job! Your website has excellent environmental performance.",
-    tips: ["Good optimization", "Reasonable file sizes", "Efficient hosting"],
-    color: "from-green-400 to-green-500", bgColor: "bg-green-50 dark:bg-green-900/20",
-    borderColor: "border-green-200 dark:border-green-700"
+    grade: "A",
+    title: "Efficient",
+    description:
+      "A strong result. Your website performs very well environmentally and already shows good optimisation choices.",
+    tips: ["Lean assets", "Reasonable file sizes", "Fast delivery", "Efficient hosting"],
   },
   {
-    grade: "B", title: "Good",
-    description: "Above average performance with room for improvement.",
-    tips: ["Image optimization", "Code minification", "Resource compression"],
-    color: "from-lime-400 to-green-500", bgColor: "bg-lime-50 dark:bg-lime-900/20",
-    borderColor: "border-lime-200 dark:border-lime-700"
+    grade: "B",
+    title: "Good",
+    description:
+      "Above-average environmental performance with clear opportunities to become even lighter and more efficient.",
+    tips: ["Image optimisation", "Code minification", "Compression", "Script review"],
   },
   {
-    grade: "C", title: "Average",
-    description: "Standard performance. Consider optimization for better results.",
-    tips: ["Reduce image sizes", "Minimize plugins", "Optimize CSS/JS"],
-    color: "from-yellow-400 to-yellow-500", bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
-    borderColor: "border-yellow-200 dark:border-yellow-700"
+    grade: "C",
+    title: "Average",
+    description:
+      "A typical result. There is room to reduce emissions and improve overall efficiency without a full rebuild.",
+    tips: ["Reduce image sizes", "Audit plugins", "Optimise CSS/JS", "Reduce third parties"],
   },
   {
-    grade: "D", title: "Below Average",
-    description: "Your site needs optimization to reduce environmental impact.",
-    tips: ["Image compression", "Remove unused code", "Hosting review"],
-    color: "from-orange-400 to-orange-500", bgColor: "bg-orange-50 dark:bg-orange-900/20",
-    borderColor: "border-orange-200 dark:border-orange-700"
+    grade: "D",
+    title: "Below Average",
+    description:
+      "This score suggests your website is carrying more weight than it should and would benefit from focused optimisation work.",
+    tips: ["Compress assets", "Remove unused code", "Review hosting", "Improve media delivery"],
   },
   {
-    grade: "E", title: "Less Efficient",
-    description: "Significant improvements needed for sustainability.",
-    tips: ["Major image optimization", "Code refactoring", "Hosting upgrade"],
-    color: "from-red-400 to-red-500", bgColor: "bg-red-50 dark:bg-red-900/20",
-    borderColor: "border-red-200 dark:border-red-700"
+    grade: "E",
+    title: "Less Efficient",
+    description:
+      "Significant improvements are recommended. The current page experience is likely generating avoidable emissions.",
+    tips: ["Major image optimisation", "Refactor code", "Reduce dependencies", "Upgrade hosting"],
   },
   {
-    grade: "F", title: "Above Global Average",
-    description: "Critical optimization needed. Your site has high emissions.",
-    tips: ["Complete audit needed", "Professional optimization", "Green hosting"],
-    color: "from-red-500 to-red-600", bgColor: "bg-red-50 dark:bg-red-900/20",
-    borderColor: "border-red-200 dark:border-red-700"
-  }
+    grade: "F",
+    title: "Above Global Average",
+    description:
+      "This is the heaviest end of the scale. A full sustainability and performance review is recommended.",
+    tips: ["Full audit", "Professional optimisation", "Green hosting", "Large asset reduction"],
+  },
 ];
 
 function useTailwindDark() {
@@ -86,7 +474,9 @@ function useTailwindDark() {
 
   useEffect(() => {
     const html = document.documentElement;
-    const observer = new MutationObserver(() => setDark(html.classList.contains("dark")));
+    const observer = new MutationObserver(() =>
+      setDark(html.classList.contains("dark"))
+    );
     observer.observe(html, { attributes: true, attributeFilter: ["class"] });
     return () => observer.disconnect();
   }, []);
@@ -94,296 +484,493 @@ function useTailwindDark() {
   return dark;
 }
 
+function CustomTooltip({ active, payload, label }) {
+  if (!active || !payload || !payload.length) return null;
+
+  const item = payload[0]?.payload;
+  if (!item) return null;
+
+  const dark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+
+  return (
+    <div
+      style={{
+        background: dark ? "rgba(6,22,35,0.96)" : "rgba(255,255,255,0.96)",
+        border: `1px solid ${dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`,
+        borderRadius: "14px",
+        padding: "12px 14px",
+        boxShadow: dark ? "0 18px 40px -24px rgba(0,0,0,0.65)" : "0 8px 24px -8px rgba(0,0,0,0.12)",
+        color: dark ? "#f8fafc" : "#0f172a",
+        minWidth: 180,
+      }}
+    >
+      <div
+        style={{
+          fontFamily: "JetBrains Mono, monospace",
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          color: dark ? "#94a3b8" : "#64748b",
+          marginBottom: 6,
+        }}
+      >
+        Grade {label}
+      </div>
+      <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>
+        {item.label}
+      </div>
+      <div style={{ fontSize: 13, color: dark ? "#cbd5e1" : "#475569" }}>
+        {item.grade !== "F" ? `≤ ${item.value.toFixed(3)} g CO₂e / view` : "≥ 0.847 g CO₂e / view"}
+      </div>
+    </div>
+  );
+}
+
 export default function RatingPage() {
   const isDark = useTailwindDark();
   const [selectedGrade, setSelectedGrade] = useState("A+");
   const [activeChart, setActiveChart] = useState("bar");
-  const tickColor = isDark ? "#fff" : "#334155";
 
-  const selectedGradeInfo = gradeDetails.find(g => g.grade === selectedGrade);
-  
-  // ✅ SEO: Create the WebPage schema for this informational page
+  const tickColor = isDark ? "#cbd5e1" : "#334155";
+
+  const selectedGradeInfo = useMemo(
+    () => gradeDetails.find((g) => g.grade === selectedGrade),
+    [selectedGrade]
+  );
+
+  const selectedGradeData = useMemo(
+    () => chartData.find((g) => g.grade === selectedGrade),
+    [selectedGrade]
+  );
+
   const webPageSchema = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    "name": "GreenTracer Carbon Rating System",
-    "description": "Learn how GreenTracer grades website environmental impact from A+ to F based on CO₂ emissions, and get tips to improve your score.",
-    "url": "https://www.greentracer.org/rating",
-    "keywords": "carbon rating system, website sustainability grade, CO₂ score, environmental impact rating"
+    name: "GreenTracer Carbon Rating System",
+    description:
+      "Learn how GreenTracer grades website environmental impact from A+ to F based on CO₂ emissions, and get tips to improve your score.",
+    url: "https://www.greentracer.org/rating",
   };
 
   return (
     <>
-      {/* ✅ SEO: Full advanced Helmet setup for the Rating System page */}
       <Helmet>
-        {/* -- Primary Meta Tags -- */}
         <title>Carbon Rating System | GreenTracer</title>
-        <meta name="description" content="Understand how we grade your website's environmental impact from A+ (Ultra-Efficient) to F. See our science-based CO₂ rating scale and get optimization tips." />
+        <meta
+          name="description"
+          content="Understand how GreenTracer grades your website's environmental impact from A+ to F. Explore our CO₂ rating scale, thresholds, and optimisation guidance."
+        />
         <link rel="canonical" href="https://www.greentracer.org/rating" />
-
-        {/* -- Open Graph / Facebook -- */}
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://www.greentracer.org/rating" />
-        <meta property="og:title" content="Carbon Rating System | GreenTracer" />
-        <meta property="og:description" content="Understand how we grade your website's environmental impact from A+ to F and get optimization tips." />
-        <meta property="og:image" content="https://www.greentracer.org/GreenFavi.png" />
-
-        {/* -- Twitter -- */}
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content="https://www.greentracer.org/rating" />
-        <meta property="twitter:title" content="Carbon Rating System | GreenTracer" />
-        <meta property="twitter:description" content="Understand how we grade your website's environmental impact from A+ to F and get optimization tips." />
-        <meta property="twitter:image" content="https://www.greentracer.org/GreenFavi.png" />
-
-        {/* -- Schema.org Markup -- */}
-        <script type="application/ld+json">
-          {JSON.stringify(webPageSchema)}
-        </script>
+        <script type="application/ld+json">{JSON.stringify(webPageSchema)}</script>
       </Helmet>
 
-      <div className="bg-white dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
-        <section className="relative overflow-hidden py-20 px-4">
+      <div className="gt-page min-h-screen">
+        <style>{pageStyles}</style>
+
+        {/* HERO */}
+        <section className="relative overflow-hidden border-b border-white/5 px-6 pb-16 pt-28 sm:pt-32">
+          <div className="gt-hero-grid absolute inset-0 pointer-events-none opacity-60" />
           <div className="absolute inset-0 pointer-events-none">
-            {/* ✅ Performance: Added 'motion-safe' to respect user settings */}
-            <div className="absolute top-1/4 left-1/4 w-[700px] h-[700px] bg-green-400/20 transform -translate-x-1/2 -translate-y-1/2 blur-3xl opacity-30 motion-safe:animate-pulse" />
-            <div className="absolute top-3/4 right-1/4 w-[500px] h-[500px] bg-blue-400/20 transform rotate-12 blur-2xl opacity-25 motion-safe:animate-pulse motion-safe:delay-1000" />
-            <div className="absolute bottom-1/4 left-3/4 w-[400px] h-[400px] bg-purple-400/20 transform -rotate-45 blur-2xl opacity-20 motion-safe:animate-pulse motion-safe:delay-2000" />
+            <div className="absolute left-1/2 top-[-120px] h-[320px] w-[520px] -translate-x-1/2 rounded-full bg-green-500/10 blur-[120px]" />
           </div>
 
-          <div className="relative z-10 max-w-6xl mx-auto text-center space-y-8">
-            <div className="inline-flex items-center gap-3 bg-green-500/10 dark:bg-green-400/10 px-6 py-3 rounded-full border border-green-500/20 dark:border-green-400/20">
-              <FaChartBar className="text-green-600 dark:text-green-400" />
-              <span className="text-green-600 dark:text-green-400 font-semibold">Rating System</span>
+          <div className="relative z-10 mx-auto max-w-5xl text-center">
+            <div className="mb-8 flex justify-center">
+              <div className="gt-chip">
+                <FaChartBar className="text-[11px] text-green-400" />
+                <span className="gt-mono text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                  Rating Protocol
+                </span>
+              </div>
             </div>
-            <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-slate-900 via-green-600 to-blue-600 dark:from-white dark:via-green-400 dark:to-blue-400 bg-clip-text text-transparent leading-tight">
-              GreenTracer Carbon Rating System
-            </h1>
-            <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-300 max-w-4xl mx-auto leading-relaxed">
-              Understanding how we grade your website's environmental impact. 
-              From A+ ultra-efficient to F needs improvement - every grade tells a story.
-            </p>
-            <div className="inline-flex items-center gap-2 bg-white/70 dark:bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-slate-200 dark:border-white/20">
-              <FaHeart className="text-red-500" />
-              <span className="text-sm font-medium">
-                Built by{" "}
-                <a
-                  href="https://buzzboost.co.uk"
-                  className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 font-semibold hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  BuzzBoost Digital
-                </a>
+
+            <h1 className="gt-display mx-auto max-w-4xl text-5xl font-semibold leading-[1.02] text-white sm:text-6xl md:text-7xl">
+              The carbon
+              <br />
+              <span className="bg-gradient-to-r from-green-400 to-emerald-300 bg-clip-text italic font-light text-transparent">
+                grading system
               </span>
+            </h1>
+
+            <p className="mx-auto mt-7 max-w-3xl text-lg leading-relaxed text-slate-400 sm:text-xl">
+              Understand how GreenTracer turns page-level CO₂ estimates into a
+              clear A+ to F grading system, rooted in benchmark thresholds and
+              practical optimisation guidance.
+            </p>
+
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <span className="gt-badge">7 grade levels</span>
+              <span className="gt-badge">CO₂e per page view</span>
+              <span className="gt-badge">Benchmark-led thresholds</span>
             </div>
-            <div className="flex flex-wrap justify-center gap-8 mt-12">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">7</div>
-                <div className="text-sm text-slate-600 dark:text-slate-400 font-medium">Grade Levels</div>
+
+            <div className="mt-10 flex flex-wrap justify-center gap-6 sm:gap-10">
+              <div className="gt-stat text-center">
+                <div className="gt-mono gt-stat__value text-2xl font-bold">7</div>
+                <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+                  Grade Levels
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">2-4%</div>
-                <div className="text-sm text-slate-600 dark:text-slate-400 font-medium">Global Emissions</div>
+              <div className="gt-stat text-center">
+                <div className="gt-mono gt-stat__value text-2xl font-bold">A+–F</div>
+                <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+                  Full Scale
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">Real-time</div>
-                <div className="text-sm text-slate-600 dark:text-slate-400 font-medium">Calculations</div>
+              <div className="gt-stat text-center">
+                <div className="gt-mono gt-stat__value text-2xl font-bold">g/view</div>
+                <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+                  Core Metric
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ...The rest of your component JSX is perfect, no other changes are needed... */}
-        <section className="py-16 px-4 bg-slate-50 dark:bg-slate-900/50">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid md:grid-cols-3 gap-8 text-center">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-lg">
-                <FaGlobe className="text-4xl text-blue-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold mb-4">Global Web Impact</h3>
-                <p className="text-slate-600 dark:text-slate-400">
-                  The web is responsible for <strong>2–4% of global CO₂ emissions</strong>—equivalent to the aviation industry.
-                </p>
+        {/* CONTEXT CARDS */}
+        <section className="border-b border-white/5 px-6 py-16">
+          <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
+            <article className="gt-panel gt-card p-8">
+              <div className="gt-icon-box mb-4">
+                <FaGlobe className="text-lg" />
               </div>
-              <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-lg">
-                <FaChartLine className="text-4xl text-green-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold mb-4">Scientific Approach</h3>
-                <p className="text-slate-600 dark:text-slate-400">
-                  Our grades translate grams of CO₂ per page view into clear ratings using industry standards.
-                </p>
+              <h3 className="text-lg font-bold text-white">Why the scale matters</h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-400">
+                A raw emissions number is useful, but a grading system makes it
+                easier to understand where a website sits relative to better and
+                worse-performing pages.
+              </p>
+            </article>
+
+            <article className="gt-panel gt-card p-8">
+              <div className="gt-icon-box mb-4">
+                <FaChartLine className="text-lg" />
               </div>
-              <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-lg">
-                <FaTrophy className="text-4xl text-yellow-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold mb-4">Benchmarked Results</h3>
-                <p className="text-slate-600 dark:text-slate-400">
-                  Grades A+ to E mean you're ahead of the curve—F means you're above the global average.
-                </p>
+              <h3 className="text-lg font-bold text-white">Clear benchmarking</h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-400">
+                Each grade corresponds to a threshold in grams of CO₂e per page
+                view, helping you translate technical output into a clear
+                performance position.
+              </p>
+            </article>
+
+            <article className="gt-panel gt-card p-8">
+              <div className="gt-icon-box mb-4">
+                <FaTrophy className="text-lg" />
               </div>
-            </div>
+              <h3 className="text-lg font-bold text-white">Actionable outcomes</h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-400">
+                The goal is not just to label a site, but to show what that
+                grade means and where optimisation effort can have the most
+                impact.
+              </p>
+            </article>
           </div>
         </section>
 
-        <section className="py-20 px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                The GreenTracer Rating Scale
+        {/* INTERACTIVE GRADING */}
+        <section className="px-6 py-20">
+          <div className="mx-auto max-w-6xl">
+            <div className="mx-auto mb-12 max-w-3xl text-center">
+              <div className="gt-mono mb-4 text-xs font-bold uppercase tracking-[0.22em] text-green-400">
+                // INTERACTIVE_SCALE
+              </div>
+              <h2 className="gt-display text-3xl font-bold text-white sm:text-4xl">
+                Explore each grade
               </h2>
-              <p className="text-lg text-slate-600 dark:text-slate-300">
-                Click on any grade to explore its meaning and optimization tips
+              <p className="mx-auto mt-4 max-w-2xl text-slate-400">
+                Select a grade to see its threshold, interpretation, and the
+                kinds of optimisations commonly associated with that level.
               </p>
             </div>
-            <div className="flex flex-wrap justify-center gap-4 mb-12">
-              {gradeDetails.map((grade) => (
+
+            <div className="mb-8 flex flex-wrap justify-center gap-3">
+              {gradeDetails.map((g) => (
                 <button
-                  key={grade.grade}
-                  onClick={() => setSelectedGrade(grade.grade)}
-                  className={`px-6 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 ${
-                    selectedGrade === grade.grade
-                      ? `bg-gradient-to-r ${grade.color} text-white shadow-lg scale-105`
-                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 hover:border-green-500'
-                  }`}
-                  style={selectedGrade === grade.grade ? {} : { color: gradeColors[grade.grade] }}
+                  key={g.grade}
+                  type="button"
+                  onClick={() => setSelectedGrade(g.grade)}
+                  aria-pressed={selectedGrade === g.grade}
+                  className={`gt-grade-btn ${selectedGrade === g.grade ? "is-active" : ""}`}
+                  style={
+                    selectedGrade === g.grade
+                      ? { backgroundColor: gradeColors[g.grade], borderColor: "transparent" }
+                      : {}
+                  }
                 >
-                  {grade.grade}
+                  {g.grade}
                 </button>
               ))}
             </div>
 
-            {selectedGradeInfo && (
-              <div className={`bg-white dark:bg-slate-800 rounded-2xl border-2 ${selectedGradeInfo.borderColor} p-8 shadow-xl mb-12`}>
-                <div className="grid md:grid-cols-2 gap-8 items-center">
+            {selectedGradeInfo && selectedGradeData && (
+              <div className="gt-panel rounded-[28px] p-8 lg:p-10">
+                <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
                   <div>
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className={`w-16 h-16 bg-gradient-to-r ${selectedGradeInfo.color} rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg`}>
+                    <div className="mb-5 flex items-start gap-4">
+                      <div
+                        className="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl font-extrabold text-white"
+                        style={{ backgroundColor: gradeColors[selectedGradeInfo.grade] }}
+                      >
                         {selectedGradeInfo.grade}
                       </div>
+
                       <div>
-                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                        <div className="gt-mono mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                          // SELECTED_GRADE
+                        </div>
+                        <h3 className="text-2xl font-bold text-white">
                           {selectedGradeInfo.title}
                         </h3>
-                        <p className="text-slate-600 dark:text-slate-400">
-                          Grade {selectedGradeInfo.grade} websites
+                        <p className="mt-1 text-sm font-semibold" style={{ color: gradeColors[selectedGradeInfo.grade] }}>
+                          {selectedGradeInfo.grade === "F"
+                            ? "High-impact threshold"
+                            : "Maximum threshold benchmark"}
                         </p>
                       </div>
                     </div>
-                    <p className="text-lg text-slate-700 dark:text-slate-300 mb-6">
+
+                    <p className="max-w-2xl text-base leading-relaxed text-slate-400">
                       {selectedGradeInfo.description}
                     </p>
-                    <div className="text-sm text-slate-600 dark:text-slate-400">
-                      <strong>CO₂ Threshold:</strong> {
-                        selectedGradeInfo.grade !== "F" 
-                          ? `≤ ${chartData.find(d => d.grade === selectedGradeInfo.grade)?.value.toFixed(3)} g/view`
-                          : "≥ 0.847 g/view"
-                      }
+
+                    <div className="mt-6 inline-flex items-center gap-3 rounded-2xl px-4 py-3 gt-threshold-box">
+                      <span className="gt-mono text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                        Threshold
+                      </span>
+                      <span
+                        className="gt-mono text-sm font-bold"
+                        style={{ color: gradeColors[selectedGradeInfo.grade] }}
+                      >
+                        {selectedGradeInfo.grade !== "F"
+                          ? `≤ ${selectedGradeData.value.toFixed(3)} g CO₂e / view`
+                          : "≥ 0.847 g CO₂e / view"}
+                      </span>
                     </div>
                   </div>
-                  <div className={`${selectedGradeInfo.bgColor} rounded-xl p-6`}>
-                    <h4 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                      <FaLightbulb className="text-yellow-500" />
-                      Optimization Tips:
-                    </h4>
-                    <ul className="space-y-2">
+
+                  <div className="rounded-3xl border border-white/8 bg-white/4 p-6">
+                    <div className="gt-mono mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                      <FaTerminal />
+                      Optimisation vectors
+                    </div>
+
+                    <ul className="space-y-3">
                       {selectedGradeInfo.tips.map((tip, index) => (
-                        <li key={index} className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                          <div className={`w-2 h-2 bg-gradient-to-r ${selectedGradeInfo.color} rounded-full`} />
-                          {tip}
+                        <li key={index} className="flex items-start gap-3 text-sm text-slate-300">
+                          <span
+                            className="mt-2 h-2 w-2 rounded-full"
+                            style={{ backgroundColor: gradeColors[selectedGradeInfo.grade] }}
+                          />
+                          <span>{tip}</span>
                         </li>
                       ))}
                     </ul>
+
+                    <div className="gt-divider my-6" />
+
+                    <div className="flex items-start gap-3 text-sm text-slate-400">
+                      <FaQuestionCircle className="mt-0.5 flex-shrink-0 text-slate-500" />
+                      <p>
+                        Grades are designed to make the emissions number easier
+                        to understand at a glance, not replace the underlying
+                        metric itself.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
-            
-            <div className="flex justify-center gap-4 mb-8">
-              <button
-                onClick={() => setActiveChart("bar")}
-                className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
-                  activeChart === "bar"
-                    ? "bg-green-600 text-white shadow-lg"
-                    : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600"
-                }`}
-              >
-                Bar Chart
-              </button>
-              <button
-                onClick={() => setActiveChart("area")}
-                className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
-                  activeChart === "area"
-                    ? "bg-green-600 text-white shadow-lg"
-                    : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600"
-                }`}
-              >
-                Area Chart
-              </button>
+          </div>
+        </section>
+
+        {/* CHARTS */}
+        <section className="border-t border-white/5 px-6 py-20">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-8 flex flex-col items-center justify-between gap-5 sm:flex-row">
+              <div>
+                <div className="gt-mono mb-3 text-xs font-bold uppercase tracking-[0.22em] text-green-400">
+                  // VISUAL_BENCHMARK
+                </div>
+                <h2 className="text-3xl font-bold text-white">Threshold chart</h2>
+                <p className="mt-2 max-w-2xl text-slate-400">
+                  Compare the full A+ to F scale in either bar or area view.
+                </p>
+              </div>
+
+              <div className="gt-toggle" role="tablist" aria-label="Chart type">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeChart === "bar"}
+                  className={`gt-toggle__btn ${activeChart === "bar" ? "is-active" : ""}`}
+                  onClick={() => setActiveChart("bar")}
+                >
+                  Bar Chart
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeChart === "area"}
+                  className={`gt-toggle__btn ${activeChart === "area" ? "is-active" : ""}`}
+                  onClick={() => setActiveChart("area")}
+                >
+                  Area Chart
+                </button>
+              </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-2xl">
-              <h3 className="text-2xl font-bold text-center mb-6" style={{ color: tickColor }}>
-                {activeChart === "bar" ? "CO₂ Emissions by Grade" : "Emission Curve Visualization"}
-              </h3>
-              <ResponsiveContainer width="100%" height={400}>
+            <div className="gt-panel gt-chart-panel p-6 sm:p-8">
+              <ResponsiveContainer width="100%" height="100%">
                 {activeChart === "bar" ? (
-                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                    <XAxis dataKey="grade" tick={{ fill: tickColor, fontSize: 16, fontWeight: 700 }} axisLine={false} />
-                    <YAxis tick={{ fill: tickColor, fontSize: 13 }} axisLine={false} label={{ value: "g CO₂e/view", angle: -90, position: "insideLeft", fill: tickColor, fontSize: 13 }} />
-                    <Tooltip formatter={(value, _, { payload }) => [`${value.toFixed(3)} g CO₂e`, `Grade ${payload.grade} - ${payload.label}`]} contentStyle={{ backgroundColor: isDark ? "#1e293b" : "#ffffff", color: tickColor, border: `2px solid ${gradeColors[selectedGrade]}`, borderRadius: "12px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)" }} cursor={{ fill: "rgba(34, 197, 94, 0.1)" }} />
+                  <BarChart
+                    data={chartData}
+                    margin={{ top: 16, right: 16, left: 0, bottom: 8 }}
+                  >
+                    <XAxis
+                      dataKey="grade"
+                      tick={{
+                        fill: tickColor,
+                        fontFamily: "JetBrains Mono",
+                        fontSize: 13,
+                        fontWeight: 700,
+                      }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{
+                        fill: tickColor,
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                      }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={58}
+                    />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
                     <Bar dataKey="value" radius={[8, 8, 0, 0]}>
-                      {chartData.map((entry) => (<Cell key={entry.grade} fill={gradeColors[entry.grade]} stroke={selectedGrade === entry.grade ? "#ffffff" : "none"} strokeWidth={selectedGrade === entry.grade ? 3 : 0} />))}
+                      {chartData.map((entry) => (
+                        <Cell
+                          key={entry.grade}
+                          fill={gradeColors[entry.grade]}
+                          opacity={selectedGrade === entry.grade ? 1 : 0.68}
+                        />
+                      ))}
                     </Bar>
                   </BarChart>
                 ) : (
-                  <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                    <XAxis dataKey="grade" tick={{ fill: tickColor, fontSize: 16, fontWeight: 700 }} axisLine={false} />
-                    <YAxis tick={{ fill: tickColor, fontSize: 13 }} axisLine={false} label={{ value: "g CO₂e/view", angle: -90, position: "insideLeft", fill: tickColor, fontSize: 13 }} />
-                    <Tooltip formatter={(value, _, { payload }) => [`${value.toFixed(3)} g CO₂e`, `Grade ${payload.grade} - ${payload.label}`]} contentStyle={{ backgroundColor: isDark ? "#1e293b" : "#ffffff", color: tickColor, border: "2px solid #22c55e", borderRadius: "12px" }} />
-                    <Area type="monotone" dataKey="value" stroke="#22c55e" strokeWidth={3} fill="url(#colorGradient)" />
+                  <AreaChart
+                    data={chartData}
+                    margin={{ top: 16, right: 16, left: 0, bottom: 8 }}
+                  >
                     <defs>
-                      <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1}/>
+                      <linearGradient id="gtAreaFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.36} />
+                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
                       </linearGradient>
                     </defs>
+                    <XAxis
+                      dataKey="grade"
+                      tick={{
+                        fill: tickColor,
+                        fontFamily: "JetBrains Mono",
+                        fontSize: 13,
+                        fontWeight: 700,
+                      }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{
+                        fill: tickColor,
+                        fontFamily: "Inter",
+                        fontSize: 12,
+                      }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={58}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#22c55e"
+                      strokeWidth={3}
+                      fill="url(#gtAreaFill)"
+                    />
                   </AreaChart>
                 )}
               </ResponsiveContainer>
-              <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                {activeChart === "bar" ? "Each bar shows the maximum CO₂e allowed for that grade level" : "Smooth curve showing the progression of emissions across grade levels"}
+            </div>
+          </div>
+        </section>
+
+        {/* RAW DATA TABLE */}
+        <section className="border-t border-white/5 px-6 py-20">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-8">
+              <div className="gt-mono mb-3 text-xs font-bold uppercase tracking-[0.22em] text-green-400">
+                // RAW_DATA_LOG
+              </div>
+              <h2 className="text-3xl font-bold text-white">Threshold reference table</h2>
+              <p className="mt-2 max-w-2xl text-slate-400">
+                A quick-reference view of each grade, threshold, classification,
+                and illustrative distribution.
               </p>
             </div>
 
-            <div className="mt-12 bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden">
-              <div className="p-6 bg-gradient-to-r from-green-500 to-green-600 text-white">
-                <h3 className="text-xl font-bold">Complete Rating Breakdown</h3>
-                <p className="opacity-90">Detailed specifications for each grade level</p>
+            <div className="gt-panel overflow-hidden">
+              <div className="flex items-center justify-between border-b border-white/8 bg-white/4 px-6 py-4">
+                <span className="gt-mono text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
+                  Benchmark Data
+                </span>
+                <FaDatabase className="text-slate-500" />
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-slate-50 dark:bg-slate-900">
+
+              <div className="gt-table-wrap">
+                <table className="w-full text-left text-sm">
+                  <thead className="border-b border-white/8 bg-white/3 text-slate-500">
                     <tr>
-                      <th className="px-6 py-4 text-left font-semibold">Grade</th>
-                      <th className="px-6 py-4 text-left font-semibold">Max CO₂/view</th>
-                      <th className="px-6 py-4 text-left font-semibold">Level</th>
-                      <th className="px-6 py-4 text-left font-semibold">Typical Sites</th>
+                      <th className="px-6 py-4 font-bold uppercase tracking-[0.14em]">Grade</th>
+                      <th className="px-6 py-4 font-bold uppercase tracking-[0.14em]">Threshold</th>
+                      <th className="px-6 py-4 font-bold uppercase tracking-[0.14em]">Classification</th>
+                      <th className="px-6 py-4 font-bold uppercase tracking-[0.14em]">Distribution</th>
                     </tr>
                   </thead>
                   <tbody>
                     {chartData.map(({ grade, value, label, count }) => (
-                      <tr key={grade} className={`border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors duration-200 ${selectedGrade === grade ? 'bg-green-50 dark:bg-green-900/20' : ''}`}>
+                      <tr
+                        key={grade}
+                        className={`${selectedGrade === grade ? "gt-row-selected" : "gt-row-hover"}`}
+                      >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: gradeColors[grade] }}>{grade}</div>
-                            <span className="font-medium">{grade}</span>
+                            <div
+                              className="flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold text-white"
+                              style={{ backgroundColor: gradeColors[grade] }}
+                            >
+                              {grade}
+                            </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-mono">{grade !== "F" ? `≤ ${value.toFixed(3)}` : "≥ 0.847"}</td>
-                        <td className="px-6 py-4">{label}</td>
+                        <td className="gt-mono px-6 py-4 font-medium text-slate-300">
+                          {grade !== "F" ? `≤ ${value.toFixed(3)} g/view` : "≥ 0.847 g/view"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-300">{label}</td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${(count / 25) * 100}%`, backgroundColor: gradeColors[grade] }}/>
+                          <div className="flex items-center gap-3">
+                            <div className="h-2 w-28 overflow-hidden rounded-full bg-white/8">
+                              <div
+                                className="h-full rounded-full"
+                                style={{
+                                  width: `${(count / 25) * 100}%`,
+                                  backgroundColor: gradeColors[grade],
+                                }}
+                              />
                             </div>
-                            <span className="text-sm text-slate-600 dark:text-slate-400">{count}%</span>
+                            <span className="gt-mono text-xs text-slate-500">{count}%</span>
                           </div>
                         </td>
                       </tr>
@@ -395,81 +982,55 @@ export default function RatingPage() {
           </div>
         </section>
 
-        <section className="py-16 px-4 bg-slate-50 dark:bg-slate-900/50">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-8">Why These Grades Matter</h2>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-lg">
-                <FaEye className="text-4xl text-blue-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold mb-4">Transparency</h3>
-                <p className="text-slate-600 dark:text-slate-400">
-                  Clear, science-based ratings help you understand your environmental impact and compare with industry standards.
-                </p>
-              </div>
-              <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-lg">
-                <FaRocket className="text-4xl text-green-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold mb-4">Motivation</h3>
-                <p className="text-slate-600 dark:text-slate-400">
-                  Grades provide clear targets for optimization, making it easier to set and achieve sustainability goals.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* CTA */}
+        <section className="px-6 pb-20 pt-8">
+          <div className="mx-auto max-w-5xl">
+            <div className="gt-panel relative overflow-hidden border-white/10 px-8 py-12 text-white">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(74,222,128,0.2),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.16),transparent_34%)]" />
 
-        <section className="py-20 px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="bg-gradient-to-r from-green-500/10 to-green-600/10 border border-green-500/20 dark:border-green-400/20 rounded-2xl p-8">
-              <FaTrophy className="text-4xl text-green-600 dark:text-green-400 mx-auto mb-4" />
-              <h2 className="text-3xl font-bold mb-4 text-slate-900 dark:text-white">
-                Discover Your Website's Grade
-              </h2>
-              <p className="text-lg text-slate-600 dark:text-slate-300 mb-8">
-                Get your personalized carbon rating and join thousands of websites working toward a greener internet. 
-                Test your site now and see where you stand!
-              </p>
-              <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Link
-                  to="/#input-form"
-                  className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-green-600 to-green-600 hover:from-green-700 hover:to-green-500 text-white font-semibold rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                >
-                  <FaRocket className="mr-2" />
-                  Test My Website
-                </Link>
-                <Link
-                  to="/how-it-works"
-                  className="inline-flex items-center justify-center px-8 py-4 border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white dark:border-green-400 dark:text-green-400 dark:hover:bg-green-400 dark:hover:text-slate-900 rounded-full font-semibold transition-all duration-300"
-                >
-                  <FaQuestionCircle className="mr-2" />
-                  How It Works
-                </Link>
-              </div>
-              <div className="mt-8 text-center">
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Built with ❤️ by{" "}
-                  <a
-                    href="https://buzzboost.co.uk"
-                    className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 font-semibold hover:underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
+              <div className="relative z-10 mx-auto max-w-3xl text-center">
+                <div className="gt-mono mb-4 text-xs font-bold uppercase tracking-[0.22em] text-green-300">
+                  // NEXT_STEP
+                </div>
+                <h2 className="gt-display text-3xl font-bold text-white sm:text-4xl">
+                  Discover your grade
+                </h2>
+                <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-slate-300">
+                  Run your site through the GreenTracer engine to see exactly
+                  where it sits on the scale and what to improve next.
+                </p>
+
+                <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                  <Link
+                    to="/#input-form"
+                    className="gt-link-btn gt-btn--light inline-flex items-center justify-center gap-2 px-8 py-4 text-sm"
                   >
-                    BuzzBoost Digital
-                  </a>
-                  {" "}• Help us build a greener internet
-                </p>
+                    Initialise Scan
+                    <FaRocket className="text-xs" />
+                  </Link>
+
+                  <Link
+                    to="/how-it-works"
+                    className="gt-link-btn gt-btn--ghost inline-flex items-center justify-center gap-2 px-8 py-4 text-sm"
+                  >
+                    View Methodology
+                    <FaLeaf className="text-xs" />
+                  </Link>
+                </div>
               </div>
+            </div>
+
+            <div className="mt-12 text-center">
+              <Link
+                to="/"
+                className="gt-mono inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500 transition-colors hover:text-green-400"
+              >
+                <FaArrowRight className="rotate-180" />
+                System Root
+              </Link>
             </div>
           </div>
         </section>
-
-        <div className="text-center py-8">
-          <Link
-            to="/"
-            className="inline-block text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-          >
-            ← Back to Homepage
-          </Link>
-        </div>
       </div>
     </>
   );

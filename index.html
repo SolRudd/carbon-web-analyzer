@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
 
     <title>GreenTracer | Green Website Intelligence Platform</title>
 
@@ -21,21 +22,46 @@
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://www.greentracer.org/" />
-    <meta property="og:image" content="https://www.greentracer.org/GreenFavi.png" />
+    <meta
+      property="og:image"
+      content="https://www.greentracer.org/GreenFavi.png"
+    />
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="https://www.greentracer.org/" />
-    <meta property="twitter:title" content="GreenTracer | Green Website Intelligence Platform" />
-    <meta property="twitter:description" content="Measure carbon impact, verify hosting, and generate trust-ready sustainability reports." />
-    <meta property="twitter:image" content="https://www.greentracer.org/GreenFavi.png" />
+    <meta
+      property="twitter:title"
+      content="GreenTracer | Green Website Intelligence Platform"
+    />
+    <meta
+      property="twitter:description"
+      content="Measure carbon impact, verify hosting, and generate trust-ready sustainability reports."
+    />
+    <meta
+      property="twitter:image"
+      content="https://www.greentracer.org/GreenFavi.png"
+    />
 
     <script>
       (function () {
-        const theme = localStorage.getItem("theme");
-        if (theme === "dark") {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
+        const root = document.documentElement;
+        let theme = "light";
+
+        try {
+          const storedTheme = localStorage.getItem("theme");
+          if (storedTheme === "dark" || storedTheme === "light") {
+            theme = storedTheme;
+          } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            theme = "dark";
+          }
+        } catch {
+          if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            theme = "dark";
+          }
         }
+
+        root.classList.toggle("dark", theme === "dark");
+        root.dataset.theme = theme;
+        root.style.colorScheme = theme;
       })();
     </script>
 
@@ -45,19 +71,19 @@
     />
     <link rel="stylesheet" href="/src/index.css" />
     <link rel="icon" type="image/svg+xml" href="/GreenFavi.png" />
-    <!-- Consent Mode v2 default (must run before GTM) -->
     <script>
       window.dataLayer = window.dataLayer || [];
-      window.gtag = window.gtag || function gtag() {
-        window.dataLayer.push(arguments);
-      };
-      window.gtag("consent", "default", {
-        analytics_storage: "denied",
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("consent", "default", {
         ad_storage: "denied",
+        analytics_storage: "denied",
         ad_user_data: "denied",
         ad_personalization: "denied",
       });
     </script>
+
     <!-- Google Tag Manager -->
     <script>
       (function (w, d, s, l, i) {

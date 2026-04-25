@@ -1,13 +1,25 @@
 'use strict';
-require('dotenv').config();
+const path = require('path');
+const dotenv = require('dotenv');
 
-const path       = require('path');
+const ENV_FILE_PATH = path.join(__dirname, '.env');
+dotenv.config({ path: ENV_FILE_PATH });
+
+const crypto     = require('crypto');
 const express    = require('express');
 const helmet     = require('helmet');
 const cors       = require('cors');
 const rateLimit  = require('express-rate-limit');
 const axios      = require('axios');
 const { createClient } = require('@supabase/supabase-js');
+const { inspectBadgeHtml } = require('./lib/badge-verification');
+const { parseLeadCapturePayload } = require('./lib/lead-capture');
+const {
+  calcCO2,
+  gradeFor,
+  percentileFromCarbon,
+  totalGreenReductionPct,
+} = require('./lib/metrics');
 
 // ── App Initialization ─────────────────────────────
 const app   = express();
@@ -17,25 +29,45 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
+if (process.env.NODE_ENV !== 'production') {
+  console.info('[startup-env]', {
+    cwd: process.cwd(),
+    envFilePath: ENV_FILE_PATH,
+    hasSupabaseUrl: Boolean((process.env.SUPABASE_URL || '').trim()),
+    hasSupabaseAnonKey: Boolean((process.env.SUPABASE_ANON_KEY || '').trim()),
+    hasSupabasePublishableKey: Boolean((process.env.SUPABASE_PUBLISHABLE_KEY || '').trim()),
+    hasSupabasePublishable: Boolean((process.env.SUPABASE_PUBLISHABLE || '').trim()),
+  });
+}
+
 // ── Middleware & Security ───────────────────────────
 app.set('trust proxy', 1);
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-app.use(express.json());
+app.use(express.json({
+  verify: (req, _res, buf) => {
+    if (req.originalUrl === '/api/stripe/webhook') {
+      req.rawBody = Buffer.from(buf);
+    }
+  }
+}));
 
 // ── Rate Limiters ───────────────────────────────────
 const limiterCheck       = rateLimit({ windowMs: 24*60*60*1000, max: 20 });
 const limiterBadge       = rateLimit({ windowMs:    60*1000, max: 60 });
 const limiterTraceOrCheck= rateLimit({ windowMs:    60*1000, max: 12 });
+const limiterLicenseRead = rateLimit({ windowMs:    60*1000, max: 60 });
+const limiterLicenseWrite= rateLimit({ windowMs:    60*1000, max: 20 });
+const limiterStripe      = rateLimit({ windowMs:    60*1000, max: 30 });
 
 // ── CORS Rules ──────────────────────────────────────
 // allow badge endpoints from anywhere:
-const badgeCors = cors({ origin:'*', methods:['GET'] });
+const badgeCors = cors({ origin:'*', methods:['GET','POST','OPTIONS'] });
 
 // allow API calls from your frontends (and any badge user)
 app.use(cors({
   origin: true,   // echo back whatever Origin header the client sent
-  methods: ['GET','POST'],
-  allowedHeaders: ['Content-Type','X-API-Key']
+  methods: ['GET','POST','PATCH'],
+  allowedHeaders: ['Content-Type','X-API-Key', 'X-Admin-Key', 'Authorization']
 }));
 
 // ── Badge & Static File Routes ──────────────────────
@@ -124,6 +156,445 @@ app.get('/api/badge.svg', badgeCors, limiterBadge, async (req, res) => {
 app.use(express.static(path.join(__dirname,'public')));
 app.get('/healthz', (_req,res) => res.send('OK'));
 
+// ── Stripe checkout + webhook (Ticket 2.1 + 2.2) ──
+app.post('/api/stripe/create-checkout-session', limiterStripe, async (req, res) => {
+  const { stripe, error } = getStripeClient();
+  if (error) return res.status(503).json({ error });
+
+  const priceId = process.env.STRIPE_PRICE_ID_VERIFIED_BADGE;
+  if (!priceId) return res.status(503).json({ error: 'Stripe price is not configured.' });
+
+  const domain = normalizeDomain(req.body?.domain);
+  if (!domain) return res.status(400).json({ error: 'Valid domain is required.' });
+  const checkoutMode = String(process.env.STRIPE_CHECKOUT_MODE || 'payment').toLowerCase() === 'subscription'
+    ? 'subscription'
+    : 'payment';
+
+  const plan = 'verified_badge_license_annual';
+  const licenseType = 'paid';
+  const siteBase = resolveSiteBase(req);
+  const successUrl = `${siteBase}/license-status?checkout=success&domain=${encodeURIComponent(domain)}`;
+  const cancelUrl = `${siteBase}/pricing?checkout=cancel&domain=${encodeURIComponent(domain)}`;
+
+  try {
+    const sessionPayload = {
+      mode: checkoutMode,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      client_reference_id: domain,
+      allow_promotion_codes: true,
+      metadata: {
+        domain,
+        plan,
+        license_type: licenseType
+      },
+    };
+
+    if (checkoutMode === 'subscription') {
+      sessionPayload.subscription_data = {
+        metadata: {
+          domain,
+          plan,
+          license_type: licenseType
+        }
+      };
+    } else {
+      sessionPayload.payment_intent_data = {
+        metadata: {
+          domain,
+          plan,
+          license_type: licenseType
+        }
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionPayload);
+
+    await upsertLicenseByDomain({
+      domain,
+      plan,
+      status: 'inactive',
+      license_type: licenseType,
+      payment_reference: session.id
+    });
+
+    return res.json({ ok: true, sessionId: session.id, url: session.url });
+  } catch (err) {
+    console.error('[stripe/create-checkout-session] failed:', err.message);
+    return res.status(500).json({
+      error: 'Failed to create checkout session.',
+      details: process.env.NODE_ENV === 'production' ? undefined : (err.message || String(err)),
+      checkoutMode: process.env.NODE_ENV === 'production' ? undefined : checkoutMode
+    });
+  }
+});
+
+app.post('/api/stripe/webhook', limiterStripe, async (req, res) => {
+  const { stripe, error } = getStripeClient();
+  if (error) return res.status(503).json({ error });
+
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) return res.status(503).json({ error: 'Stripe webhook secret is not configured.' });
+
+  const signature = req.get('stripe-signature');
+  if (!signature) return res.status(400).send('Missing Stripe signature');
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.rawBody || JSON.stringify(req.body), signature, webhookSecret);
+  } catch (err) {
+    console.error('[stripe/webhook] signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  try {
+    await handleStripeEvent(event);
+    return res.json({ received: true });
+  } catch (err) {
+    console.error('[stripe/webhook] handler failed:', err.message);
+    return res.status(500).send('Webhook handler failed');
+  }
+});
+
+// ── License endpoints (Ticket 1.2 + 1.3) ──────────
+app.get('/api/license/check', limiterLicenseRead, async (req, res) => {
+  const domainInput = req.query.domain;
+  const tokenInput = req.query.token;
+  const domain = normalizeDomain(domainInput);
+  const token = typeof tokenInput === 'string' && tokenInput.trim() ? tokenInput.trim() : null;
+
+  if (!domain && !token) {
+    if (typeof domainInput === 'string' && domainInput.trim()) {
+      return res.status(400).json({ error: 'Invalid domain format. Provide a valid domain (example.com) and/or token.' });
+    }
+    return res.status(400).json({ error: 'Provide domain and/or token.' });
+  }
+
+  let query = supabase.from('licenses').select('*');
+  if (domain) query = query.eq('domain', domain);
+  if (token) query = query.eq('issued_token_or_key', token);
+
+  const { data, error } = await query
+    .order('updated_at', { ascending: false })
+    .limit(1);
+  if (error) {
+    return res.status(500).json({
+      error: 'License lookup failed.',
+      details: process.env.NODE_ENV === 'production'
+        ? undefined
+        : `${error.message || String(error)} (domain=${domain || 'none'}, tokenProvided=${Boolean(token)})`
+    });
+  }
+  const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
+  if (!row) return res.json({ licensed: false, status: 'none', domain: domain || null });
+
+  const payload = mapLicensePublic(row);
+  return res.json(payload);
+});
+
+app.get('/api/license/verify-badge', limiterLicenseRead, async (req, res) => {
+  const domain = normalizeDomain(req.query.domain);
+  const expectedBadgeTypeRaw = String(req.query.expectedBadgeType || '').toLowerCase();
+  const expectedBadgeType = ['carbon', 'hosting', 'member'].includes(expectedBadgeTypeRaw)
+    ? expectedBadgeTypeRaw
+    : null;
+
+  if (!domain) {
+    return res.status(400).json({ error: 'Valid domain is required.' });
+  }
+
+  const candidates = [`https://${domain}`, `http://${domain}`];
+  let html = '';
+  let checkedUrl = candidates[0];
+  let finalUrl = null;
+  let httpStatus = null;
+  let fetchError = null;
+
+  for (const candidate of candidates) {
+    try {
+      const response = await axios.get(candidate, {
+        timeout: 10000,
+        maxRedirects: 5,
+        validateStatus: () => true
+      });
+      checkedUrl = candidate;
+      html = typeof response.data === 'string' ? response.data : '';
+      httpStatus = response.status;
+      finalUrl = response.request?.res?.responseUrl || candidate;
+      if (response.status >= 200 && response.status < 500) break;
+    } catch (err) {
+      checkedUrl = candidate;
+      fetchError = err.message || 'Failed to fetch site HTML.';
+    }
+  }
+
+  if (!html) {
+    return res.json({
+      state: 'needs_review',
+      domain,
+      checkedUrl,
+      finalUrl,
+      httpStatus,
+      expectedBadgeType,
+      checks: {
+        scriptDetected: false,
+        containerDetected: false,
+        dataUrlDetected: false
+      },
+      detectedBadgeTypes: [],
+      issues: ['site_fetch_failed'],
+      message: 'Unable to fetch website HTML for automatic badge verification.',
+      fetchError: fetchError || null
+    });
+  }
+
+  const verification = inspectBadgeHtml(html, expectedBadgeType);
+
+  return res.json({
+    state: verification.state,
+    domain,
+    checkedUrl,
+    finalUrl,
+    httpStatus,
+    expectedBadgeType,
+    checks: verification.checks,
+    detectedBadgeTypes: verification.detectedBadgeTypes,
+    issues: verification.issues
+  });
+});
+
+async function fetchSupabaseAuthUser(accessToken) {
+  const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
+  const clientKey = getSupabaseClientAuthKey();
+  if (!supabaseUrl || !clientKey || !accessToken) return null;
+
+  try {
+    const response = await axios.get(`${supabaseUrl}/auth/v1/user`, {
+      timeout: 10000,
+      headers: {
+        apikey: clientKey,
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
+    return response.data || null;
+  } catch {
+    return null;
+  }
+}
+
+function getSupabaseClientAuthKey() {
+  return (
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_PUBLISHABLE ||
+    ''
+  ).trim();
+}
+
+function hasAccountAuthServerConfig() {
+  return Boolean(
+    (process.env.SUPABASE_URL || '').trim() &&
+    getSupabaseClientAuthKey()
+  );
+}
+
+async function requireAccountAuth(req, res, next) {
+  // Keep this explicit so local setup/debugging failures are obvious.
+  if (!hasAccountAuthServerConfig()) {
+    return res.status(503).json({
+      error: 'Account auth is not configured on backend. Set SUPABASE_URL and one client key: SUPABASE_ANON_KEY or SUPABASE_PUBLISHABLE_KEY.'
+    });
+  }
+
+  const authHeader = req.get('authorization') || req.get('Authorization') || '';
+  const tokenMatch = authHeader.match(/^Bearer\s+(.+)$/i);
+  const token = tokenMatch ? tokenMatch[1].trim() : '';
+  if (!token) {
+    return res.status(401).json({ error: 'Missing bearer token.' });
+  }
+
+  const user = await fetchSupabaseAuthUser(token);
+  if (!user?.id) {
+    return res.status(401).json({ error: 'Invalid or expired auth token.' });
+  }
+
+  req.accountUser = {
+    id: user.id,
+    email: user.email || null
+  };
+  return next();
+}
+
+app.get('/api/account/me/dashboard', limiterLicenseRead, requireAccountAuth, async (req, res) => {
+  const userId = req.accountUser.id;
+  const { data, error } = await supabase
+    .from('account_domains')
+    .select('domain')
+    .eq('user_id', userId)
+    .order('domain', { ascending: true });
+
+  if (error) {
+    return res.status(500).json({
+      error: 'Failed to load account domains.',
+      details: process.env.NODE_ENV === 'production' ? undefined : (error.message || String(error))
+    });
+  }
+
+  const domains = await Promise.all(
+    (data || []).map(async (row) => ({
+      domain: row.domain,
+      license: await getLicenseStateForDomain(row.domain)
+    }))
+  );
+
+  return res.json({
+    user: req.accountUser,
+    domains
+  });
+});
+
+app.post('/api/account/me/domains', limiterLicenseWrite, requireAccountAuth, async (req, res) => {
+  const normalizedDomain = normalizeDomain(req.body?.domain);
+  if (!normalizedDomain) {
+    return res.status(400).json({ error: 'Valid domain is required.' });
+  }
+
+  const payload = {
+    user_id: req.accountUser.id,
+    domain: normalizedDomain
+  };
+
+  const { error } = await supabase
+    .from('account_domains')
+    .upsert(payload, { onConflict: 'user_id,domain' });
+
+  if (error) {
+    return res.status(500).json({
+      error: 'Failed to save account domain.',
+      details: process.env.NODE_ENV === 'production' ? undefined : (error.message || String(error))
+    });
+  }
+
+  return res.status(201).json({
+    ok: true,
+    domain: normalizedDomain
+  });
+});
+
+app.post('/api/account/me/domains/remove', limiterLicenseWrite, requireAccountAuth, async (req, res) => {
+  const normalizedDomain = normalizeDomain(req.body?.domain);
+  if (!normalizedDomain) {
+    return res.status(400).json({ error: 'Valid domain is required.' });
+  }
+
+  const { error } = await supabase
+    .from('account_domains')
+    .delete()
+    .eq('user_id', req.accountUser.id)
+    .eq('domain', normalizedDomain);
+
+  if (error) {
+    return res.status(500).json({
+      error: 'Failed to remove account domain.',
+      details: process.env.NODE_ENV === 'production' ? undefined : (error.message || String(error))
+    });
+  }
+
+  return res.json({ ok: true, domain: normalizedDomain });
+});
+
+app.post('/api/admin/licenses', limiterLicenseWrite, requireLicenseAdmin, async (req, res) => {
+  const {
+    domain,
+    plan = 'verified_badge_license_annual',
+    status = 'inactive',
+    license_type = 'paid',
+    start_date = null,
+    end_date = null,
+    payment_reference = null,
+    issued_token_or_key = null,
+    notes = null
+  } = req.body || {};
+
+  const normalizedDomain = normalizeDomain(domain);
+  if (!normalizedDomain) return res.status(400).json({ error: 'Valid domain is required.' });
+
+  const token = issued_token_or_key || crypto.randomUUID();
+
+  const payload = {
+    domain: normalizedDomain,
+    plan,
+    status,
+    license_type,
+    start_date,
+    end_date,
+    payment_reference,
+    issued_token_or_key: token,
+    notes
+  };
+
+  const { data, error } = await supabase
+    .from('licenses')
+    .upsert(payload, { onConflict: 'domain' })
+    .select('*')
+    .single();
+
+  if (error) return res.status(500).json({ error: 'License create/update failed.' });
+  return res.status(201).json({ ok: true, license: mapLicenseAdmin(data), token: data.issued_token_or_key });
+});
+
+app.patch('/api/admin/licenses/:id', limiterLicenseWrite, requireLicenseAdmin, async (req, res) => {
+  const id = req.params.id;
+  if (!id) return res.status(400).json({ error: 'License id is required.' });
+
+  const allowedFields = [
+    'plan', 'status', 'license_type', 'start_date', 'end_date',
+    'payment_reference', 'issued_token_or_key', 'notes'
+  ];
+
+  const updates = {};
+  allowedFields.forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(req.body || {}, field)) {
+      updates[field] = req.body[field];
+    }
+  });
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ error: 'No allowed fields provided for update.' });
+  }
+
+  updates.updated_at = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('licenses')
+    .update(updates)
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  if (error) return res.status(500).json({ error: 'License update failed.' });
+  return res.json({ ok: true, license: mapLicenseAdmin(data) });
+});
+
+app.post('/api/admin/licenses/:id/suspend', limiterLicenseWrite, requireLicenseAdmin, async (req, res) => {
+  const id = req.params.id;
+  if (!id) return res.status(400).json({ error: 'License id is required.' });
+
+  const { data, error } = await supabase
+    .from('licenses')
+    .update({
+      status: 'suspended',
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  if (error) return res.status(500).json({ error: 'License suspend failed.' });
+  return res.json({ ok: true, license: mapLicenseAdmin(data) });
+});
+
 // ── “Trace” endpoint: only return cached ───────────
 app.get('/api/trace', badgeCors, limiterBadge, async (req,res) => {
   const site = req.query.site;
@@ -131,6 +602,52 @@ app.get('/api/trace', badgeCors, limiterBadge, async (req,res) => {
   const row = await getCached(slugify(site));
   if (!row) return res.status(404).json({ error:'No data—run a check first.' });
   res.json(row);
+});
+
+// ── Badge install tracking (fire-and-forget from badge script) ─
+const limiterBadgePing = rateLimit({ windowMs: 60*1000, max: 30 });
+
+app.post('/api/badge/ping', badgeCors, limiterBadgePing, async (req, res) => {
+  // Respond immediately – tracking is best-effort, never blocks rendering
+  res.json({ ok: true });
+
+  try {
+    const siteUrl  = String(req.body?.site  || '').trim().slice(0, 500);
+    const hostDomain = String(req.body?.host || '').trim().slice(0, 255);
+    const badgeType  = ['carbon','hosting','member'].includes(req.body?.type)
+      ? req.body.type
+      : 'carbon';
+
+    if (!siteUrl) return;
+
+    await supabase
+      .from('badge_pings')
+      .upsert(
+        {
+          site_url:     siteUrl,
+          host_domain:  hostDomain,
+          badge_type:   badgeType,
+          last_seen_at: new Date().toISOString(),
+          ping_count:   1
+        },
+        {
+          onConflict: 'site_url,host_domain',
+          ignoreDuplicates: false
+        }
+      );
+
+    // Increment ping_count on conflict (Supabase doesn't support expressions in upsert,
+    // so we do a separate update if the row already existed)
+    await supabase.rpc('increment_badge_ping', {
+      p_site_url:    siteUrl,
+      p_host_domain: hostDomain
+    }).catch(() => null); // non-critical – ignore if RPC not set up yet
+  } catch (err) {
+    // Swallow – tracking must never affect badge rendering
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[badge/ping] tracking error:', err.message);
+    }
+  }
 });
 
 // ── “Trace or Check” endpoint ──────────────────────
@@ -199,11 +716,33 @@ app.post('/api/check-carbon', limiterCheck, async (req,res) => {
   catch { return res.status(400).json({ error:'Bad URL.' }); }
 
   try {
+    const contactSource = String(req.body?.contactSource || '').trim().toLowerCase();
+    const requiresLeadCapture = contactSource === 'homepage_hero';
+    const lead = parseLeadCapturePayload(req.body || {}, {
+      requireEmail: requiresLeadCapture,
+      requireConsent: requiresLeadCapture
+    });
     const data = await performCarbonCheck(site, host);
+    if (lead.shouldCapture) {
+      try {
+        await captureContactLead({
+          lead,
+          siteUrl: data.url || site,
+          domain: normalizeDomain(data.url || site),
+          resultSlug: data.slug
+        });
+      } catch (leadError) {
+        console.error('[/api/check-carbon POST] lead capture failed:', leadError.message);
+        return res.status(500).json({ error: 'Failed to save contact details for this scan.' });
+      }
+    }
     res.json(data);
   } catch (err) {
     console.error('[/api/check-carbon POST] failed:', err.message);
-    res.status(500).json({ error:'Failed to perform carbon check.' });
+    const statusCode = Number(err.statusCode) || 500;
+    res.status(statusCode).json({
+      error: statusCode >= 500 ? 'Failed to perform carbon check.' : err.message
+    });
   }
 });
 
@@ -221,6 +760,237 @@ function slugify(site) {
   }
 }
 
+function normalizeDomain(input) {
+  if (!input || typeof input !== 'string') return null;
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  try {
+    const normalized = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    const url = new URL(normalized);
+    return url.hostname.replace(/^www\./i, '').toLowerCase();
+  } catch {
+    return trimmed.replace(/^https?:\/\//i, '').replace(/^www\./i, '').split('/')[0].toLowerCase() || null;
+  }
+}
+
+async function captureContactLead({ lead, siteUrl, domain, resultSlug }) {
+  if (!lead?.shouldCapture || !lead.email || !domain || !siteUrl) return;
+
+  const payload = {
+    email: lead.email,
+    domain,
+    site_url: siteUrl,
+    source: lead.source || 'homepage_hero',
+    consent_to_contact: true,
+    result_slug: resultSlug || null,
+    updated_at: new Date().toISOString()
+  };
+
+  const { error } = await supabase
+    .from('contact_leads')
+    .upsert(payload, { onConflict: 'email,domain,source' });
+
+  if (error) {
+    throw error;
+  }
+}
+
+function mapLicensePublic(row) {
+  const now = new Date();
+  const endDate = row.end_date ? new Date(row.end_date) : null;
+  const isExpired = !!(endDate && endDate < now);
+  const activeStatuses = new Set(['active', 'trial', 'charity', 'partner', 'internal']);
+  return {
+    id: row.id,
+    domain: row.domain,
+    plan: row.plan,
+    status: row.status,
+    licenseType: row.license_type,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    licensed: activeStatuses.has(String(row.status || '').toLowerCase()) && !isExpired,
+    expired: isExpired
+  };
+}
+
+function mapLicenseAdmin(row) {
+  return {
+    ...mapLicensePublic(row),
+    paymentReference: row.payment_reference || null,
+    notes: row.notes || null
+  };
+}
+
+const DEFAULT_LICENSE_STATE = Object.freeze({
+  licensed: false,
+  status: 'none',
+  licenseType: null,
+  plan: null,
+  startDate: null,
+  endDate: null,
+  expired: false
+});
+
+async function getLicenseStateForDomain(domain) {
+  if (!domain) return DEFAULT_LICENSE_STATE;
+  try {
+    const { data, error } = await supabase
+      .from('licenses')
+      .select('*')
+      .eq('domain', domain)
+      .order('updated_at', { ascending: false })
+      .limit(1);
+    if (error || !Array.isArray(data) || data.length === 0) return DEFAULT_LICENSE_STATE;
+    return mapLicensePublic(data[0]);
+  } catch {
+    return DEFAULT_LICENSE_STATE;
+  }
+}
+
+function resolveSiteBase(req) {
+  const fromEnv = (process.env.SITE_URL || process.env.FRONTEND_URL || '').trim();
+  if (/^https?:\/\//i.test(fromEnv)) return fromEnv.replace(/\/+$/, '');
+
+  const origin = String(req.get('origin') || '').trim();
+  if (/^https?:\/\//i.test(origin)) return origin.replace(/\/+$/, '');
+
+  return 'https://www.greentracer.org';
+}
+
+function requireLicenseAdmin(req, res, next) {
+  const configured = process.env.LICENSE_ADMIN_KEY || process.env.ADMIN_API_KEY || '';
+  if (!configured) return res.status(503).json({ error: 'Admin license key is not configured.' });
+  const provided = req.get('x-admin-key') || req.get('x-api-key') || '';
+  if (!provided || provided !== configured) return res.status(401).json({ error: 'Unauthorized.' });
+  return next();
+}
+
+let stripeClient = null;
+function getStripeClient() {
+  if (!process.env.STRIPE_SECRET_KEY) return { error: 'Stripe secret key is not configured.' };
+  try {
+    const Stripe = require('stripe');
+    if (!stripeClient) {
+      stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY);
+    }
+    return { stripe: stripeClient };
+  } catch {
+    return { error: 'Stripe SDK is not available. Install backend dependency "stripe".' };
+  }
+}
+
+async function getLicenseRowByDomain(domain) {
+  const normalized = normalizeDomain(domain);
+  if (!normalized) return null;
+  const { data, error } = await supabase
+    .from('licenses')
+    .select('*')
+    .eq('domain', normalized)
+    .order('updated_at', { ascending: false })
+    .limit(1);
+  if (error || !Array.isArray(data) || data.length === 0) return null;
+  return data[0];
+}
+
+async function upsertLicenseByDomain({
+  domain,
+  plan = 'verified_badge_license_annual',
+  status = 'inactive',
+  license_type = 'paid',
+  start_date = null,
+  end_date = null,
+  payment_reference = null,
+  notes = null
+}) {
+  const normalized = normalizeDomain(domain);
+  if (!normalized) throw new Error('Domain is required for license upsert.');
+
+  const existing = await getLicenseRowByDomain(normalized);
+  const payload = {
+    domain: normalized,
+    plan,
+    status,
+    license_type,
+    start_date,
+    end_date,
+    payment_reference,
+    notes,
+    issued_token_or_key: existing?.issued_token_or_key || crypto.randomUUID(),
+    updated_at: new Date().toISOString()
+  };
+
+  const { data, error } = await supabase
+    .from('licenses')
+    .upsert(payload, { onConflict: 'domain' })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+function addYearISO(date = new Date()) {
+  const d = new Date(date);
+  d.setUTCFullYear(d.getUTCFullYear() + 1);
+  return d.toISOString();
+}
+
+async function handleStripeEvent(event) {
+  const type = event.type;
+  const object = event.data?.object || {};
+  const meta = object.metadata || {};
+  const domain = normalizeDomain(meta.domain || object.client_reference_id);
+  if (!domain) return;
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.info('[stripe/webhook] event', {
+      type,
+      mode: object.mode || null,
+      paymentStatus: object.payment_status || null,
+      domain
+    });
+  }
+
+  if (type === 'checkout.session.completed' || type === 'checkout.session.async_payment_succeeded') {
+    const paymentStatus = String(object.payment_status || '').toLowerCase();
+    const checkoutMode = String(object.mode || '').toLowerCase();
+    if (type === 'checkout.session.completed' && checkoutMode === 'payment' && paymentStatus && paymentStatus !== 'paid') {
+      return;
+    }
+    const paymentRef = object.payment_intent || object.id || event.id;
+    await upsertLicenseByDomain({
+      domain,
+      plan: meta.plan || 'verified_badge_license_annual',
+      status: 'active',
+      license_type: meta.license_type || 'paid',
+      start_date: new Date().toISOString(),
+      end_date: addYearISO(),
+      payment_reference: String(paymentRef),
+      notes: `Activated by Stripe ${type}`
+    });
+    return;
+  }
+
+  if (type === 'checkout.session.expired' || type === 'checkout.session.async_payment_failed') {
+    const existing = await getLicenseRowByDomain(domain);
+    if (!existing) return;
+    const sessionRef = object.id || '';
+    const existingRef = existing.payment_reference || '';
+    if (String(existing.status).toLowerCase() === 'active' && existingRef && existingRef !== sessionRef) {
+      return;
+    }
+    await upsertLicenseByDomain({
+      domain,
+      plan: existing.plan,
+      status: 'inactive',
+      license_type: existing.license_type || 'paid',
+      start_date: existing.start_date,
+      end_date: existing.end_date,
+      payment_reference: sessionRef || existingRef || null,
+      notes: `Updated by Stripe ${type}`
+    });
+  }
+}
+
 async function getCached(slug) {
   const s = slug.toLowerCase().replace(/-+$/,'');
   const { data: row, error } = await supabase
@@ -229,6 +999,8 @@ async function getCached(slug) {
   if (TTL!==0 && Date.now() - new Date(row.created_at).getTime() > TTL) return null;
   const info = row.result_data || {};
   const lighthouseScores = normalizeLighthouseScores(info.lighthouseScores);
+  const lighthouseMeta = info.lighthouseMeta || {};
+  const license = await getLicenseStateForDomain(normalizeDomain(row.url));
   return {
     slug:           row.slug,
     url:            row.url,
@@ -239,6 +1011,9 @@ async function getCached(slug) {
     grade:          row.grade,
     lighthouseScores,
     lighthouseStatus: hasAnyLighthouseScore(lighthouseScores) ? 'available' : (info.lighthouseMeta?.status || 'unavailable'),
+    lighthouseSource: lighthouseMeta.source || null,
+    lighthouseReason: lighthouseMeta.reason || null,
+    license,
     timestamp:      new Date(row.created_at).getTime()
   };
 }
@@ -274,6 +1049,7 @@ async function performCarbonCheck(norm, host) {
     .select().single();
 
   if (error) throw error;
+  const license = await getLicenseStateForDomain(normalizeDomain(row.url));
   return {
     slug:           row.slug,
     url:            row.url,
@@ -284,37 +1060,11 @@ async function performCarbonCheck(norm, host) {
     grade:          row.grade,
     lighthouseScores,
     lighthouseStatus,
+    lighthouseSource: lighthouseMeta.source,
+    lighthouseReason: lighthouseMeta.reason,
+    license,
     timestamp:      new Date(row.created_at).getTime()
   };
-}
-
-function gradeFor(c) {
-  if (c <= 0.095) return 'A+';
-  if (c <= 0.186) return 'A';
-  if (c <= 0.341) return 'B';
-  if (c <= 0.493) return 'C';
-  if (c <= 0.656) return 'D';
-  if (c <= 0.846) return 'E';
-  return 'F';
-}
-
-function percentileFromCarbon(carbon) {
-  const max = 0.846;
-  return Math.round(Math.max(0,Math.min(100,((max-Math.min(carbon,max))/max)*100)));
-}
-
-function totalGreenReductionPct() {
-  const D=0.06,N=0.014,U=0.123;
-  return Math.round((D/(D+N+U))*25);
-}
-
-function calcCO2(sizeMB, isGreen) {
-  const D=0.06,N=0.014,U=0.123,I=442;
-  const gb=sizeMB/1024;
-  let dc=gb*D*(isGreen?0.75:1);
-  const kwh=dc+gb*N+gb*U;
-  const g=kwh*I;
-  return g<0.01?+g.toPrecision(2):g<1?+g.toFixed(3):+g.toFixed(2);
 }
 
 async function runPSI(url, strat, key) {

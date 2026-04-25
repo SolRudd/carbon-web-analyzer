@@ -105,7 +105,7 @@ export default function Methodology() {
   return (
     <section
       id="methodology"
-      className="gt-section relative bg-white dark:bg-slate-950 py-24 sm:py-28 px-5 sm:px-6 transition-colors duration-300 border-t border-slate-200 dark:border-slate-900 overflow-hidden"
+      className="gt-section relative bg-white dark:bg-[#020f1e] py-24 sm:py-28 px-5 sm:px-6 transition-colors duration-300 border-t border-slate-200 dark:border-slate-900 overflow-hidden"
       aria-labelledby="methodology-heading"
     >
       <style>{sectionStyles}</style>
@@ -163,7 +163,7 @@ export default function Methodology() {
             {steps.map((step) => (
               <article
                 key={step.title}
-                className="gt-step-card group bg-white dark:bg-slate-950 p-8 flex flex-col h-full"
+                className="gt-step-card group bg-white dark:bg-[#020f1e] p-8 flex flex-col h-full"
               >
                 <div className="flex justify-between items-start mb-6">
                   <div className="flex flex-col">

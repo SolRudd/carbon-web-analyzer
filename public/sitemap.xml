@@ -2,51 +2,57 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://www.greentracer.org/</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-04-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://www.greentracer.org/calculator</loc>
+    <lastmod>2026-04-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://www.greentracer.org/how-it-works</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-04-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.greentracer.org/rating</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-04-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.greentracer.org/blog</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-04-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.greentracer.org/badge</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-04-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.greentracer.org/faq</loc>
-    <lastmod>2026-03-08</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://www.greentracer.org/api-access</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-04-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.greentracer.org/privacy-policy</loc>
-    <lastmod>2026-03-08</lastmod>
+    <lastmod>2026-04-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.greentracer.org/blog/badge-renewal-checklist-2026</loc>
+    <lastmod>2026-01-22</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.greentracer.org/blog/carbon-footprints-energy-providers</loc>
@@ -61,14 +67,26 @@
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://www.greentracer.org/blog/from-free-scan-to-paid-verification-2026</loc>
+    <lastmod>2026-04-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.greentracer.org/blog/green-hosting-proof-without-greenwashing-2025</loc>
+    <lastmod>2025-11-20</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://www.greentracer.org/blog/improve-air-quality</loc>
-    <lastmod>2025-06-19</lastmod>
+    <lastmod>2025-06-28</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.greentracer.org/blog/plastic-climate-crisis</loc>
-    <lastmod>2025-07-01</lastmod>
+    <lastmod>2025-07-22</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -80,7 +98,31 @@
   </url>
   <url>
     <loc>https://www.greentracer.org/blog/save-energy-in-summer</loc>
-    <lastmod>2025-07-07</lastmod>
+    <lastmod>2025-08-15</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.greentracer.org/blog/turn-carbon-reports-into-retainers-2025</loc>
+    <lastmod>2025-08-28</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.greentracer.org/blog/verified-sustainability-badges-2026</loc>
+    <lastmod>2026-04-23</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.greentracer.org/blog/website-carbon-reports-for-sales-teams-2026</loc>
+    <lastmod>2026-04-09</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.greentracer.org/blog/what-a-website-sustainability-calculator-should-show-2026</loc>
+    <lastmod>2026-03-12</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.9</priority>
   </url>

@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaWind, FaBolt, FaTerminal, FaCheck, FaSpinner } from "react-icons/fa";
 import { API_BASE } from "../config";
 import LoadingOverlay from "./LoadingOverlay";
+import { normalizeWebsiteUrl } from "../lib/url";
 
 const heroStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap');
@@ -120,28 +121,6 @@ const heroStyles = `
   }
 `;
 
-function normalizeUrl(inputUrl) {
-  let url = inputUrl.trim();
-
-  if (!url) return "";
-
-  if (!/^(https?:\/\/)/i.test(url)) {
-    url = `https://${url}`;
-  }
-
-  try {
-    const urlObject = new URL(url);
-
-    if (urlObject.hostname.startsWith("www.")) {
-      urlObject.hostname = urlObject.hostname.substring(4);
-    }
-
-    return urlObject.origin + urlObject.pathname.replace(/\/+$/, "");
-  } catch {
-    return inputUrl;
-  }
-}
-
 function WindStatus() {
   return (
     <div className="flex items-center gap-3 px-4 py-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-lg border border-slate-200/80 dark:border-slate-800">
@@ -163,19 +142,34 @@ function WindStatus() {
 
 export default function Hero() {
   const [url, setUrl] = useState("");
+  const [email, setEmail] = useState("");
+  const [contactConsent, setContactConsent] = useState(false);
+  const [formError, setFormError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const cleanUrl = normalizeUrl(url);
+    const cleanUrl = normalizeWebsiteUrl(url);
+    const normalizedEmail = email.trim().toLowerCase();
 
     if (!cleanUrl) {
-      alert("Please enter a valid URL.");
+      setFormError("Please enter a valid website URL.");
       return;
     }
 
+    if (!normalizedEmail) {
+      setFormError("Please enter your email address before running a scan.");
+      return;
+    }
+
+    if (!contactConsent) {
+      setFormError("Please confirm contact permission before submitting your email.");
+      return;
+    }
+
+    setFormError("");
     setLoading(true);
 
     try {
@@ -184,7 +178,12 @@ export default function Hero() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ url: cleanUrl }),
+        body: JSON.stringify({
+          url: cleanUrl,
+          contactEmail: normalizedEmail || undefined,
+          contactConsent: normalizedEmail ? contactConsent : false,
+          contactSource: "homepage_hero",
+        }),
       });
 
       const [res] = await Promise.all([
@@ -203,7 +202,11 @@ export default function Hero() {
       navigate(`/result/${data.slug}`);
     } catch (err) {
       console.error("❌ Error fetching carbon data:", err);
-      alert(`Oops! Something went wrong: ${err.message}. Please try again.`);
+      if (/email|contact permission/i.test(err.message || "")) {
+        setFormError(err.message);
+      } else {
+        alert(`Oops! Something went wrong: ${err.message}. Please try again.`);
+      }
     } finally {
       setLoading(false);
     }
@@ -213,7 +216,7 @@ export default function Hero() {
     <>
       <style>{heroStyles}</style>
 
-      <section id="top" className="gt-hero relative overflow-hidden bg-white dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300 border-b border-slate-100 dark:border-slate-900">
+      <section id="top" className="gt-hero relative overflow-hidden bg-white dark:bg-[#020f1e] text-slate-900 dark:text-white transition-colors duration-300 border-b border-slate-100 dark:border-slate-900">
         <div className="absolute inset-0 gt-grid-bg pointer-events-none" />
         <div className="absolute inset-0 gt-hero-fade pointer-events-none" />
 
@@ -281,7 +284,7 @@ export default function Hero() {
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || !url.trim() || !email.trim() || !contactConsent}
                   className="gt-btn-brand sm:w-auto w-full mt-2 sm:mt-0 px-7 py-3.5 rounded-xl font-bold text-sm tracking-wide uppercase flex items-center justify-center gap-2"
                   aria-live="polite"
                 >
@@ -297,6 +300,86 @@ export default function Hero() {
                   )}
                 </button>
               </form>
+
+              <div className="mt-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 px-5 py-4 text-left shadow-[0_16px_36px_-28px_rgba(15,23,42,0.45)]">
+                <div className="mb-4 border-b border-slate-200/80 pb-3 dark:border-slate-800">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-green-700 dark:text-green-300">
+                    Step 2
+                  </p>
+                  <h3 className="mt-1 text-base font-semibold text-slate-900 dark:text-white">
+                    Add your email so we can send your report and follow up
+                  </h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="email-input"
+                      className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400"
+                    >
+                      Work email
+                    </label>
+                    <input
+                      id="email-input"
+                      type="email"
+                      placeholder="you@company.com"
+                      value={email}
+                      onChange={(e) => {
+                        const nextEmail = e.target.value;
+                        setEmail(nextEmail);
+                        if (!nextEmail.trim()) {
+                          setContactConsent(false);
+                        }
+                        setFormError("");
+                      }}
+                      disabled={loading}
+                      autoComplete="email"
+                      inputMode="email"
+                      aria-required="true"
+                      className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-4 py-3.5 text-sm text-slate-900 dark:text-white outline-none transition-colors focus:border-green-600"
+                    />
+                  </div>
+
+                  <label className="flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3.5 text-sm leading-relaxed text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={contactConsent}
+                      onChange={(e) => {
+                        setContactConsent(e.target.checked);
+                        setFormError("");
+                      }}
+                      disabled={loading || !email.trim()}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-green-600 focus:ring-green-500"
+                    />
+                    <span className="space-y-1">
+                      <span className="block text-slate-700 dark:text-slate-200">
+                        I agree to the privacy policy and I&apos;m happy for GreenTracer to contact me about this result and badge access.
+                      </span>
+                      <span className="block text-xs text-slate-500 dark:text-slate-400">
+                        By continuing, you&apos;re set to our{" "}
+                        <Link
+                          to="/privacy-policy"
+                          className="font-medium text-green-700 underline decoration-green-300 underline-offset-2 hover:text-green-800 dark:text-green-400 dark:decoration-green-700 dark:hover:text-green-300"
+                        >
+                          privacy policy
+                        </Link>
+                        .
+                      </span>
+                    </span>
+                  </label>
+                </div>
+
+                <div className="mt-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Email and consent are required before the scan runs so we can send the result and follow up properly.
+                  </p>
+                  {formError ? (
+                    <p className="text-xs font-medium text-rose-600 dark:text-rose-400">
+                      {formError}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
 
               <div className="mt-6 flex flex-wrap justify-center items-center gap-x-7 gap-y-3 text-sm text-slate-500 dark:text-slate-500 font-medium">
                 <span className="flex items-center gap-1.5">

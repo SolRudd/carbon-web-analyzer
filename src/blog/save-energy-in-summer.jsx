@@ -1,336 +1,206 @@
 import React from "react";
-import {
-  FaExternalLinkAlt, FaThermometerHalf, FaSun, FaLeaf, FaHome, FaLaptop, FaChartLine
-} from "react-icons/fa";
-// ✅ Image Optimization: Switched from .jpg to the lighter .webp format
-
-
-export const toc = [
-  { id: "intro", text: "Introduction", level: 2 },
-  { id: "hidden-crisis", text: "The Hidden Summer Energy Crisis", level: 2 },
-  { id: "digital-connection", text: "The Digital Connection", level: 2 },
-  { id: "track-impact", text: "Track Your Complete Carbon Impact", level: 2 },
-  { id: "essential-strategies", text: "Essential Summer Energy-Saving Strategies", level: 2 },
-  { id: "office-strategies", text: "Office and Remote Work Summer Strategies", level: 2 },
-  { id: "business-case", text: "The Business Case for Summer Energy Efficiency", level: 2 },
-  { id: "advanced-techniques", text: "Advanced Summer Carbon Reduction Techniques", level: 2 },
-  { id: "track-impact-2", text: "Track Your Impact", level: 2 },
-  { id: "action-plan", text: "Your Summer Action Plan", level: 2 },
-];
+import { FaCertificate, FaCode, FaShieldAlt, FaRocket, FaChartLine, FaLeaf, FaGlobe } from "react-icons/fa";
 
 export const meta = {
-  title: "How to Save Energy in Summer: A Complete Guide to Reducing Your Carbon Footprint",
-  author: "Jack Paradise",
-  date: "2025-07-07",
-  tags: ["Eco-friendly", "Energy", "Carbon Reduction", "Digital Emissions"],
+  title: "The GreenTracer Badge: A Trust Signal for the Sustainable Web",
+  author: "Sol Rudd",
+  date: "2025-08-15",
+  readingMinutes: 3,
+  tags: ["GreenTracer", "Badges", "Web Sustainability", "Digital Ethics"],
   slug: "save-energy-in-summer",
-  image: "/assets/blog/summer-energy.webp",
-  imageAvif: "/assets/blog/summer-energy.avif",
-  excerpt: "Cut costs and emissions with comprehensive summer energy-saving strategies that reduce both your home and digital carbon footprint."
+  image: "/assets/blog/energy-carbon.webp",
+  imageAvif: "/assets/blog/energy-carbon.avif",
+  excerpt: "Your visitors can't see the emissions your website produces. The GreenTracer badge changes that — turning your carbon data into a live, credible trust signal that updates automatically.",
 };
+
+export const toc = [
+  { id: "intro", text: "Why Transparency Beats Claims", level: 2 },
+  { id: "what-badge-does", text: "What the Badge Actually Does", level: 2 },
+  { id: "badge-types", text: "Three Badge Types, One Purpose", level: 2 },
+  { id: "how-it-works", text: "How It Works (Technically)", level: 2 },
+  { id: "adding-badge", text: "Adding the Badge in 3 Minutes", level: 2 },
+  { id: "customisation", text: "Brand Customisation", level: 2 },
+  { id: "business-case", text: "The Business Case for Transparency", level: 2 },
+  { id: "next-steps", text: "Next Steps", level: 2 },
+];
 
 export default function Post() {
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row items-center gap-3 mb-2 bg-white/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl px-5 py-3 shadow">
-        <span className="font-medium text-slate-700 dark:text-slate-300">
-          Written by <span className="text-greenbuzz dark:text-green-400 font-semibold">Jack Paradise</span> — Founder of{" "}
-          <a
-            href="https://seoparadise.co.uk"
-            target="_blank"
-            rel="noopener"
-            className="underline text-blue-700 dark:text-blue-400 hover:text-greenbuzz dark:hover:text-greenbuzz transition"
-          >
-            SEO Paradise
-          </a>
-        </span>
-      </div>
+    <div className="space-y-10">
 
-      <p className="text-lg leading-relaxed first-letter:text-5xl first-letter:font-bold first-letter:text-greenbuzz dark:first-letter:text-green-400 first-letter:mr-3 first-letter:float-left first-letter:leading-none" id="intro">
-        Summer months bring soaring temperatures and skyrocketing energy bills, but they also present the perfect opportunity to dramatically reduce your carbon footprint. With global temperatures breaking records year after year, the decisions we make about energy consumption during peak summer months have never been more critical for both our wallets and our planet's future.
+      <p id="intro" className="text-lg leading-relaxed first-letter:text-5xl first-letter:font-bold first-letter:text-greenbuzz dark:first-letter:text-green-400 first-letter:mr-3 first-letter:float-left first-letter:leading-none">
+        Any company can publish a sustainability page. It costs nothing to write "we care about the environment" and mean nothing by it. That's the problem the GreenTracer badge was built to solve: replacing claims with live, verifiable data. When a visitor loads your site, the badge fetches your actual carbon score in real time and displays it — not a screenshot, not a one-time audit from three years ago, but the current number.
       </p>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-orange-500 pl-4" id="hidden-crisis">
-        The Hidden Summer Energy Crisis
+      <h2 id="what-badge-does" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
+        What the Badge Actually Does
       </h2>
-
       <p className="text-lg leading-relaxed">
-        Most people don't realize that summer energy consumption in developed countries increases by <strong>30-50%</strong> compared to other seasons. This spike isn't just about air conditioning—it's about our entire lifestyle shifting toward energy-intensive cooling, longer daylight hours increasing device usage, and the compounding effect of heat on all electrical systems.
+        The badge is a small JavaScript snippet you embed in your website. When it loads, it makes a lightweight request to the GreenTracer API, retrieves the cached carbon analysis for your site, and renders a compact, branded badge inline on your page. No page-weight penalty, no iframes, no tracking cookies.
       </p>
 
-      <div className="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 p-6 rounded-r-xl">
-        <h3 className="text-xl font-semibold text-orange-800 dark:text-orange-300 mb-3 flex items-center">
-          <FaThermometerHalf className="mr-2" />
-          Shocking Summer Energy Statistics
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-8 border border-green-100 dark:border-green-800/30">
+        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+          <FaChartLine className="text-green-600 dark:text-green-400" /> What gets displayed
         </h3>
-        <ul className="space-y-3 text-slate-700 dark:text-slate-300">
-          <li>• Air conditioning accounts for <strong className="text-orange-600 dark:text-orange-400">70% of summer electricity bills</strong> in hot climates</li>
-          <li>• The average household's carbon footprint increases by <strong>40% during summer months</strong></li>
-          <li>• Data centers consume <strong>50% more energy</strong> during peak summer due to cooling requirements</li>
-          <li>• Summer peak electricity demand often forces utilities to use <strong>dirtier backup power sources</strong></li>
-          <li>• Every 1°C increase in temperature raises electricity demand by <strong>2-4%</strong></li>
-        </ul>
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="bg-white dark:bg-slate-800 p-5 rounded-lg border border-green-100 dark:border-slate-700">
+            <p className="font-bold text-slate-900 dark:text-white mb-1">CO₂ per view</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Your site's estimated grams of CO₂ per page visit — calculated from transfer size and hosting energy mix.</p>
+          </div>
+          <div className="bg-white dark:bg-slate-800 p-5 rounded-lg border border-green-100 dark:border-slate-700">
+            <p className="font-bold text-slate-900 dark:text-white mb-1">Global percentile</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">How your site compares to millions of others tested. "Cleaner than 82% of pages" is a meaningful, concrete claim.</p>
+          </div>
+          <div className="bg-white dark:bg-slate-800 p-5 rounded-lg border border-green-100 dark:border-slate-700">
+            <p className="font-bold text-slate-900 dark:text-white mb-1">Live data</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Results update when you run a new scan. The badge reflects your current score, not a historical snapshot.</p>
+          </div>
+        </div>
       </div>
 
-      <blockquote className="bg-greenbuzz/10 dark:bg-green-400/10 border-l-4 border-greenbuzz dark:border-green-400 p-6 rounded-r-xl italic text-lg">
-        "Summer energy consumption patterns are directly linked to the same infrastructure powering our digital lives. When you reduce summer energy waste, you're also contributing to lower emissions from the data centers hosting your websites and apps."
-        <footer className="text-sm mt-2 not-italic">
-          — <a 
-            href="https://www.iea.org/reports/cooling" 
-            target="_blank" 
-            rel="noopener"
-            className="text-greenbuzz dark:text-green-400 hover:underline inline-flex items-center"
-          >
-            International Energy Agency Cooling Report <FaExternalLinkAlt className="ml-1 text-xs" />
-          </a>
-        </footer>
-      </blockquote>
-
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-4" id="digital-connection">
-        The Digital Connection: How Summer Heat Affects Your Website's Carbon Footprint
+      <h2 id="badge-types" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
+        Three Badge Types, One Purpose
       </h2>
-
       <p className="text-lg leading-relaxed">
-        Here's something most businesses don't consider: summer heat significantly increases the carbon footprint of your digital presence. Data centers—the backbone of the internet—work overtime during hot months, consuming exponentially more energy to keep servers cool and operational.
+        GreenTracer offers three distinct badge variants, each communicating a different dimension of your site's sustainability credentials.
       </p>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl">
-          <h3 className="text-xl font-semibold mb-3 text-blue-800 dark:text-blue-300 flex items-center">
-            <FaLaptop className="mr-2" />
-            Data Center Summer Impact
-          </h3>
-          <p>Data centers housing your website require 40% more cooling energy during summer, directly increasing your site's carbon emissions per visitor.</p>
-        </div>
-        <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-xl">
-          <h3 className="text-xl font-semibold mb-3 text-red-800 dark:text-red-300 flex items-center">
-            <FaChartLine className="mr-2" />
-            Peak Usage Patterns
-          </h3>
-          <p>Summer increases internet usage by 25% as people stay indoors, amplifying the environmental impact of every unoptimized website and app.</p>
-        </div>
-      </div>
-
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-6 rounded-xl" id="track-impact">
-        <h3 className="text-xl font-semibold mb-4">Track Your Complete Carbon Impact</h3>
-        <p className="mb-4">
-          Understanding the connection between your physical and digital energy consumption is crucial. Our <a href="/calculator" className="text-greenbuzz dark:text-green-400 font-semibold hover:underline">carbon calculator</a> helps you measure both your website's emissions and track improvements from energy-saving initiatives.
-        </p>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Monitor your progress with a <a href="/badge" className="text-greenbuzz dark:text-green-400 hover:underline">GreenTracer badge</a> and see how your summer energy savings translate to overall carbon reduction.
-        </p>
-      </div>
-
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4" id="essential-strategies">
-        Essential Summer Energy-Saving Strategies
-      </h2>
-
-      <div className="space-y-6">
-        <div className="flex items-start space-x-4">
-          <div className="flex-shrink-0 w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-            <FaThermometerHalf className="text-blue-600 dark:text-blue-400" />
+      <div className="space-y-4">
+        <div className="flex gap-4 p-5 bg-white dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
+          <div className="flex-shrink-0 mt-1">
+            <FaChartLine className="text-blue-500 text-xl" />
           </div>
           <div>
-            <h3 className="text-xl font-semibold mb-2">Smart Cooling Management</h3>
-            <p className="text-slate-600 dark:text-slate-400 mb-3">
-              Optimize your air conditioning usage without sacrificing comfort. Every degree you raise your thermostat can reduce cooling costs by 6-8%.
-            </p>
-            <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400 ml-4">
-              <li>• Set AC to 78°F (26°C) when home, 85°F (29°C) when away</li>
-              <li>• Use programmable thermostats to avoid cooling empty spaces</li>
-              <li>• Install ceiling fans to create wind chill effect (feels 4°F cooler)</li>
-              <li>• Close vents in unused rooms to focus cooling where needed</li>
-            </ul>
+            <p className="font-bold text-slate-900 dark:text-white">Carbon Badge</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Shows CO₂ per page view and your percentile ranking. Available to any site that has run a GreenTracer scan. No license required.</p>
           </div>
         </div>
-
-        <div className="flex items-start space-x-4">
-          <div className="flex-shrink-0 w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
-            <FaSun className="text-yellow-600 dark:text-yellow-400" />
+        <div className="flex gap-4 p-5 bg-white dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
+          <div className="flex-shrink-0 mt-1">
+            <FaShieldAlt className="text-green-500 text-xl" />
           </div>
           <div>
-            <h3 className="text-xl font-semibold mb-2">Harness Natural Cooling</h3>
-            <p className="text-slate-600 dark:text-slate-400 mb-3">
-              Work with nature instead of against it. Strategic use of natural cooling can reduce AC dependency by up to 40%.
-            </p>
-            <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400 ml-4">
-              <li>• Close blinds and curtains during peak sun hours (10am-4pm)</li>
-              <li>• Open windows at night for cross-ventilation cooling</li>
-              <li>• Use reflective window film to block 80% of heat gain</li>
-              <li>• Plant shade trees or install awnings on south-facing windows</li>
-            </ul>
+            <p className="font-bold text-slate-900 dark:text-white">Green Hosting Verified Badge</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Confirms your site is served from renewable-energy data centres as verified by the Green Web Foundation. Only renders if your latest scan confirms green hosting.</p>
           </div>
         </div>
-
-        <div className="flex items-start space-x-4">
-          <div className="flex-shrink-0 w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-            <FaHome className="text-purple-600 dark:text-purple-400" />
+        <div className="flex gap-4 p-5 bg-white dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
+          <div className="flex-shrink-0 mt-1">
+            <FaCertificate className="text-emerald-500 text-xl" />
           </div>
           <div>
-            <h3 className="text-xl font-semibold mb-2">Appliance Optimization</h3>
-            <p className="text-slate-600 dark:text-slate-400 mb-3">
-              Summer heat makes all appliances work harder. Smart usage patterns can prevent unnecessary energy waste.
-            </p>
-            <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400 ml-4">
-              <li>• Switch off and unplug devices when not in use (saves 10% on bills)</li>
-              <li>• Use appliances during cooler evening hours to reduce AC load</li>
-              <li>• Air-dry laundry outdoors instead of using energy-intensive dryers</li>
-              <li>• Cook outdoors or use smaller appliances to avoid heating your home</li>
-            </ul>
+            <p className="font-bold text-slate-900 dark:text-white">Licensed Member Badge</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">For GreenTracer subscribers. Displays your membership status and links to your full audit report. Updates automatically if your license status changes.</p>
           </div>
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-purple-500 pl-4" id="office-strategies">
-        Office and Remote Work Summer Strategies
+      <h2 id="how-it-works" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
+        How It Works (Technically)
       </h2>
-
-      <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-xl">
-        <h3 className="text-xl font-semibold mb-4 flex items-center">
-          <FaLaptop className="mr-2 text-purple-600 dark:text-purple-400" />
-          Digital Workspace Optimization
-        </h3>
-        <div className="space-y-4">
-          <div>
-            <h4 className="font-semibold mb-2">Reduce Heat-Generating Activities</h4>
-            <ul className="space-y-2 text-sm ml-4">
-              <li>• Use laptops instead of desktop computers (75% less energy)</li>
-              <li>• Enable power saving modes on all devices</li>
-              <li>• Close unnecessary browser tabs and applications</li>
-              <li>• Schedule intensive computing tasks for cooler evening hours</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-2">Smart Office Cooling</h4>
-            <ul className="space-y-2 text-sm ml-4">
-              <li>• Position workstations away from windows and heat sources</li>
-              <li>• Use task lighting instead of overhead lights</li>
-              <li>• Implement flexible work hours to avoid peak heat periods</li>
-              <li>• Consider co-working spaces with efficient shared cooling</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-red-500 pl-4" id="business-case">
-        The Business Case for Summer Energy Efficiency
-      </h2>
-
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-xl text-center">
-          <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">30-50%</div>
-          <div className="font-semibold mb-2">Potential Bill Reduction</div>
-          <div className="text-sm text-slate-600 dark:text-slate-400">
-            Implementing comprehensive summer strategies
-          </div>
-        </div>
-        <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl text-center">
-          <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">2-4 tons</div>
-          <div className="font-semibold mb-2">CO₂ Avoided Annually</div>
-          <div className="text-sm text-slate-600 dark:text-slate-400">
-            Per household following these guidelines
-          </div>
-        </div>
-        <div className="bg-orange-50 dark:bg-orange-900/20 p-6 rounded-xl text-center">
-          <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 mb-2">$400+</div>
-          <div className="font-semibold mb-2">Average Annual Savings</div>
-          <div className="text-sm text-slate-600 dark:text-slate-400">
-            Through reduced summer energy consumption
-          </div>
-        </div>
-      </div>
-
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-yellow-500 pl-4" id="advanced-techniques">
-        Advanced Summer Carbon Reduction Techniques
-      </h2>
-
-      <div className="space-y-6">
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 p-6 rounded-xl">
-          <h3 className="text-xl font-semibold mb-4">Renewable Energy Integration</h3>
-          <p className="mb-4">
-            Summer's abundant sunshine makes it the perfect time to maximize renewable energy benefits. Solar panels generate peak power during the same months when energy demand is highest.
-          </p>
-          <ul className="space-y-2 text-sm">
-            <li>• <strong>Solar Panel ROI:</strong> Summer generation can offset 80-90% of cooling costs</li>
-            <li>• <strong>Battery Storage:</strong> Store excess solar energy for peak evening usage</li>
-            <li>• <strong>Grid Integration:</strong> Feed surplus power back to reduce community carbon footprint</li>
-            <li>• <strong>Smart Meters:</strong> Monitor real-time usage to optimize consumption patterns</li>
-          </ul>
-        </div>
-
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 p-6 rounded-xl">
-          <h3 className="text-xl font-semibold mb-4">Digital Integration Strategies</h3>
-          <p className="mb-4">
-            Connect your physical energy savings with your digital carbon footprint reduction for maximum environmental impact.
-          </p>
-          <ul className="space-y-2 text-sm">
-            <li>• Use energy monitoring apps to track real-time consumption</li>
-            <li>• Schedule website maintenance during off-peak energy hours</li>
-            <li>• Choose green hosting providers that use renewable energy</li>
-            <li>• Optimize your website's performance to reduce server load during peak summer traffic</li>
-          </ul>
-        </div>
-      </div>
-
-      <blockquote className="bg-greenbuzz/10 dark:bg-green-400/10 border-l-4 border-greenbuzz dark:border-green-400 p-6 rounded-r-xl italic text-lg">
-        "The most effective carbon reduction strategies address both physical and digital consumption. Summer energy savings at home directly complement efforts to reduce your website's carbon footprint."
-        <footer className="text-sm mt-2 not-italic">
-          — Learn more at <a 
-            href="https://energysavingtrust.org.uk/"
-            target="_blank" 
-            rel="noopener"
-            className="text-greenbuzz dark:text-green-400 hover:underline inline-flex items-center"
-          >
-            Energy Saving Trust <FaExternalLinkAlt className="ml-1 text-xs" />
-          </a>
-        </footer>
-      </blockquote>
-
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-greenbuzz pl-4" id="track-impact-2">
-        Track Your Impact: From Summer Savings to Year-Round Carbon Reduction
-      </h2>
-
       <p className="text-lg leading-relaxed">
-        Summer energy efficiency is just the beginning of your carbon reduction journey. The habits you develop during peak consumption months create lasting environmental benefits that extend throughout the year and into your digital presence.
+        The badge script is served from <code className="text-green-600 dark:text-green-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-sm">api.greentracer.org</code>. When your page loads, the script reads the <code className="text-green-600 dark:text-green-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-sm">data-url</code> attribute on the badge container element, fetches the cached scan result from our API, and renders the badge inline.
+      </p>
+      <p className="text-lg leading-relaxed">
+        The API call is a single lightweight GET request returning a small JSON payload. There's no external script loading, no Google Analytics-style beacon, and no cookies. The badge renders using plain HTML and CSS — no shadow DOM, no React runtime. It's as lightweight as the sustainability data it represents.
       </p>
 
-      <div className="bg-gradient-to-r from-greenbuzz/10 to-green-600/10 border border-greenbuzz/20 dark:border-green-400/20 rounded-xl p-8">
-        <h3 className="text-2xl font-bold mb-4 text-center">Start Measuring Your Complete Carbon Impact</h3>
-        <p className="text-lg mb-6 text-center">
-          Combine your summer energy savings with digital carbon tracking for comprehensive environmental impact monitoring. Our tools help you understand both your physical and online carbon footprint.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="/calculator" className="bg-greenbuzz hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg text-center transition-colors">
-            Calculate Your Website's Carbon Impact
-          </a>
-          <a href="/badge" className="border-2 border-greenbuzz text-greenbuzz dark:text-green-400 hover:bg-greenbuzz hover:text-white font-semibold py-3 px-6 rounded-lg text-center transition-colors">
-            Get Your Green Badge
-          </a>
+      <div className="bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
+        <div className="px-4 py-2 border-b border-slate-800 text-xs text-slate-400 font-mono">How the badge fetches data</div>
+        <div className="p-5">
+          <pre className="text-xs text-slate-300 leading-relaxed overflow-x-auto font-mono whitespace-pre">{`// 1. Script finds badge containers
+document.querySelectorAll('.greentrace-badge').forEach(el => {
+  const site = el.getAttribute('data-url');
+
+  // 2. Fetch cached result from GreenTracer API
+  fetch(\`https://api.greentracer.org/api/trace?site=\${encodeURIComponent(site)}\`)
+    .then(res => res.json())
+    .then(data => renderBadge(data, el));
+    // 3. Renders inline — no iframes, no cookies
+});`}</pre>
         </div>
-        <p className="text-sm text-slate-600 dark:text-slate-400 text-center mt-4">
-          Join thousands tracking both physical and digital emissions. Read our <a href="/blog/why-website-carbon-matters-2025" className="text-greenbuzz dark:text-green-400 hover:underline">complete guide to website carbon footprints</a> and discover <a href="/blog/reduce-website-emissions-tips" className="text-greenbuzz dark:text-green-400 hover:underline">practical tips for digital carbon reduction</a>.
-        </p>
       </div>
 
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-blue-500 pl-4" id="action-plan">
-        Your Summer Action Plan
+      <h2 id="adding-badge" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
+        Adding the Badge in 3 Minutes
       </h2>
+      <p className="text-lg leading-relaxed">
+        Embedding the badge takes two steps: run a scan on your site to generate a result, then paste the snippet.
+      </p>
+      <ol className="space-y-4 list-decimal list-inside text-lg leading-relaxed">
+        <li><strong>Scan your site</strong> — go to the GreenTracer homepage and enter your URL. This creates a cached result the badge can retrieve.</li>
+        <li><strong>Copy the snippet</strong> — visit the Badge Setup page, configure your preferred type and colours, and copy the generated code.</li>
+        <li><strong>Paste into your HTML</strong> — anywhere in your page body, typically the footer.</li>
+      </ol>
 
-      <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl">
-        <h3 className="text-xl font-semibold mb-4 flex items-center">
-          <FaLeaf className="mr-2 text-green-600 dark:text-green-400" />
-          Your Summer Action Plan
-        </h3>
-        <ol className="space-y-3 list-decimal list-inside">
-          <li><strong>Week 1:</strong> Install programmable thermostats and seal air leaks</li>
-          <li><strong>Week 2:</strong> Implement natural cooling strategies and optimize appliance usage</li>
-          <li><strong>Week 3:</strong> Audit your digital devices and optimize your website's carbon footprint</li>
-          <li><strong>Week 4:</strong> Track results and plan for autumn efficiency improvements</li>
-        </ol>
-        <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">
-          Use our carbon tracking tools to monitor progress and see how your summer energy initiatives contribute to year-round environmental benefits.
+      <div className="bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
+        <div className="px-4 py-2 border-b border-slate-800 text-xs text-slate-400 font-mono">Embed snippet</div>
+        <div className="p-5">
+          <pre className="text-xs text-slate-300 leading-relaxed overflow-x-auto font-mono whitespace-pre">{`<div
+  class="greentrace-badge"
+  data-url="https://yoursite.com"
+  data-theme="auto"
+></div>
+<script
+  src="https://api.greentracer.org/greentrace-badge.js"
+  defer
+></script>`}</pre>
+        </div>
+      </div>
+
+      <h2 id="customisation" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
+        Brand Customisation
+      </h2>
+      <p className="text-lg leading-relaxed">
+        The badge accepts optional colour overrides via data attributes, so it can match your brand without requiring custom CSS. You can set the background, accent, and text colours independently.
+      </p>
+      <div className="bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
+        <div className="px-4 py-2 border-b border-slate-800 text-xs text-slate-400 font-mono">Custom colours</div>
+        <div className="p-5">
+          <pre className="text-xs text-slate-300 leading-relaxed overflow-x-auto font-mono whitespace-pre">{`<div
+  class="greentrace-badge"
+  data-url="https://yoursite.com"
+  data-theme="auto"
+  data-bg-color="#0f172a"
+  data-accent-color="#22c55e"
+  data-text-color="#f1f5f9"
+></div>`}</pre>
+        </div>
+      </div>
+      <p className="text-lg leading-relaxed">
+        The live preview on the Badge Setup page shows exactly how your badge will appear before you commit to embedding it.
+      </p>
+
+      <h2 id="business-case" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
+        The Business Case for Transparency
+      </h2>
+      <div className="bg-gradient-to-r from-slate-50 to-green-50 dark:from-slate-900/60 dark:to-green-900/20 rounded-xl p-8 border border-slate-200 dark:border-slate-700">
+        <p className="text-lg leading-relaxed text-slate-700 dark:text-slate-300">
+          Sustainability is increasingly a purchase driver. A 2024 Edelman survey found 71% of consumers consider a company's environmental practices when making buying decisions. Displaying verified carbon data — not vague commitments — turns sustainability into a visible differentiator. It signals that you measure your impact, you're not hiding from it, and you're working to improve it.
         </p>
       </div>
+
+      <h2 id="next-steps" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
+        Next Steps
+      </h2>
+      <div className="grid md:grid-cols-2 gap-4">
+        <a href="/" className="flex gap-3 p-5 bg-white dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-green-400 dark:hover:border-green-600 transition-colors no-underline">
+          <FaRocket className="text-green-500 text-xl flex-shrink-0 mt-1" />
+          <div>
+            <p className="font-bold text-slate-900 dark:text-white">Scan Your Site</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5">Get your carbon score and percentile in seconds.</p>
+          </div>
+        </a>
+        <a href="/badge" className="flex gap-3 p-5 bg-white dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-green-400 dark:hover:border-green-600 transition-colors no-underline">
+          <FaCode className="text-green-500 text-xl flex-shrink-0 mt-1" />
+          <div>
+            <p className="font-bold text-slate-900 dark:text-white">Configure Your Badge</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5">Choose your style and copy the embed snippet.</p>
+          </div>
+        </a>
+      </div>
+
     </div>
   );
 }
