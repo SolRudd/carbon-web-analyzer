@@ -37,10 +37,10 @@ export const meta = {
 export default function Post() {
   return (
     <div className="space-y-8">
-      <h1 className="text-4xl font-bold text-slate-900 dark:text-white" id="intro">
-        How to Reduce Website Emissions: 5 Practical Tips That Cut Carbon by 60%
-      </h1>
-      <p className="text-lg leading-relaxed">
+      <p
+        id="intro"
+        className="text-lg leading-relaxed first-letter:float-left first-letter:mr-3 first-letter:text-5xl first-letter:font-bold first-letter:leading-none first-letter:text-greenbuzz dark:first-letter:text-green-400"
+      >
         Did you know your website could be generating more CO₂ each year than you think?  
         Every click, scroll, image, and third-party script on your site consumes energy—and in a world running hotter than ever, every byte counts.  
         <strong>But here’s the good news:</strong> You can slash your website’s carbon footprint, supercharge performance, and still rank higher in Google. You just need the right approach—and the right tool. (Hint: <span className="text-greenbuzz font-bold">GreenTracer</span>.)

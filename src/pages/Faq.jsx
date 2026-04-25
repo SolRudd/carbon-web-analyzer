@@ -210,15 +210,21 @@ const faqs = [
 
   {
     category: "badge-api",
-    question: "How do I add the carbon badge to my website?",
+    question: "How do I add the GreenTracer badge to my website?",
     answer: (
       <>
         Add this code where you want the badge:
         <code className="break-all block bg-slate-100 dark:bg-slate-800 p-3 rounded-xl text-xs mt-3 mb-3 font-mono">
-          {`<div class="greentrace-badge" data-url="your-site.com"></div>
-<script src="https://api.greentracer.org/greentrace-badge.js"></script>`}
+          {`<a href="https://www.greentracer.org/verify/PUBLIC_TOKEN" target="_blank" rel="noopener">
+  <img
+    src="https://api.greentracer.org/api/badge/PUBLIC_TOKEN"
+    alt="GreenTracer Verified"
+    width="240"
+    height="40"
+  />
+</a>`}
         </code>
-        The badge will automatically display your latest carbon score and update when visitors load your page.
+        Replace PUBLIC_TOKEN with your public badge token. The badge links to a public verification page and does not expose API keys.
       </>
     ),
     emoji: "🏷️",
@@ -228,7 +234,7 @@ const faqs = [
     category: "badge-api",
     question: "Can I customize the badge appearance?",
     answer:
-      "Currently, our badge uses a standard design optimized for readability and trust. Custom styling options including colors, sizes, and themes are planned for our premium tier. The badge automatically adapts to light/dark themes and is fully responsive.",
+      "GreenTracer badges use a fixed verified design so the trust mark stays consistent. Choose compact for footers or standard for trust sections.",
     emoji: "🎨",
     tags: ["badge", "customization", "styling"],
   },
@@ -244,7 +250,7 @@ const faqs = [
     category: "badge-api",
     question: "Can I use the badge on multiple websites?",
     answer:
-      "Absolutely! Our badge script works on any website and automatically detects the domain. You can embed badges for different sites by setting the data-url attribute. Each badge independently fetches and displays the correct carbon score.",
+      "Yes, but each verified website should use its own public badge token. Public tokens are safe to embed and only return public verification data.",
     emoji: "🌐",
     tags: ["badge", "multiple sites", "domains"],
   },

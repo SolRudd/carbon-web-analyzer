@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 
-const src = 'public/greentrace-badge.js';
-const out = 'public/badge-loader.min.js';
+const src = 'backend/public/greentrace-badge.js';
+const out = 'backend/public/badge-loader.min.js';
 
 if (!existsSync(src)) {
   console.log(`ℹ️ Skipping minify: ${src} not found.`);

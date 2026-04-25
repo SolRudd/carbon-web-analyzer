@@ -330,7 +330,7 @@ export default function Dashboard() {
                           License status
                         </Link>
                         <Link
-                          to={`/license-status?domain=${encodeURIComponent(entry.domain)}&action=verify&badgeType=member`}
+                          to={`/license-status?domain=${encodeURIComponent(entry.domain)}&action=verify&variant=compact`}
                           className="rounded-full border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200"
                         >
                           Badge verification

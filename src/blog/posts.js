@@ -28,4 +28,17 @@ export const blogPosts = [
   post12,
   post13,
   post14,
-].filter(Boolean);
+]
+  .filter(Boolean)
+  .map((post) => ({
+    ...post,
+    meta: {
+      ...post.meta,
+      imageAvif: post.meta.imageAvif || post.meta.image,
+      imagePosition: post.meta.imagePosition || "50% 50%",
+      cardImagePosition: post.meta.cardImagePosition || post.meta.imagePosition || "50% 50%",
+      heroImagePosition: post.meta.heroImagePosition || post.meta.imagePosition || "50% 50%",
+      relatedImagePosition:
+        post.meta.relatedImagePosition || post.meta.cardImagePosition || post.meta.imagePosition || "50% 50%",
+    },
+  }));

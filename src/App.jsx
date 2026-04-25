@@ -17,6 +17,7 @@ import Calculator from "./pages/Calculator";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Pricing from "./pages/Pricing";
 import LicenseStatus from "./pages/LicenseStatus";
+import Verify from "./pages/Verify";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -38,6 +39,7 @@ function App() {
           <Route path="/badge" element={<Badge />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/license-status" element={<LicenseStatus />} />
+          <Route path="/verify/:token" element={<Verify />} />
           <Route path="/login" element={<Login />} />
           <Route
             path="/dashboard"

@@ -8,8 +8,8 @@ export const meta = {
   readingMinutes: 3,
   tags: ["GreenTracer", "Badges", "Web Sustainability", "Digital Ethics"],
   slug: "save-energy-in-summer",
-  image: "/assets/blog/energy-carbon.webp",
-  imageAvif: "/assets/blog/energy-carbon.avif",
+  image: "/assets/blog/summer-energy.webp",
+  imageAvif: "/assets/blog/summer-energy.avif",
   excerpt: "Your visitors can't see the emissions your website produces. The GreenTracer badge changes that — turning your carbon data into a live, credible trust signal that updates automatically.",
 };
 
@@ -100,25 +100,23 @@ export default function Post() {
         How It Works (Technically)
       </h2>
       <p className="text-lg leading-relaxed">
-        The badge script is served from <code className="text-green-600 dark:text-green-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-sm">api.greentracer.org</code>. When your page loads, the script reads the <code className="text-green-600 dark:text-green-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-sm">data-url</code> attribute on the badge container element, fetches the cached scan result from our API, and renders the badge inline.
+        The recommended badge is served as a static SVG from <code className="text-green-600 dark:text-green-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-sm">api.greentracer.org</code>. It uses a public badge token and links to a public verification page.
       </p>
       <p className="text-lg leading-relaxed">
-        The API call is a single lightweight GET request returning a small JSON payload. There's no external script loading, no Google Analytics-style beacon, and no cookies. The badge renders using plain HTML and CSS — no shadow DOM, no React runtime. It's as lightweight as the sustainability data it represents.
+        The browser loads one small image. There is no required JavaScript, no API key in the page, and no private account or billing data exposed.
       </p>
 
       <div className="bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
-        <div className="px-4 py-2 border-b border-slate-800 text-xs text-slate-400 font-mono">How the badge fetches data</div>
+        <div className="px-4 py-2 border-b border-slate-800 text-xs text-slate-400 font-mono">How the badge loads</div>
         <div className="p-5">
-          <pre className="text-xs text-slate-300 leading-relaxed overflow-x-auto font-mono whitespace-pre">{`// 1. Script finds badge containers
-document.querySelectorAll('.greentrace-badge').forEach(el => {
-  const site = el.getAttribute('data-url');
-
-  // 2. Fetch cached result from GreenTracer API
-  fetch(\`https://api.greentracer.org/api/trace?site=\${encodeURIComponent(site)}\`)
-    .then(res => res.json())
-    .then(data => renderBadge(data, el));
-    // 3. Renders inline — no iframes, no cookies
-});`}</pre>
+          <pre className="text-xs text-slate-300 leading-relaxed overflow-x-auto font-mono whitespace-pre">{`<a href="https://www.greentracer.org/verify/PUBLIC_TOKEN" target="_blank" rel="noopener">
+  <img
+    src="https://api.greentracer.org/api/badge/PUBLIC_TOKEN"
+    alt="GreenTracer Verified"
+    width="240"
+    height="40"
+  />
+</a>`}</pre>
         </div>
       </div>
 
@@ -126,46 +124,43 @@ document.querySelectorAll('.greentrace-badge').forEach(el => {
         Adding the Badge in 3 Minutes
       </h2>
       <p className="text-lg leading-relaxed">
-        Embedding the badge takes two steps: run a scan on your site to generate a result, then paste the snippet.
+        Embedding the badge takes two steps: activate a verified badge record for your site, then paste the tokenized snippet.
       </p>
       <ol className="space-y-4 list-decimal list-inside text-lg leading-relaxed">
-        <li><strong>Scan your site</strong> — go to the GreenTracer homepage and enter your URL. This creates a cached result the badge can retrieve.</li>
-        <li><strong>Copy the snippet</strong> — visit the Badge Setup page, configure your preferred type and colours, and copy the generated code.</li>
+        <li><strong>Verify your site</strong> — use your GreenTracer license and verification flow to create a public badge token.</li>
+        <li><strong>Copy the snippet</strong> — visit the Badge Setup page, choose compact or standard, and copy the generated code.</li>
         <li><strong>Paste into your HTML</strong> — anywhere in your page body, typically the footer.</li>
       </ol>
 
       <div className="bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
         <div className="px-4 py-2 border-b border-slate-800 text-xs text-slate-400 font-mono">Embed snippet</div>
         <div className="p-5">
-          <pre className="text-xs text-slate-300 leading-relaxed overflow-x-auto font-mono whitespace-pre">{`<div
-  class="greentrace-badge"
-  data-url="https://yoursite.com"
-  data-theme="auto"
-></div>
-<script
-  src="https://api.greentracer.org/greentrace-badge.js"
-  defer
-></script>`}</pre>
+          <pre className="text-xs text-slate-300 leading-relaxed overflow-x-auto font-mono whitespace-pre">{`<a href="https://www.greentracer.org/verify/PUBLIC_TOKEN" target="_blank" rel="noopener">
+  <img
+    src="https://api.greentracer.org/api/badge/PUBLIC_TOKEN"
+    alt="GreenTracer Verified"
+    width="240"
+    height="40"
+  />
+</a>`}</pre>
         </div>
       </div>
 
       <h2 id="customisation" className="text-3xl font-bold text-slate-900 dark:text-white border-l-4 border-green-500 pl-4">
-        Brand Customisation
+        Badge Variants
       </h2>
       <p className="text-lg leading-relaxed">
-        The badge accepts optional colour overrides via data attributes, so it can match your brand without requiring custom CSS. You can set the background, accent, and text colours independently.
+        Compact is the recommended footer badge. A standard variant is available for trust sections where a little more visual weight is useful.
       </p>
       <div className="bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
-        <div className="px-4 py-2 border-b border-slate-800 text-xs text-slate-400 font-mono">Custom colours</div>
+        <div className="px-4 py-2 border-b border-slate-800 text-xs text-slate-400 font-mono">Standard variant</div>
         <div className="p-5">
-          <pre className="text-xs text-slate-300 leading-relaxed overflow-x-auto font-mono whitespace-pre">{`<div
-  class="greentrace-badge"
-  data-url="https://yoursite.com"
-  data-theme="auto"
-  data-bg-color="#0f172a"
-  data-accent-color="#22c55e"
-  data-text-color="#f1f5f9"
-></div>`}</pre>
+          <pre className="text-xs text-slate-300 leading-relaxed overflow-x-auto font-mono whitespace-pre">{`<img
+  src="https://api.greentracer.org/api/badge/PUBLIC_TOKEN?variant=standard"
+  alt="GreenTracer Verified"
+  width="300"
+  height="50"
+/>`}</pre>
         </div>
       </div>
       <p className="text-lg leading-relaxed">

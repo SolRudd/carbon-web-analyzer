@@ -252,6 +252,10 @@ const pageStyles = `
     border: 1px solid var(--gt-border);
   }
 
+  .gt-article-page .blog-content > h1:first-child {
+    display: none;
+  }
+
   .gt-article-page .gt-tag-pill {
     border: 1px solid var(--gt-border);
     background: var(--gt-soft-bg);
@@ -562,7 +566,12 @@ export default function BlogPostPage() {
         </div>
 
         <div className="gt-divider relative h-[48vh] overflow-hidden border-b lg:h-[56vh]">
-          <img src={meta.image} alt={meta.title} className="h-full w-full object-cover" />
+          <img
+            src={meta.image}
+            alt={meta.title}
+            className="h-full w-full object-cover"
+            style={{ objectPosition: meta.heroImagePosition }}
+          />
           <div className="gt-hero-overlay absolute inset-0" />
 
           <div className="absolute left-8 right-8 top-8 z-20 flex items-center justify-between">
@@ -644,7 +653,12 @@ export default function BlogPostPage() {
                     to={`/blog/${relatedPost.meta.slug}`}
                     className="gt-panel gt-related-card group"
                   >
-                    <img src={relatedPost.meta.image} alt={relatedPost.meta.title} className="gt-related-image h-48 w-full object-cover" />
+                    <img
+                      src={relatedPost.meta.image}
+                      alt={relatedPost.meta.title}
+                      className="gt-related-image h-48 w-full object-cover"
+                      style={{ objectPosition: relatedPost.meta.relatedImagePosition }}
+                    />
                     <div className="p-6">
                       <h3 className="gt-heading mb-2 text-lg font-bold transition-colors group-hover:text-green-400">
                         {relatedPost.meta.title}

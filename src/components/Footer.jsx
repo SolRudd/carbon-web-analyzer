@@ -16,6 +16,7 @@ export default function Footer() {
     typeof window !== "undefined" && window.location
       ? window.location.origin
       : "";
+  const badgeToken = import.meta.env.VITE_GREENTRACER_BADGE_TOKEN || "";
 
   return (
     <footer
@@ -45,8 +46,8 @@ export default function Footer() {
             </picture>
           </Link>
 
-          <div className="min-h-[38px] flex items-center justify-center md:justify-end">
-            <CarbonBadge url={siteUrl} />
+          <div className="min-h-[40px] flex items-center justify-center md:justify-end">
+            <CarbonBadge url={siteUrl} token={badgeToken} variant="compact" />
           </div>
         </div>
 

@@ -607,6 +607,7 @@ export default function Blog() {
                       src={featuredPost.meta.image}
                       alt={featuredPost.meta.title}
                       className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      style={{ objectPosition: featuredPost.meta.heroImagePosition }}
                     />
                     <div className="gt-overlay absolute inset-0" />
                     <div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur">
@@ -708,6 +709,7 @@ export default function Blog() {
                           src={post.meta.image}
                           alt={post.meta.title}
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          style={{ objectPosition: post.meta.cardImagePosition }}
                         />
                         <div className="gt-overlay absolute inset-0 opacity-80" />
                         <div className="absolute right-4 top-4 rounded-full border border-white/10 bg-slate-950/70 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur">

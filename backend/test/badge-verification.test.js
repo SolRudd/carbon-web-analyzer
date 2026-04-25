@@ -17,6 +17,8 @@ test('badge verification accepts badge markup regardless of attribute order', ()
     scriptDetected: true,
     containerDetected: true,
     dataUrlDetected: true,
+    svgBadgeImageDetected: false,
+    verificationLinkDetected: false,
   });
   assert.deepEqual(result.detectedBadgeTypes, ['hosting']);
   assert.deepEqual(result.issues, []);
@@ -39,4 +41,19 @@ test('badge verification flags missing script and data-url problems', () => {
 
   assert.equal(result.state, 'needs_review');
   assert.deepEqual(result.issues, ['missing_script', 'missing_data_url']);
+});
+
+test('badge verification accepts tokenized SVG badge embed', () => {
+  const html = `
+    <a href="https://www.greentracer.org/verify/publictoken123" target="_blank" rel="noopener">
+      <img src="https://api.greentracer.org/api/badge/publictoken123" alt="GreenTracer Verified" width="240" height="40" />
+    </a>
+  `;
+
+  const result = inspectBadgeHtml(html);
+  assert.equal(result.state, 'connected');
+  assert.equal(result.checks.svgBadgeImageDetected, true);
+  assert.equal(result.checks.verificationLinkDetected, true);
+  assert.deepEqual(result.detectedBadgeTypes, ['verification']);
+  assert.deepEqual(result.issues, []);
 });

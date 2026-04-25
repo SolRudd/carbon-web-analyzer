@@ -24,6 +24,9 @@ function hasClassName(classValue, targetClassName) {
 function inspectBadgeHtml(html, expectedBadgeType = null) {
   const markup = typeof html === 'string' ? html : '';
   const scriptDetected = /<script\b[^>]*\bsrc\s*=\s*["'][^"']*greentrace-badge\.js(?:\?[^"']*)?["'][^>]*>/i.test(markup);
+  const svgBadgeImageDetected = /<img\b[^>]*\bsrc\s*=\s*["'][^"']*\/api\/badge\/[A-Za-z0-9_-]+(?:\?[^"']*)?["'][^>]*>/i.test(markup)
+    || /<img\b[^>]*\bsrc\s*=\s*["'][^"']*\/api\/badge\.svg\?[^"']*\btoken=/i.test(markup);
+  const verificationLinkDetected = /<a\b[^>]*\bhref\s*=\s*["'][^"']*\/verify\/[A-Za-z0-9_-]+(?:\?[^"']*)?["'][^>]*>/i.test(markup);
   const allTags = markup.match(/<[^>]+>/g) || [];
   const badgeTags = allTags.filter((tag) => {
     const attrs = parseAttributes(tag);
@@ -53,9 +56,10 @@ function inspectBadgeHtml(html, expectedBadgeType = null) {
   if (scriptDetected && !containerDetected) issues.push('missing_badge_container');
   if (containerDetected && !dataUrlDetected) issues.push('missing_data_url');
   if (expectedBadgeType && containerDetected && !hasExpectedType) issues.push('expected_badge_type_mismatch');
+  if (svgBadgeImageDetected && !verificationLinkDetected) issues.push('missing_verification_link');
 
   let state = 'connected';
-  if (!scriptDetected && !containerDetected) {
+  if (!scriptDetected && !containerDetected && !svgBadgeImageDetected) {
     state = 'not_detected';
   } else if (issues.length > 0) {
     state = 'needs_review';
@@ -67,8 +71,12 @@ function inspectBadgeHtml(html, expectedBadgeType = null) {
       scriptDetected,
       containerDetected,
       dataUrlDetected,
+      svgBadgeImageDetected,
+      verificationLinkDetected,
     },
-    detectedBadgeTypes,
+    detectedBadgeTypes: svgBadgeImageDetected && detectedBadgeTypes.length === 0
+      ? ['verification']
+      : detectedBadgeTypes,
     issues,
   };
 }

@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams } from "react-router-dom";
 import { FaArrowRight, FaCheckCircle, FaInfoCircle, FaShieldAlt } from "react-icons/fa";
-import { API_BASE } from "../config";
+import { API_BASE, RESULTS_BASE } from "../config";
+import { buildBadgeEmbedCode } from "../lib/badges/embed";
 
 const STATUS_STYLES = {
   active: "text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30",
@@ -29,6 +30,7 @@ const ISSUE_LABELS = {
   missing_data_url: "Badge container found, but data-url is missing or empty.",
   expected_badge_type_mismatch: "Badge is installed, but not using the selected badge type.",
   site_fetch_failed: "Could not fetch the website HTML automatically.",
+  missing_verification_link: "Badge image found, but the verification page link is missing.",
 };
 
 export default function LicenseStatus() {
@@ -37,15 +39,15 @@ export default function LicenseStatus() {
   const initialToken = String(params.get("token") || "").trim();
   const checkoutSuccess = params.get("checkout") === "success";
   const initialAction = String(params.get("action") || "").toLowerCase();
-  const initialBadgeTypeRaw = String(params.get("badgeType") || "").toLowerCase();
-  const initialBadgeType = ["member", "carbon", "hosting"].includes(initialBadgeTypeRaw) ? initialBadgeTypeRaw : "member";
+  const initialBadgeVariantRaw = String(params.get("variant") || "").toLowerCase();
+  const initialBadgeVariant = ["compact", "standard"].includes(initialBadgeVariantRaw) ? initialBadgeVariantRaw : "compact";
 
   const [domain, setDomain] = useState(initialDomain);
   const [token, setToken] = useState(initialToken);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
-  const [installBadgeType, setInstallBadgeType] = useState(initialBadgeType);
+  const [installBadgeVariant, setInstallBadgeVariant] = useState(initialBadgeVariant);
   const [verifyDomain, setVerifyDomain] = useState(initialDomain);
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyError, setVerifyError] = useState("");
@@ -78,11 +80,12 @@ export default function LicenseStatus() {
   }, [status, result?.domain, domain, verifyDomain]);
 
   const getEmbedCode = () => {
-    const normalized = normalizeDomainInput(result?.domain || domain || verifyDomain);
-    const targetUrl = normalized ? `https://${normalized}` : "https://example.com";
-    const typeAttr = installBadgeType === "carbon" ? "" : ` data-badge-type="${installBadgeType}"`;
-    return `<div class="greentrace-badge" data-url="${targetUrl}" data-theme="auto"${typeAttr}></div>
-<script src="https://api.greentracer.org/greentrace-badge.js" defer></script>`;
+    return buildBadgeEmbedCode({
+      token: result?.badgePublicToken || "PUBLIC_TOKEN",
+      apiBase: API_BASE,
+      siteBase: RESULTS_BASE,
+      variant: installBadgeVariant,
+    });
   };
 
   const copyEmbedCode = async () => {
@@ -215,10 +218,7 @@ export default function LicenseStatus() {
     setVerifyError("");
     setVerifyResult(null);
     try {
-      const query = new URLSearchParams({
-        domain: cleanDomain,
-        expectedBadgeType: installBadgeType,
-      });
+      const query = new URLSearchParams({ domain: cleanDomain });
       const res = await fetch(`${API_BASE}/api/license/verify-badge?${query.toString()}`);
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Badge verification failed.");
@@ -360,10 +360,10 @@ export default function LicenseStatus() {
                 {showVerificationPanel && (
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/40 p-5 space-y-4">
                     <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                      Next Step: Install and Verify Your Member Badge
+                      Next Step: Install and Verify Your Verification Badge
                     </h2>
                     <p className="text-sm text-slate-600 dark:text-slate-300">
-                      This badge confirms GreenTracer license membership only. It does not claim green hosting verification or performance certification.
+                      This badge confirms the public GreenTracer verification record for this domain. It links visitors to a public verification page and does not expose private account or billing details.
                     </p>
                     {!hasMemberLicense && (
                       <p className="text-sm rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/25 px-3 py-2 text-amber-800 dark:text-amber-300">
@@ -373,15 +373,14 @@ export default function LicenseStatus() {
 
                     <div className="grid sm:grid-cols-3 gap-3">
                       <label className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide sm:col-span-1">
-                        Badge Type
+                        Badge Variant
                         <select
-                          value={installBadgeType}
-                          onChange={(e) => setInstallBadgeType(e.target.value)}
+                          value={installBadgeVariant}
+                          onChange={(e) => setInstallBadgeVariant(e.target.value)}
                           className="mt-1 h-10 w-full rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 px-3 text-sm text-slate-900 dark:text-white"
                         >
-                          <option value="member">Member (Recommended)</option>
-                          <option value="carbon">Carbon</option>
-                          <option value="hosting">Hosting</option>
+                          <option value="compact">Compact (Recommended)</option>
+                          <option value="standard">Standard</option>
                         </select>
                       </label>
                       <label className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide sm:col-span-2">
@@ -434,7 +433,7 @@ export default function LicenseStatus() {
                                 : "Needs review"}
                           </p>
                           <p className="text-slate-600 dark:text-slate-300">
-                            {verifyResult.state === "connected" && "GreenTracer embed script and badge container were detected with the expected badge type."}
+                            {verifyResult.state === "connected" && "GreenTracer verification badge markup was detected."}
                             {verifyResult.state === "not_detected" && "No GreenTracer badge embed was detected on the checked page."}
                             {verifyResult.state === "needs_review" && "GreenTracer embed markup was partially detected or did not match the expected setup."}
                           </p>

@@ -15,6 +15,13 @@ const { createClient } = require('@supabase/supabase-js');
 const { inspectBadgeHtml } = require('./lib/badge-verification');
 const { parseLeadCapturePayload } = require('./lib/lead-capture');
 const { getLeadCaptureErrorMessage } = require('./lib/lead-capture-error');
+const { renderBadgeSvg } = require('./lib/badges/svg');
+const {
+  getPublicBadgeData,
+  toPublicBadgeJson,
+  unavailableBadgeData,
+} = require('./lib/badges/get-public-badge-data');
+const { booleanFromQuery } = require('./lib/badges/formatters');
 const {
   calcCO2,
   gradeFor,
@@ -79,81 +86,69 @@ app.get('/greentrace-badge.js', badgeCors, limiterBadge, (req,res) => {
   res.sendFile(path.join(__dirname,'public','greentrace-badge.js'));
 });
 
-// Helper: Validate hex colour
-function isValidHex(hex) {
-  return /^#[0-9A-Fa-f]{6}$/.test(hex);
-}
-
-// ⬇︎ New: truly static SVG badge
-app.get('/api/badge.svg', badgeCors, limiterBadge, async (req, res) => {
-  const theme = (req.query.theme||'auto').toLowerCase();
-  const site  = req.query.url;
-  const customBgColor = req.query.bgColor;
-  const customAccentColor = req.query.accentColor;
-  
-  if (!site) {
-    res.set('Content-Type','image/svg+xml');
-    return res.status(400).send(`<svg><text x="0" y="15" fill="red">Missing url</text></svg>`);
-  }
-
-  let data;
-  try {
-    const r = await axios.get(
-      `https://${req.get('host')}/api/trace?site=${encodeURIComponent(site)}`,
-      { timeout:5000 }
-    );
-    data = r.data;
-  } catch (e) {
-    if (e.response && e.response.status === 404) {
-      res.set('Content-Type','image/svg+xml');
-      return res.status(200).send(`<svg xmlns="http://www.w3.org/2000/svg" width="240" height="40">
-        <rect width="240" height="40" fill="#f3f4f6" rx="4"/>
-        <text x="10" y="25" fill="#374151" font-family="Inter,system-ui" font-size="12" font-weight="500">
-          No data - run a scan first
-        </text>
-      </svg>`);
-    }
-    res.set('Content-Type','image/svg+xml');
-    return res.status(500).send(`<svg><text x="0" y="15" fill="red">Error</text></svg>`);
-  }
-
-  const light = { fg:'#0F172A', bg:'#fff', border:'#16A34A', sub:'#475569' };
-  const dark  = { fg:'#e5e7eb', bg:'#1f2937', border:'#16A34A', sub:'#94a3b8' };
-  let pick = theme==='dark'
-    ? dark
-    : theme==='light'
-      ? light
-      : (req.get('sec-ch-prefers-color-scheme')==='dark' ? dark : light);
-
-  // Apply custom colours if provided and valid
-  if (customBgColor && isValidHex(customBgColor)) {
-    pick.bg = customBgColor;
-  }
-  if (customAccentColor && isValidHex(customAccentColor)) {
-    pick.border = customAccentColor;
-  }
-
-  const co2 = Number(data.carbonEstimate||0).toFixed(2);
-  const pct = data.percentile!=null ? data.percentile : '--';
-
-  const svg = `
-<svg xmlns="http://www.w3.org/2000/svg" width="240" height="40">
-  <rect width="120" height="40" fill="${pick.bg}" rx="4"/>
-  <rect x="120" width="120" height="40" fill="${pick.border}" rx="4"/>
-  <text x="8" y="25" fill="${pick.fg}" font-family="Inter,system-ui" font-size="14" font-weight="600">
-    ${co2}g CO₂/view
-  </text>
-  <text x="132" y="25" fill="#fff" font-family="Inter,system-ui" font-size="14" font-weight="600">
-    Cleaner ${pct}%
-  </text>
-</svg>`;
-  res.set({
-    'Content-Type':'image/svg+xml',
-    'Cache-Control':'public,max-age=3600'
+app.get('/api/badge/:token/data', badgeCors, limiterBadge, async (req, res) => {
+  const showMetric = booleanFromQuery(req.query.metric, true);
+  const data = await getPublicBadgeData(supabase, req.params.token, {
+    siteBase: resolveSiteBase(req),
+    markRequest: false,
+    showMetric,
   });
-  res.send(svg);
+
+  res.set({
+    'Cache-Control': data.publicStatus === 'verified'
+      ? 'public,max-age=120,stale-while-revalidate=600'
+      : 'public,max-age=60',
+  });
+  return res.json(toPublicBadgeJson(data));
 });
-// ⬆︎ End static SVG badge
+
+app.get('/api/badge/:token', badgeCors, limiterBadge, async (req, res) => {
+  const showMetric = booleanFromQuery(req.query.metric, true);
+  const data = await getPublicBadgeData(supabase, req.params.token, {
+    siteBase: resolveSiteBase(req),
+    markRequest: true,
+    showMetric,
+  });
+  const svg = renderBadgeSvg(data, {
+    variant: req.query.variant,
+    showMetric,
+  });
+
+  res.set({
+    'Content-Type': 'image/svg+xml; charset=utf-8',
+    'Cache-Control': data.publicStatus === 'verified'
+      ? 'public,max-age=3600,stale-while-revalidate=86400'
+      : 'public,max-age=300',
+    'X-Content-Type-Options': 'nosniff',
+  });
+  return res.status(200).send(svg);
+});
+
+app.get('/api/badge.svg', badgeCors, limiterBadge, async (req, res) => {
+  const token = req.query.token || req.query.publicToken || req.query.public_token;
+  const showMetric = booleanFromQuery(req.query.metric, true);
+  const data = token
+    ? await getPublicBadgeData(supabase, token, {
+      siteBase: resolveSiteBase(req),
+      markRequest: true,
+      showMetric,
+    })
+    : unavailableBadgeData(resolveSiteBase(req), 'token_required');
+
+  const svg = renderBadgeSvg(data, {
+    variant: req.query.variant,
+    showMetric,
+  });
+
+  res.set({
+    'Content-Type': 'image/svg+xml; charset=utf-8',
+    'Cache-Control': data.publicStatus === 'verified'
+      ? 'public,max-age=3600,stale-while-revalidate=86400'
+      : 'public,max-age=300',
+    'X-Content-Type-Options': 'nosniff',
+  });
+  return res.status(200).send(svg);
+});
 
 app.use(express.static(path.join(__dirname,'public')));
 app.get('/healthz', (_req,res) => res.send('OK'));
@@ -516,7 +511,15 @@ app.post('/api/admin/licenses', limiterLicenseWrite, requireLicenseAdmin, async 
     end_date = null,
     payment_reference = null,
     issued_token_or_key = null,
-    notes = null
+    notes = null,
+    badge_public_token,
+    badge_enabled,
+    verification_status,
+    is_public_verification_enabled,
+    verified_at,
+    latest_co2_per_page,
+    latest_scan_at,
+    latest_result_slug
   } = req.body || {};
 
   const normalizedDomain = normalizeDomain(domain);
@@ -536,6 +539,19 @@ app.post('/api/admin/licenses', limiterLicenseWrite, requireLicenseAdmin, async 
     notes
   };
 
+  [
+    ['badge_public_token', badge_public_token],
+    ['badge_enabled', badge_enabled],
+    ['verification_status', verification_status],
+    ['is_public_verification_enabled', is_public_verification_enabled],
+    ['verified_at', verified_at],
+    ['latest_co2_per_page', latest_co2_per_page],
+    ['latest_scan_at', latest_scan_at],
+    ['latest_result_slug', latest_result_slug],
+  ].forEach(([field, value]) => {
+    if (value !== undefined) payload[field] = value;
+  });
+
   const { data, error } = await supabase
     .from('licenses')
     .upsert(payload, { onConflict: 'domain' })
@@ -552,7 +568,10 @@ app.patch('/api/admin/licenses/:id', limiterLicenseWrite, requireLicenseAdmin, a
 
   const allowedFields = [
     'plan', 'status', 'license_type', 'start_date', 'end_date',
-    'payment_reference', 'issued_token_or_key', 'notes'
+    'payment_reference', 'issued_token_or_key', 'notes',
+    'badge_public_token', 'badge_enabled', 'verification_status',
+    'is_public_verification_enabled', 'verified_at', 'latest_co2_per_page',
+    'latest_scan_at', 'latest_result_slug'
   ];
 
   const updates = {};
@@ -821,6 +840,13 @@ function mapLicensePublic(row) {
     licenseType: row.license_type,
     startDate: row.start_date,
     endDate: row.end_date,
+    badgePublicToken: row.badge_public_token || null,
+    badgeEnabled: row.badge_enabled !== false,
+    verificationStatus: row.verification_status || 'pending',
+    publicVerificationEnabled: row.is_public_verification_enabled !== false,
+    verifiedAt: row.verified_at || null,
+    latestCo2PerPage: row.latest_co2_per_page ?? null,
+    latestScanAt: row.latest_scan_at || null,
     licensed: activeStatuses.has(String(row.status || '').toLowerCase()) && !isExpired,
     expired: isExpired
   };
@@ -857,6 +883,28 @@ async function getLicenseStateForDomain(domain) {
     return mapLicensePublic(data[0]);
   } catch {
     return DEFAULT_LICENSE_STATE;
+  }
+}
+
+async function updateLicenseBadgeMetricFromResult(row) {
+  const domain = normalizeDomain(row?.url);
+  if (!domain || row?.carbon_estimate === undefined || row?.carbon_estimate === null) return;
+
+  try {
+    const { error } = await supabase
+      .from('licenses')
+      .update({
+        latest_co2_per_page: Number(row.carbon_estimate),
+        latest_scan_at: row.created_at || new Date().toISOString(),
+        latest_result_slug: row.slug || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('domain', domain);
+    if (error) throw error;
+  } catch (err) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[badge-metric] metric update skipped:', err.message);
+    }
   }
 }
 
@@ -1062,6 +1110,7 @@ async function performCarbonCheck(norm, host) {
     .select().single();
 
   if (error) throw error;
+  await updateLicenseBadgeMetricFromResult(row);
   const license = await getLicenseStateForDomain(normalizeDomain(row.url));
   return {
     slug:           row.slug,

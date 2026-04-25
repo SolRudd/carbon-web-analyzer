@@ -1,648 +1,242 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { useSearchParams } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { API_BASE } from "../config";
-import {
-  FaCertificate,
-  FaCode,
-  FaRocket,
-  FaPalette,
-  FaShieldAlt,
-  FaQuestionCircle,
-  FaExternalLinkAlt,
-  FaTerminal,
-} from "react-icons/fa";
-import { ArrowRight, Check, Copy } from "lucide-react";
-import CompactTrustBadge from "../components/CompactTrustBadge";
+import { Check, Copy, ExternalLink, ShieldCheck } from "lucide-react";
+import { API_BASE, RESULTS_BASE } from "../config";
+import GreenTracerBadgePreview from "../components/badges/GreenTracerBadgePreview";
+import { buildBadgeEmbedCode, buildBadgeVerifyUrl } from "../lib/badges/embed";
 
-const pageStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap');
-
-  :root {
-    --gt-green: #15803d;
-    --gt-neon: #4ade80;
-  }
-
-  .gt-page { font-family: 'Inter', sans-serif; }
-  .gt-display { font-family: 'Fraunces', serif; letter-spacing: -0.03em; }
-  .gt-mono { font-family: 'JetBrains Mono', monospace; }
-
-  @keyframes gt-blink { 50% { opacity: 0; } }
-  @keyframes gt-reveal {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .gt-bg-data {
-    background-image:
-      linear-gradient(
-        0deg,
-        transparent 24%,
-        rgba(34, 197, 94, .05) 25%,
-        rgba(34, 197, 94, .05) 26%,
-        transparent 27%,
-        transparent 74%,
-        rgba(34, 197, 94, .05) 75%,
-        rgba(34, 197, 94, .05) 76%,
-        transparent 77%,
-        transparent
-      ),
-      linear-gradient(
-        90deg,
-        transparent 24%,
-        rgba(34, 197, 94, .05) 25%,
-        rgba(34, 197, 94, .05) 26%,
-        transparent 27%,
-        transparent 74%,
-        rgba(34, 197, 94, .05) 75%,
-        rgba(34, 197, 94, .05) 76%,
-        transparent 77%,
-        transparent
-      );
-    background-size: 50px 50px;
-  }
-
-  .gt-grid-faint {
-    background-size: 40px 40px;
-    background-image:
-      linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px);
-  }
-
-  .dark .gt-grid-faint {
-    background-image:
-      linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
-  }
-
-  .gt-panel {
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(0,0,0,0.08);
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-
-  .gt-panel:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
-    border-color: rgba(22, 163, 74, 0.3);
-  }
-
-  .dark .gt-panel {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(255,255,255,0.08);
-  }
-
-  .dark .gt-panel:hover {
-    box-shadow: 0 10px 30px -10px rgba(22, 163, 74, 0.1);
-  }
-
-  .gt-input-wrapper:focus-within {
-    border-color: var(--gt-green);
-    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
-  }
-
-  .gt-badge-preview {
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-
-  .gt-badge-preview:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
-  }
-`;
-
-const MEMBER_ACTIVE_STATUSES = new Set(["active", "trial", "charity", "partner", "internal"]);
-
-const getMemberBadgeLabel = (status) => {
-  const key = String(status || "none").toLowerCase();
-  const labels = {
-    active: "GreenTracer Licensed Member",
-    charity: "GreenTracer Charity Member",
-    partner: "GreenTracer Partner Member",
-    trial: "GreenTracer Trial Member",
-    internal: "GreenTracer Internal Member",
-  };
-  return labels[key] || "GreenTracer Licensed Member";
-};
-
-const getMemberStatusTag = (status) => {
-  const key = String(status || "none").toLowerCase();
-  const tags = {
-    active: "LICENSE_ACTIVE",
-    charity: "LICENSE_CHARITY",
-    partner: "LICENSE_PARTNER",
-    trial: "LICENSE_TRIAL",
-    internal: "LICENSE_INTERNAL",
-    suspended: "LICENSE_SUSPENDED",
-    inactive: "LICENSE_INACTIVE",
-  };
-  return tags[key] || "LICENSE_UNAVAILABLE";
-};
-
-const isValidHexColor = (v) => /^#[0-9A-Fa-f]{6}$/.test((v || "").trim());
-
-const normalizeSiteUrl = (u) => {
-  try {
-    const url = new URL((u || "").includes("://") ? u : `https://${u}`);
-    return url.href.replace(/\/$/, "");
-  } catch {
-    return null;
-  }
-};
-
-const howToSchema = {
-  "@context": "https://schema.org",
-  "@type": "HowTo",
-  name: "How to Add the GreenTracer Badge",
-  step: [
-    { "@type": "HowToStep", name: "Test Site", text: "Run a carbon audit on your URL." },
-    { "@type": "HowToStep", name: "Configure Badge", text: "Choose style and copy code." },
-    { "@type": "HowToStep", name: "Embed", text: "Paste snippet into HTML footer." },
-  ],
-};
+const normalizeDomainInput = (value) =>
+  String(value || "")
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .split("/")[0]
+    .toLowerCase();
 
 export default function Badge() {
   const [searchParams] = useSearchParams();
-  const initialSiteFromQuery = String(searchParams.get("site") || "").trim();
-  const [websiteUrl, setWebsiteUrl] = useState(initialSiteFromQuery || "yoursite.com");
-  const [selectedBadgeType, setSelectedBadgeType] = useState("carbon");
-  const [copiedCode, setCopiedCode] = useState(false);
-  const [bgColor, setBgColor] = useState("#ffffff");
-  const [accentColor, setAccentColor] = useState("#16A34A");
-  const [textColor, setTextColor] = useState("");
-  const [hostingStatus, setHostingStatus] = useState({
-    loading: false,
-    checkedUrl: "",
-    hasSavedData: false,
-    isGreenHost: false,
-    licenseStatus: "none",
-    hasMemberLicense: false,
-  });
+  const initialSite = normalizeDomainInput(searchParams.get("site") || "");
+  const initialToken = String(searchParams.get("token") || "").trim();
+
+  const [domain, setDomain] = useState(initialSite);
+  const [publicToken, setPublicToken] = useState(initialToken);
+  const [variant, setVariant] = useState("compact");
+  const [lookupState, setLookupState] = useState("");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (initialSiteFromQuery) {
-      setWebsiteUrl(initialSiteFromQuery);
-    }
-  }, [initialSiteFromQuery]);
-
-  const copyToClipboard = async (text) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedCode(true);
-      setTimeout(() => setCopiedCode(false), 2000);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    const normalizedUrl = normalizeSiteUrl(websiteUrl);
-
-    if (!normalizedUrl) {
-      setHostingStatus({
-        loading: false,
-        checkedUrl: "",
-        hasSavedData: false,
-        isGreenHost: false,
-        licenseStatus: "none",
-        hasMemberLicense: false,
-      });
-      return;
-    }
+    if (!initialSite || initialToken) return;
 
     const controller = new AbortController();
-    const timer = setTimeout(() => {
-      setHostingStatus((prev) => ({
-        ...prev,
-        loading: true,
-        checkedUrl: normalizedUrl,
-      }));
+    setLookupState("Looking up public badge token...");
 
-      fetch(`${API_BASE}/api/trace?site=${encodeURIComponent(normalizedUrl)}`, {
-        signal: controller.signal,
+    fetch(`${API_BASE}/api/license/check?domain=${encodeURIComponent(initialSite)}`, {
+      signal: controller.signal,
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.badgePublicToken) {
+          setPublicToken(data.badgePublicToken);
+          setLookupState("Public badge token found for this domain.");
+          return;
+        }
+        setLookupState("No public badge token is available for this domain yet.");
       })
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          const licenseStatus = String(data?.license?.status || "none").toLowerCase();
-          const hasMemberLicense =
-            MEMBER_ACTIVE_STATUSES.has(licenseStatus) && !!data?.license?.licensed;
-          setHostingStatus({
-            loading: false,
-            checkedUrl: normalizedUrl,
-            hasSavedData: !!data,
-            isGreenHost: !!data?.greenHost,
-            licenseStatus,
-            hasMemberLicense,
-          });
-        })
-        .catch((err) => {
-          if (err.name !== "AbortError") {
-            setHostingStatus((prev) => ({ ...prev, loading: false }));
-          }
-        });
-    }, 500);
+      .catch((err) => {
+        if (err.name !== "AbortError") setLookupState("Could not look up a public badge token.");
+      });
 
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [websiteUrl]);
+    return () => controller.abort();
+  }, [initialSite, initialToken]);
 
-  useEffect(() => {
-    if (selectedBadgeType === "hosting" && !hostingStatus.isGreenHost) {
-      setSelectedBadgeType("carbon");
+  const tokenForEmbed = publicToken || "PUBLIC_TOKEN";
+  const embedCode = useMemo(() => buildBadgeEmbedCode({
+    token: tokenForEmbed,
+    apiBase: API_BASE,
+    siteBase: RESULTS_BASE,
+    variant,
+    showMetric: true,
+  }), [tokenForEmbed, variant]);
+  const verifyUrl = buildBadgeVerifyUrl({ token: tokenForEmbed, siteBase: RESULTS_BASE });
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(embedCode);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
     }
-  }, [hostingStatus.isGreenHost, selectedBadgeType]);
-
-  const getCurrentCode = () => {
-    const target = normalizeSiteUrl(websiteUrl) || "https://yoursite.com";
-    const cleanText = isValidHexColor(textColor) ? textColor.trim() : "";
-    const typeAttr =
-      selectedBadgeType !== "carbon" ? ` data-badge-type="${selectedBadgeType}"` : "";
-    const customAttrs = `${bgColor !== "#ffffff" ? ` data-bg-color="${bgColor}"` : ""}${
-      accentColor !== "#16A34A" ? ` data-accent-color="${accentColor}"` : ""
-    }${cleanText ? ` data-text-color="${cleanText}"` : ""}`;
-
-    return `<div class="greentrace-badge" data-url="${target}" data-theme="auto"${typeAttr}${customAttrs}></div>\n<script src="https://api.greentracer.org/greentrace-badge.js" defer></script>`;
   };
-
-  const hasCustomTextColor = isValidHexColor(textColor);
-  const previewTextColor = hasCustomTextColor ? textColor.trim() : "#1e293b";
-  const memberPreviewLabel = getMemberBadgeLabel(hostingStatus.licenseStatus);
-  const memberPreviewState = getMemberStatusTag(hostingStatus.licenseStatus);
-  const previewBadgeLabel =
-    selectedBadgeType === "member"
-      ? memberPreviewLabel
-      : selectedBadgeType === "hosting"
-        ? "Green Hosting Verified"
-        : "Cleaner than 84%";
-  const previewBadgeValue =
-    selectedBadgeType === "hosting"
-      ? "Renewable energy host"
-      : selectedBadgeType === "member"
-        ? "Licensed by GreenTracer"
-        : "0.45g CO₂/view";
 
   return (
     <>
       <Helmet>
-        <title>Get Your Website Carbon Badge | GreenTracer</title>
+        <title>GreenTracer Verification Badge</title>
         <meta
           name="description"
-          content="Display your website's carbon score with pride. The badge updates automatically."
+          content="Generate the compact GreenTracer verification badge embed for a verified public badge token."
         />
         <link rel="canonical" href="https://www.greentracer.org/badge" />
-        <script type="application/ld+json">{JSON.stringify(howToSchema)}</script>
       </Helmet>
 
-      <div className="gt-page bg-slate-50 dark:bg-[#020f1e] text-slate-900 dark:text-white transition-colors duration-300 min-h-screen">
-        <style>{pageStyles}</style>
+      <div className="min-h-screen bg-[#07111f] text-white">
+        <section className="px-5 pb-14 pt-28 sm:px-6">
+          <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+            <div>
+              <p className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-200">
+                <ShieldCheck size={14} aria-hidden="true" />
+                Verification Badge
+              </p>
+              <h1 className="mt-5 max-w-xl text-4xl font-semibold leading-tight sm:text-5xl">
+                Compact trust mark for verified GreenTracer sites.
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
+                The recommended badge is a tokenized SVG that links to a public verification page.
+                It does not expose API keys, billing data, or internal license states.
+              </p>
 
-        <section className="relative pt-28 sm:pt-32 pb-20 px-5 sm:px-6 overflow-hidden bg-white dark:bg-[#020f1e] border-b border-slate-200 dark:border-slate-900">
-          <div className="absolute inset-0 gt-bg-data opacity-30 pointer-events-none" />
-
-          <div className="relative z-10 max-w-5xl mx-auto text-center space-y-8 animate-[gt-reveal_0.8s_ease-out]">
-            <div className="flex justify-center">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded shadow-sm">
-                <FaCertificate className="text-[10px] text-green-600 dark:text-green-400" />
-                <span className="gt-mono text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-                  Official Trust Signal
-                </span>
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <GreenTracerBadgePreview
+                  variant="compact"
+                  status="verified"
+                  metric={0.21}
+                  domain={domain || "example.com"}
+                />
+                <span className="text-sm text-slate-400">Footer-first compact badge</span>
               </div>
             </div>
 
-            <h1 className="gt-display text-5xl sm:text-7xl font-semibold tracking-tight text-slate-900 dark:text-white leading-[1.05]">
-              Prove your <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-400 italic font-light">
-                digital ethics.
-              </span>
-            </h1>
-
-            <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed font-light">
-              Don&apos;t just say you&apos;re sustainable. Prove it. Our live badges fetch
-              real-time data from your latest audit, verifying your carbon score and
-              green hosting status.
-            </p>
-
-            <div className="flex flex-wrap justify-center gap-4 pt-4">
-              <a
-                href="#generator"
-                className="inline-flex items-center px-8 py-3 bg-green-700 hover:bg-green-600 text-white rounded-lg font-bold text-xs tracking-widest uppercase transition-all shadow-lg hover:shadow-green-900/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
-              >
-                <FaCode className="mr-2" /> Configure Badge
-              </a>
-
-              <Link
-                to="/"
-                className="inline-flex items-center px-8 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg font-bold text-xs tracking-widest uppercase hover:bg-slate-50 dark:hover:bg-slate-700 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
-              >
-                <FaRocket className="mr-2" /> Test Site First
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        <section id="generator" className="py-20 px-5 sm:px-6">
-          <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-12">
-            <div className="lg:col-span-5 space-y-6">
-              <div className="gt-panel p-1.5 rounded-xl shadow-lg">
-                <div className="gt-input-wrapper bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg flex items-center px-4 py-3 transition-colors">
-                  <span className="text-slate-400 mr-2 gt-mono select-none text-sm shrink-0">
-                    https://
-                  </span>
+            <div className="rounded-[28px] border border-slate-700/80 bg-slate-950/55 p-5 shadow-[0_24px_80px_-50px_rgba(0,0,0,0.9)] sm:p-7">
+              <div className="flex flex-col gap-4">
+                <label className="text-sm font-semibold text-slate-200">
+                  Public badge token
                   <input
-                    type="text"
-                    inputMode="url"
-                    value={websiteUrl}
-                    onChange={(e) => setWebsiteUrl(e.target.value)}
-                    placeholder="yoursite.com"
-                    autoComplete="off"
-                    aria-label="Website URL"
-                    className="w-full min-w-0 bg-transparent border-none outline-none text-base text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-slate-600 font-medium gt-mono"
+                    value={publicToken}
+                    onChange={(event) => setPublicToken(event.target.value.trim())}
+                    placeholder="PUBLIC_TOKEN"
+                    className="mt-2 h-11 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 text-sm text-white outline-none focus:border-emerald-400"
                   />
-                </div>
-              </div>
+                </label>
 
-              <div className="grid sm:grid-cols-3 gap-4">
-                <button
-                  type="button"
-                  onClick={() => setSelectedBadgeType("carbon")}
-                  className={`gt-panel p-4 rounded-xl text-left border-2 transition-all ${
-                    selectedBadgeType === "carbon"
-                      ? "border-green-500 ring-1 ring-green-500/20"
-                      : "border-transparent hover:border-slate-300 dark:hover:border-slate-700"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-2 text-blue-600 dark:text-blue-400 font-bold gt-mono text-xs">
-                    <FaRocket /> CARBON_BADGE
-                  </div>
-                  <p className="text-xs text-slate-500 leading-snug">
-                    Displays CO₂ per visit and global percentile.
-                  </p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => hostingStatus.isGreenHost && setSelectedBadgeType("hosting")}
-                  disabled={!hostingStatus.isGreenHost}
-                  className={`gt-panel p-4 rounded-xl text-left border-2 transition-all relative ${
-                    selectedBadgeType === "hosting"
-                      ? "border-green-500 ring-1 ring-green-500/20"
-                      : "border-transparent"
-                  } ${
-                    !hostingStatus.isGreenHost
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:border-slate-300 dark:hover:border-slate-700"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-2 text-green-600 dark:text-green-400 font-bold gt-mono text-xs">
-                    <FaShieldAlt /> HOSTING_VERIFIED
-                  </div>
-                  <p className="text-xs text-slate-500 leading-snug">
-                    Requires valid green hosting check.
-                  </p>
-                  {hostingStatus.loading && (
-                    <span className="absolute top-2 right-2 text-[10px] animate-pulse">
-                      Checking...
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSelectedBadgeType("member")}
-                  className={`gt-panel p-4 rounded-xl text-left border-2 transition-all ${
-                    selectedBadgeType === "member"
-                      ? "border-green-500 ring-1 ring-green-500/20"
-                      : "border-transparent hover:border-slate-300 dark:hover:border-slate-700"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-2 text-emerald-700 dark:text-emerald-300 font-bold gt-mono text-xs">
-                    <FaCertificate /> LICENSED_MEMBER
-                  </div>
-                  <p className="text-xs text-slate-500 leading-snug">
-                    {hostingStatus.hasMemberLicense
-                      ? "Active member license detected."
-                      : "Requires active paid, trial, charity, partner, or internal license."}
-                  </p>
-                </button>
-              </div>
-
-              <div className="gt-panel p-6 rounded-xl border border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-2 mb-4 text-slate-900 dark:text-white font-bold text-sm">
-                  <FaPalette className="text-slate-400" /> Style Configuration
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <label className="text-xs gt-mono text-slate-500 uppercase">Background</label>
-                    <div className="flex gap-2 items-center">
-                      <input
-                        type="text"
-                        value={bgColor}
-                        readOnly
-                        className="w-20 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-center font-mono text-slate-600 dark:text-slate-400"
-                      />
-                      <input
-                        type="color"
-                        value={bgColor}
-                        onChange={(e) => setBgColor(e.target.value)}
-                        className="w-6 h-6 rounded cursor-pointer border-0 p-0"
-                        aria-label="Background colour"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4">
-                    <label className="text-xs gt-mono text-slate-500 uppercase">Accent</label>
-                    <div className="flex gap-2 items-center">
-                      <input
-                        type="text"
-                        value={accentColor}
-                        readOnly
-                        className="w-20 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-center font-mono text-slate-600 dark:text-slate-400"
-                      />
-                      <input
-                        type="color"
-                        value={accentColor}
-                        onChange={(e) => setAccentColor(e.target.value)}
-                        className="w-6 h-6 rounded cursor-pointer border-0 p-0"
-                        aria-label="Accent colour"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4">
-                    <label className="text-xs gt-mono text-slate-500 uppercase">Text (Opt)</label>
-                    <div className="flex gap-2 items-center">
-                      <input
-                        type="text"
-                        value={textColor || "Default"}
-                        readOnly
-                        className="w-20 text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-center font-mono text-slate-600 dark:text-slate-400"
-                      />
-                      <input
-                        type="color"
-                        value={isValidHexColor(textColor) ? textColor : "#0F172A"}
-                        onChange={(e) => setTextColor(e.target.value)}
-                        className="w-6 h-6 rounded cursor-pointer border-0 p-0"
-                        aria-label="Text colour"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="pt-2 flex justify-end">
+                <label className="text-sm font-semibold text-slate-200">
+                  Domain lookup
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                    <input
+                      value={domain}
+                      onChange={(event) => setDomain(normalizeDomainInput(event.target.value))}
+                      placeholder="example.com"
+                      className="h-11 min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-900 px-3 text-sm text-white outline-none focus:border-emerald-400"
+                    />
                     <button
                       type="button"
                       onClick={() => {
-                        setBgColor("#ffffff");
-                        setAccentColor("#16A34A");
-                        setTextColor("");
+                        if (!domain) return;
+                        setLookupState("Looking up public badge token...");
+                        fetch(`${API_BASE}/api/license/check?domain=${encodeURIComponent(domain)}`)
+                          .then((res) => (res.ok ? res.json() : null))
+                          .then((data) => {
+                            if (data?.badgePublicToken) {
+                              setPublicToken(data.badgePublicToken);
+                              setLookupState("Public badge token found for this domain.");
+                              return;
+                            }
+                            setLookupState("No public badge token is available for this domain yet.");
+                          })
+                          .catch(() => setLookupState("Could not look up a public badge token."));
                       }}
-                      className="text-[10px] font-bold text-slate-400 hover:text-green-500 uppercase tracking-wider"
+                      className="h-11 rounded-xl bg-emerald-500 px-4 text-sm font-semibold text-emerald-950 hover:bg-emerald-400"
                     >
-                      Reset Defaults
+                      Find Token
                     </button>
                   </div>
-                </div>
-              </div>
-            </div>
+                </label>
 
-            <div className="lg:col-span-7 space-y-8">
-              <div className="gt-panel rounded-2xl p-8 lg:p-12 flex flex-col items-center justify-center min-h-[300px] border border-slate-200 dark:border-slate-800 relative">
-                <div className="absolute top-4 left-4 gt-mono text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  // LIVE_PREVIEW
+                {lookupState && <p className="text-sm text-slate-400">{lookupState}</p>}
+
+                <div>
+                  <p className="text-sm font-semibold text-slate-200">Variant</p>
+                  <div className="mt-2 inline-flex rounded-xl border border-slate-700 bg-slate-900 p-1">
+                    {["compact", "standard"].map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setVariant(option)}
+                        className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize ${
+                          variant === option
+                            ? "bg-emerald-500 text-emerald-950"
+                            : "text-slate-300 hover:text-white"
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="gt-badge-preview scale-100 sm:scale-110">
-                  <CompactTrustBadge
-                    label={previewBadgeLabel}
-                    value={previewBadgeValue}
-                    accentColor={accentColor}
-                    bgColor={bgColor}
-                    textColor={previewTextColor}
-                    ariaLabel="GreenTracer badge preview"
+                <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-5">
+                  <p className="mb-4 text-xs font-semibold uppercase text-slate-400">Preview</p>
+                  <GreenTracerBadgePreview
+                    variant={variant}
+                    status="verified"
+                    metric={0.21}
+                    domain={domain || "example.com"}
                   />
                 </div>
 
-                <p className="mt-8 text-xs text-slate-500 font-medium gt-mono">
-                  STATUS:{" "}
-                  {selectedBadgeType === "hosting"
-                    ? "VERIFIED_HOST"
-                    : selectedBadgeType === "member"
-                      ? memberPreviewState
-                    : "CARBON_CALCULATED"}
-                </p>
-              </div>
-
-              <div className="bg-slate-900 rounded-xl overflow-hidden shadow-2xl border border-slate-800 group">
-                <div className="bg-slate-950 px-4 py-3 flex justify-between items-center border-b border-slate-800">
-                  <div className="flex gap-2" aria-hidden="true">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/20 border border-red-500/50"></div>
-                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/20 border border-yellow-500/50"></div>
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/20 border border-green-500/50"></div>
+                <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950">
+                  <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+                    <span className="text-xs font-semibold uppercase text-slate-400">Recommended Embed</span>
+                    <button
+                      type="button"
+                      onClick={copyToClipboard}
+                      className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-300 hover:text-white"
+                    >
+                      {copied ? <Check size={14} /> : <Copy size={14} />}
+                      {copied ? "Copied" : "Copy"}
+                    </button>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(getCurrentCode())}
-                    className="flex items-center gap-2 text-[10px] font-bold text-green-400 hover:text-white transition-colors uppercase tracking-wider"
-                  >
-                    {copiedCode ? <Check size={12} /> : <Copy size={12} />}
-                    {copiedCode ? "COPIED" : "COPY CODE"}
-                  </button>
-                </div>
-
-                <div className="p-6 overflow-x-auto">
-                  <pre className="gt-mono text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
-                    {getCurrentCode()}
+                  <pre className="whitespace-pre-wrap break-all p-4 text-xs leading-6 text-slate-300">
+                    {embedCode}
                   </pre>
                 </div>
+
+                <a
+                  href={verifyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-emerald-300 hover:text-white"
+                >
+                  Open verification page
+                  <ExternalLink size={14} aria-hidden="true" />
+                </a>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="relative py-20 px-5 sm:px-6 bg-white dark:bg-[#020f1e] border-t border-slate-100 dark:border-slate-900 overflow-hidden">
-          <div className="absolute inset-0 gt-grid-faint pointer-events-none opacity-50" />
-
-          <div className="relative z-10 max-w-6xl mx-auto grid md:grid-cols-3 gap-6">
-            {[
-              {
-                id: "01",
-                title: "Run Audit",
-                desc: "Scan your site on the homepage to generate a baseline carbon score.",
-                icon: <FaRocket />,
-              },
-              {
-                id: "02",
-                title: "Config",
-                desc: "Select your badge style and customize colors to match your brand.",
-                icon: <FaCode />,
-              },
-              {
-                id: "03",
-                title: "Embed",
-                desc: "Paste the script tag into your website footer. Data updates automatically.",
-                icon: <FaTerminal />,
-              },
-            ].map((step) => (
-              <div
-                key={step.id}
-                className="gt-panel p-8 rounded-xl border border-slate-200 dark:border-slate-800 group hover:-translate-y-1"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <span className="gt-mono text-xs text-slate-400">STEP {step.id}</span>
-                  <div className="text-green-600 dark:text-green-400 opacity-50 group-hover:opacity-100 transition-opacity">
-                    {step.icon}
-                  </div>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-                  {step.title}
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                  {step.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="py-20 px-5 sm:px-6 text-center">
-          <div className="max-w-3xl mx-auto gt-panel p-10 rounded-2xl border border-slate-200 dark:border-slate-800">
-            <FaQuestionCircle className="text-3xl text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-            <h2 className="gt-display text-2xl font-bold text-slate-900 dark:text-white mb-4">
-              Need integration help?
-            </h2>
-
-            <div className="flex justify-center gap-4 pt-2 flex-wrap">
-              <Link
-                to="/faq"
-                className="px-6 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
-              >
-                View FAQ
-              </Link>
-
-              <a
-                href="mailto:support@greentracer.org"
-                className="px-6 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
-              >
-                <FaExternalLinkAlt size={10} /> Contact Devs
-              </a>
+        <section className="border-t border-slate-800 px-5 py-12 sm:px-6">
+          <div className="mx-auto grid max-w-6xl gap-4 text-sm text-slate-300 md:grid-cols-3">
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/45 p-5">
+              <p className="font-semibold text-white">Public token only</p>
+              <p className="mt-2 leading-6">Embeds use `badge_public_token`, not API keys or secret license tokens.</p>
+            </div>
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/45 p-5">
+              <p className="font-semibold text-white">Supabase-backed</p>
+              <p className="mt-2 leading-6">The badge state comes from the backend verification record and active license facts.</p>
+            </div>
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/45 p-5">
+              <p className="font-semibold text-white">Footer-ready</p>
+              <p className="mt-2 leading-6">Compact is the default and is designed to remain legible around 220px wide.</p>
             </div>
           </div>
+          <div className="mx-auto mt-8 max-w-6xl">
+            <Link to="/pricing" className="text-sm font-semibold text-emerald-300 hover:text-white">
+              Need a verified badge record? View licensing.
+            </Link>
+          </div>
         </section>
-
-        <div className="text-center py-10 border-t border-slate-100 dark:border-slate-900">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition-colors gt-mono text-xs font-bold uppercase tracking-wider"
-          >
-            <ArrowRight className="w-4 h-4 rotate-180" /> Back to Homepage
-          </Link>
-        </div>
       </div>
     </>
   );
