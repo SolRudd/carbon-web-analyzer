@@ -43,3 +43,14 @@ test('lead capture normalizes valid email input', () => {
     }
   );
 });
+
+test('lead capture preserves calculator scan source', () => {
+  assert.equal(
+    parseLeadCapturePayload({
+      contactEmail: 'team@example.com',
+      contactConsent: true,
+      contactSource: 'calculator',
+    }).source,
+    'calculator'
+  );
+});

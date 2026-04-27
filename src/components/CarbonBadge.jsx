@@ -1,40 +1,20 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { API_BASE, RESULTS_BASE } from "../config";
+import React, { useEffect, useState } from "react";
+import { API_BASE } from "../config";
 import GreenTracerBadge from "./badges/GreenTracerBadge";
-import { formatCo2PerPage } from "../lib/badges/formatters";
-
-const RESULTS_PATH = "/result";
-
-function normalizeUrl(url) {
-  try {
-    const u = new URL(url);
-    return u.protocol + "//" + u.hostname + u.pathname.replace(/\/+$/, "");
-  } catch {
-    return null;
-  }
-}
-
-function slugifyFromUrl(url) {
-  try {
-    const u = new URL(url);
-    return (u.hostname + u.pathname).replace(/\/$/, "").replace(/[^a-z0-9]/gi, "-").toLowerCase();
-  } catch {
-    return "";
-  }
-}
 
 export default function CarbonBadge({
-  url,
   data: preData = null,
   token = "",
-  variant = "compact",
+  resultSlug = "",
+  badgeType = "greentracer_verified",
   className = "",
 }) {
   const [data, setData] = useState(preData);
-  const [loading, setLoading] = useState(Boolean(!preData));
+  const [loading, setLoading] = useState(Boolean((token || resultSlug) && !preData));
   const [failed, setFailed] = useState(false);
-  const target = useMemo(() => normalizeUrl(url), [url]);
   const publicToken = String(token || "").trim();
+  const slug = String(resultSlug || "").trim();
+  const type = String(badgeType || "greentracer_verified").trim();
 
   useEffect(() => {
     if (preData) {
@@ -44,23 +24,25 @@ export default function CarbonBadge({
       return;
     }
 
+    if (!publicToken && !slug) {
+      setData(null);
+      setLoading(false);
+      setFailed(false);
+      return;
+    }
+
     const controller = new AbortController();
     setLoading(true);
     setFailed(false);
 
-    const endpoint = publicToken
-      ? `${API_BASE}/api/badge/${encodeURIComponent(publicToken)}/data`
-      : target
-        ? `${API_BASE}/api/trace-or-check?site=${encodeURIComponent(target)}`
-        : "";
+    const endpoint = slug
+      ? `${API_BASE}/api/badge/result/${encodeURIComponent(slug)}/data?type=${encodeURIComponent(type)}`
+      : `${API_BASE}/api/badge/${encodeURIComponent(publicToken)}/data`;
 
-    if (!endpoint) {
-      setLoading(false);
-      setFailed(true);
-      return () => controller.abort();
-    }
-
-    fetch(endpoint, { mode: "cors", signal: controller.signal })
+    fetch(endpoint, {
+      mode: "cors",
+      signal: controller.signal,
+    })
       .then((res) => {
         if (!res.ok) throw new Error(String(res.status));
         return res.json();
@@ -76,43 +58,23 @@ export default function CarbonBadge({
       });
 
     return () => controller.abort();
-  }, [preData, publicToken, target]);
+  }, [preData, publicToken, slug, type]);
 
   if (loading) {
-    return <GreenTracerBadge variant={variant} status="pending" showMetric={false} className={className} />;
+    return <GreenTracerBadge status="pending" badgeType={type} className={className} />;
   }
 
   if (failed || !data) {
-    return <GreenTracerBadge variant={variant} status="unavailable" showMetric={false} className={className} />;
+    return <GreenTracerBadge status="unavailable" badgeType={type} className={className} />;
   }
-
-  if (publicToken || data.publicStatus) {
-    return (
-      <GreenTracerBadge
-        variant={variant}
-        status={data.publicStatus || "unavailable"}
-        metric={data.metric}
-        metricText={data.metricText}
-        domain={data.domain}
-        href={data.verificationUrl}
-        showMetric={data.showMetric}
-        className={className}
-      />
-    );
-  }
-
-  const metric = Number(data.carbonEstimate || 0);
-  const slug = data.slug || slugifyFromUrl(target);
-  const href = slug ? `${RESULTS_BASE}${RESULTS_PATH}/${encodeURIComponent(slug)}` : "";
 
   return (
     <GreenTracerBadge
-      variant={variant}
-      status="verified"
-      metric={metric}
-      metricText={formatCo2PerPage(metric)}
-      href={href}
-      showMetric
+      status={data.publicStatus || "unavailable"}
+      badgeType={data.badgeType || type}
+      domain={data.domain}
+      href={data.reportUrl || data.verificationUrl}
+      valueText={data.valueText || ""}
       className={className}
     />
   );

@@ -18,7 +18,7 @@ VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 
 ```bash
 SUPABASE_URL=https://<your-project-ref>.supabase.co
-SUPABASE_SERVICE_KEY=<your-supabase-service-role-key>
+SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
 SUPABASE_ANON_KEY=<your-supabase-anon-key>
 PAGESPEED_API_KEY=<your-pagespeed-key>
 PORT=8080
@@ -27,6 +27,7 @@ DEBUG_TTL_ZERO=false
 
 Notes:
 - `SUPABASE_ANON_KEY` is required by account endpoints to validate JWT bearer tokens.
+- `SUPABASE_SERVICE_ROLE_KEY` is backend-only. Never use a `VITE_` prefix for it.
 - Stripe keys are optional for this auth/dashboard local test pass.
 
 ## 2) Required SQL migration
@@ -35,6 +36,7 @@ Run in Supabase SQL editor:
 
 - `backend/sql/001_create_licenses.sql`
 - `backend/sql/002_create_account_domains.sql`
+- `backend/sql/006_scan_privacy_model.sql`
 
 ## 3) Supabase Auth settings
 

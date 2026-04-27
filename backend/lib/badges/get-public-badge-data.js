@@ -20,7 +20,8 @@ function unavailableBadgeData(siteBase, reason = 'unavailable') {
   return {
     ...toPublicBadgeData({
       publicStatus: 'unavailable',
-      label: 'GreenTracer Unavailable',
+      badgeType: 'greentracer_verified',
+      label: 'Badge not active',
       showMetric: false,
       verificationUrl: siteBase ? `${siteBase}/verify/unavailable` : null,
       isClickable: false,
@@ -64,12 +65,46 @@ async function markBadgeRequest(supabase, licenseId) {
   }
 }
 
-async function getPublicBadgeData(supabase, tokenInput, options = {}) {
-  const siteBase = trimBaseUrl(options.siteBase, 'https://www.greentracer.org');
-  const token = normalizeBadgeToken(tokenInput);
-  if (!token) return unavailableBadgeData(siteBase, 'token_invalid');
+async function markAccountDomainBadgeRequest(supabase, accountDomainId) {
+  if (!supabase || !accountDomainId) return;
+  try {
+    await supabase
+      .from('account_domains')
+      .update({ last_badge_request_at: new Date().toISOString() })
+      .eq('id', accountDomainId);
+  } catch {
+    // Analytics freshness must not break public badge rendering.
+  }
+}
 
-  let row = null;
+async function getLicenseForDomain(supabase, domain) {
+  if (!supabase || !domain) return null;
+  const { data, error } = await supabase
+    .from('licenses')
+    .select('*')
+    .eq('domain', domain)
+    .order('updated_at', { ascending: false })
+    .limit(1);
+  if (error || !Array.isArray(data) || data.length === 0) return null;
+  return data[0];
+}
+
+async function findAccountDomainBadgeRecord(supabase, token) {
+  try {
+    const { data, error } = await supabase
+      .from('account_domains')
+      .select('*')
+      .eq('badge_public_token', token)
+      .limit(1);
+
+    if (error) return { row: null, error };
+    return { row: Array.isArray(data) && data.length > 0 ? data[0] : null, error: null };
+  } catch (error) {
+    return { row: null, error };
+  }
+}
+
+async function findLegacyLicenseBadgeRecord(supabase, token) {
   try {
     const { data, error } = await supabase
       .from('licenses')
@@ -77,13 +112,67 @@ async function getPublicBadgeData(supabase, tokenInput, options = {}) {
       .eq('badge_public_token', token)
       .limit(1);
 
-    if (error) return unavailableBadgeData(siteBase, 'lookup_error');
-    row = Array.isArray(data) && data.length > 0 ? data[0] : null;
-  } catch {
-    return unavailableBadgeData(siteBase, 'lookup_exception');
+    if (error) return { row: null, error };
+    return { row: Array.isArray(data) && data.length > 0 ? data[0] : null, error: null };
+  } catch (error) {
+    return { row: null, error };
+  }
+}
+
+async function getPublicBadgeData(supabase, tokenInput, options = {}) {
+  const siteBase = trimBaseUrl(options.siteBase, 'https://www.greentracer.org');
+  const token = normalizeBadgeToken(tokenInput);
+  if (!token) return unavailableBadgeData(siteBase, 'token_invalid');
+
+  const accountDomainLookup = await findAccountDomainBadgeRecord(supabase, token);
+  if (accountDomainLookup.row) {
+    const row = accountDomainLookup.row;
+    const domain = sanitizeDomain(row.domain);
+    if (options.markRequest !== false) {
+      await markAccountDomainBadgeRequest(supabase, row.id);
+    }
+
+    const license = await getLicenseForDomain(supabase, domain).catch(() => null);
+    const result = await getLatestResultForDomain(supabase, domain, row.latest_result_slug || license?.latest_result_slug).catch(() => null);
+    const metric = normalizeMetricValue(row.latest_co2_per_page ?? license?.latest_co2_per_page ?? result?.carbon_estimate);
+    const latestScanAt = row.latest_scan_at || license?.latest_scan_at || result?.created_at || null;
+
+    const mapped = mapPublicBadgeStatus({
+      badgeEnabled: row.badge_enabled === true,
+      publicVerificationEnabled: row.public_verification_enabled !== false,
+      verificationStatus: row.verification_status || 'pending',
+      licenseStatus: license?.status,
+      licenseType: license?.license_type,
+      licenseEndDate: license?.end_date,
+      metric,
+    });
+
+    return {
+      ...toPublicBadgeData({
+        publicStatus: mapped.publicStatus,
+        label: mapped.label,
+        badgeType: 'greentracer_verified',
+        domain,
+        metric,
+        showMetric: mapped.shouldShowMetric && options.showMetric !== false,
+        latestScanAt,
+        verifiedAt: row.verified_at || license?.verified_at || null,
+        verificationUrl: domain ? `${siteBase}/verified/${encodeURIComponent(domain)}` : `${siteBase}/verify/${encodeURIComponent(token)}`,
+        directoryUrl: domain ? `${siteBase}/verified/${encodeURIComponent(domain)}` : null,
+        isClickable: mapped.isClickable,
+      }),
+      token,
+      internalReason: mapped.internalReason,
+    };
   }
 
-  if (!row) return unavailableBadgeData(siteBase, 'record_missing');
+  const legacyLookup = await findLegacyLicenseBadgeRecord(supabase, token);
+  if (legacyLookup.error && !accountDomainLookup.error) {
+    return unavailableBadgeData(siteBase, 'lookup_error');
+  }
+  if (!legacyLookup.row) return unavailableBadgeData(siteBase, 'record_missing');
+
+  const row = legacyLookup.row;
   if (options.markRequest !== false) {
     await markBadgeRequest(supabase, row.id);
   }
@@ -98,6 +187,7 @@ async function getPublicBadgeData(supabase, tokenInput, options = {}) {
     publicVerificationEnabled: row.is_public_verification_enabled !== false,
     verificationStatus: row.verification_status || 'pending',
     licenseStatus: row.status,
+    licenseType: row.license_type,
     licenseEndDate: row.end_date,
     metric,
   });
@@ -106,12 +196,14 @@ async function getPublicBadgeData(supabase, tokenInput, options = {}) {
     ...toPublicBadgeData({
       publicStatus: mapped.publicStatus,
       label: mapped.label,
+      badgeType: 'greentracer_verified',
       domain,
       metric,
       showMetric: mapped.shouldShowMetric && options.showMetric !== false,
       latestScanAt,
       verifiedAt: row.verified_at || null,
-      verificationUrl: `${siteBase}/verify/${encodeURIComponent(token)}`,
+      verificationUrl: domain ? `${siteBase}/verified/${encodeURIComponent(domain)}` : `${siteBase}/verify/${encodeURIComponent(token)}`,
+      directoryUrl: domain ? `${siteBase}/verified/${encodeURIComponent(domain)}` : null,
       isClickable: mapped.isClickable,
     }),
     token,
@@ -122,7 +214,8 @@ async function getPublicBadgeData(supabase, tokenInput, options = {}) {
 function toPublicBadgeJson(data = {}) {
   return {
     publicStatus: data.publicStatus || 'unavailable',
-    label: data.label || 'GreenTracer Unavailable',
+    badgeType: data.badgeType || 'greentracer_verified',
+    label: data.label || 'Badge not active',
     domain: data.domain || null,
     metric: data.metric ?? null,
     metricText: data.metricText || null,
@@ -130,6 +223,10 @@ function toPublicBadgeJson(data = {}) {
     latestScanAt: data.latestScanAt || null,
     verifiedAt: data.verifiedAt || null,
     verificationUrl: data.verificationUrl || null,
+    directoryUrl: data.directoryUrl || null,
+    reportUrl: data.reportUrl || null,
+    resultSlug: data.resultSlug || null,
+    valueText: data.valueText || data.gradeText || null,
     isClickable: data.isClickable !== false,
   };
 }

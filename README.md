@@ -137,45 +137,77 @@ VITE_API_URL=http://localhost:8080
 
 ## 🛠 Badge Integration
 
-### Auto Badge (Responsive)
+Run a scan, open the saved public result page, and copy the free badge code from that report. `/badge` can also find the latest saved report for a domain and generate the same public badge code.
+
+Carbon Tested and Green Hosting are free public badges. They do not require login or a licence, but they must be backed by public report data. GreenTracer Verified is the licensed supporter badge and should be generated from the dashboard after account/licence setup.
+
+### GreenTracer Verified Badge (paid/supporter)
 
 ```html
 <div
   class="greentrace-badge"
-  data-url="https://yourdomain.com"
-  data-theme="auto"
+  data-public-token="gtb_xxxxx"
+  data-domain="yourdomain.com"
+  data-badge-type="greentracer_verified"
 ></div>
-<script src="https://api.greentracer.org/greentrace-badge.js" defer></script>
+<script src="https://api.greentracer.org/greentrace-badge.js" async></script>
 ```
 
-### Static SVG Badge (Light)
+### Carbon Tested Badge (free/report)
+
+```html
+<div
+  class="greentrace-badge"
+  data-result-slug="example-com-20260425"
+  data-domain="yourdomain.com"
+  data-badge-type="carbon_tested"
+></div>
+<script src="https://api.greentracer.org/greentrace-badge.js" async></script>
+```
+
+### Green Hosting Badge (free/report)
+
+```html
+<div
+  class="greentrace-badge"
+  data-result-slug="example-com-20260425"
+  data-domain="yourdomain.com"
+  data-badge-type="green_hosting"
+></div>
+<script src="https://api.greentracer.org/greentrace-badge.js" async></script>
+```
+
+Legacy snippets remain supported. The loader accepts `data-url`, `data-site`, `data-domain`, `data-token`, `data-result-slug`, and legacy type aliases such as `carbon`, `hosting`, `verified`, and `member`. If a public badge has no result slug, the loader resolves the latest saved public result for the declared domain.
+
+### Custom Colors
+
+```html
+<div
+  class="greentrace-badge"
+  data-public-token="gtb_xxxxx"
+  data-domain="yourdomain.com"
+  data-badge-type="greentracer_verified"
+  data-bg-color="#07111f"
+  data-accent-color="#22c55e"
+></div>
+<script src="https://api.greentracer.org/greentrace-badge.js" async></script>
+```
+
+The loader validates color contrast and falls back to a restrained default if a color would make the badge hard to read.
+
+### Static Verified SVG Badge
 
 ```html
 <a
-  href="https://www.greentracer.org?ref=badge"
+  href="https://www.greentracer.org/verified/yourdomain.com"
   target="_blank"
   rel="noopener noreferrer"
 >
   <img
-    src="https://api.greentracer.org/api/badge.svg?theme=light&url=https://yourdomain.com"
-    alt="GreenTracer Badge (Light)"
-    width="160"
-  />
-</a>
-```
-
-### Static SVG Badge (Dark)
-
-```html
-<a
-  href="https://www.greentracer.org?ref=badge"
-  target="_blank"
-  rel="noopener noreferrer"
->
-  <img
-    src="https://api.greentracer.org/api/badge.svg?theme=dark&url=https://yourdomain.com"
-    alt="GreenTracer Badge (Dark)"
-    width="160"
+    src="https://api.greentracer.org/api/badge/gtb_xxxxx"
+    alt="GreenTracer verification badge"
+    width="240"
+    height="44"
   />
 </a>
 ```

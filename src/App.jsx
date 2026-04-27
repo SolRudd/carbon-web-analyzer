@@ -15,9 +15,11 @@ import Blog from "./pages/Blog";
 import BlogPostPage from "./pages/BlogPostPage";
 import Calculator from "./pages/Calculator";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
 import Pricing from "./pages/Pricing";
 import LicenseStatus from "./pages/LicenseStatus";
 import Verify from "./pages/Verify";
+import VerifiedProfile from "./pages/VerifiedProfile";
 import CookieConsentBanner from "./components/CookieConsentBanner";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -40,6 +42,7 @@ function App() {
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/license-status" element={<LicenseStatus />} />
           <Route path="/verify/:token" element={<Verify />} />
+          <Route path="/verified/:domain" element={<VerifiedProfile />} />
           <Route path="/login" element={<Login />} />
           <Route
             path="/dashboard"
@@ -54,8 +57,10 @@ function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
 
-          {/* Privacy Policy Route */}
+          {/* Legal Routes */}
+          <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<Terms />} />
 
           {/* Results detail */}
           <Route path="/result/:slug" element={<ResultPage />} />

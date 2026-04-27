@@ -3,48 +3,201 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GreenTracer Badge Local Test</title>
+    <title>GreenTracer Badge Compatibility Test</title>
     <style>
       body {
-        font-family: Arial, sans-serif;
-        padding: 40px;
-        background: #f7f7f8;
-        color: #111827;
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f8fafc;
+        color: #0f172a;
       }
+
+      main {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 40px 0;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(28px, 5vw, 44px);
+        letter-spacing: 0;
+      }
+
+      p {
+        color: #475569;
+        line-height: 1.6;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 18px;
+        margin-top: 24px;
+      }
+
       .card {
-        background: #fff;
-        border: 1px solid #e5e7eb;
+        min-width: 0;
+        border: 1px solid #e2e8f0;
         border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 24px;
+        background: #fff;
+        padding: 18px;
+      }
+
+      .card p {
+        margin: 0 0 10px;
+      }
+
+      code {
+        display: block;
+        margin-bottom: 12px;
+        color: #64748b;
+        font-size: 12px;
+        line-height: 1.5;
+        white-space: normal;
       }
     </style>
   </head>
   <body>
-    <h1>Local GreenTracer Badge Test</h1>
+    <main>
+      <h1>GreenTracer badge compatibility test</h1>
+      <p>
+        These examples cover old snippets, new snippets, domain-only embeds, result-backed embeds,
+        and fail-open fallback rendering when backend lookup cannot find a result.
+      </p>
 
-    <div class="card">
-      <p><strong>Saved-data test:</strong></p>
-      <div
-        class="greentrace-badge"
-        data-url="https://www.greentracer.org"
-        data-theme="auto"
-        data-bg-color="#ffffff"
-        data-accent-color="#16a34a"
-      ></div>
-    </div>
+      <div class="grid">
+        <div class="card">
+          <p><strong>Old carbon snippet</strong></p>
+          <code>data-url + data-type="carbon"</code>
+          <div
+            class="greentrace-badge"
+            data-url="https://greentracer.org"
+            data-type="carbon"
+          ></div>
+        </div>
 
-    <div class="card">
-      <p><strong>Uncached-site test:</strong></p>
-      <div
-        class="greentrace-badge"
-        data-url="https://this-domain-should-never-have-been-tested-123456-example.com"
-        data-theme="auto"
-        data-bg-color="#ffffff"
-        data-accent-color="#16a34a"
-      ></div>
-    </div>
+        <div class="card">
+          <p><strong>Old hosting snippet</strong></p>
+          <code>data-site + data-type="hosting"</code>
+          <div
+            class="greentrace-badge"
+            data-site="greentracer.org"
+            data-type="hosting"
+          ></div>
+        </div>
 
-    <script src="http://localhost:8080/greentrace-badge.js" defer></script>
+        <div class="card">
+          <p><strong>Old verified/member snippet</strong></p>
+          <code>data-token + data-type="member"</code>
+          <div
+            class="greentrace-badge"
+            data-token="gtb_local_test_token"
+            data-domain="greentracer.org"
+            data-type="member"
+          ></div>
+        </div>
+
+        <div class="card">
+          <p><strong>New Carbon Tested snippet</strong></p>
+          <code>data-badge-type="carbon_tested" + data-domain</code>
+          <div
+            class="greentrace-badge"
+            data-badge-type="carbon_tested"
+            data-domain="greentracer.org"
+            data-bg-color="#07111f"
+            data-accent-color="#38bdf8"
+          ></div>
+        </div>
+
+        <div class="card">
+          <p><strong>New Green Hosting snippet</strong></p>
+          <code>data-badge-type="green_hosting" + data-domain</code>
+          <div
+            class="greentrace-badge"
+            data-badge-type="green_hosting"
+            data-domain="greentracer.org"
+            data-bg-color="#ffffff"
+            data-accent-color="#16a34a"
+          ></div>
+        </div>
+
+        <div class="card">
+          <p><strong>New GreenTracer Verified snippet</strong></p>
+          <code>data-public-token + greentracer_verified</code>
+          <div
+            class="greentrace-badge"
+            data-badge-type="greentracer_verified"
+            data-public-token="gtb_local_test_token"
+            data-domain="greentracer.org"
+          ></div>
+        </div>
+
+        <div class="card">
+          <p><strong>Domain-only Carbon Tested</strong></p>
+          <code>data-domain only, no result slug</code>
+          <div
+            class="greentrace-badge"
+            data-type="carbon"
+            data-domain="example.com"
+          ></div>
+        </div>
+
+        <div class="card">
+          <p><strong>Domain-only Green Hosting</strong></p>
+          <code>data-domain only, no result slug</code>
+          <div
+            class="greentrace-badge"
+            data-type="green-hosting"
+            data-domain="example.com"
+          ></div>
+        </div>
+
+        <div class="card">
+          <p><strong>Result-backed Carbon Tested</strong></p>
+          <code>data-result-slug</code>
+          <div
+            class="greentrace-badge"
+            data-badge-type="carbon_tested"
+            data-result-slug="example-com"
+            data-domain="example.com"
+          ></div>
+        </div>
+
+        <div class="card">
+          <p><strong>Result-backed Green Hosting</strong></p>
+          <code>data-result-slug</code>
+          <div
+            class="greentrace-badge"
+            data-badge-type="green_hosting"
+            data-result-slug="example-com"
+            data-domain="example.com"
+          ></div>
+        </div>
+
+        <div class="card">
+          <p><strong>Backend lookup fails open</strong></p>
+          <code>unknown domain, carbon still renders</code>
+          <div
+            class="greentrace-badge"
+            data-type="carbon"
+            data-domain="missing-result.example.invalid"
+            data-bg-color="#172554"
+            data-accent-color="#93c5fd"
+          ></div>
+        </div>
+
+        <div class="card">
+          <p><strong>No domain fallback</strong></p>
+          <code>no data-domain or result slug</code>
+          <div
+            class="greentrace-badge"
+            data-type="carbon"
+          ></div>
+        </div>
+      </div>
+    </main>
+
+    <script src="http://localhost:8080/greentrace-badge.js" data-site-base="http://localhost:5173" defer></script>
   </body>
 </html>

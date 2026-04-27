@@ -1,7 +1,4 @@
-const VARIANT_SIZES = {
-  compact: { width: 240, height: 40 },
-  standard: { width: 300, height: 50 },
-};
+import { OFFICIAL_BADGE_SIZE, normalizeBadgeType } from "./formatters";
 
 function cleanBaseUrl(value, fallback) {
   const raw = String(value || "").trim();
@@ -10,56 +7,77 @@ function cleanBaseUrl(value, fallback) {
 }
 
 function cleanToken(value) {
-  return String(value || "").trim() || "PUBLIC_TOKEN";
+  return String(value || "").trim();
 }
 
-export function normalizeBadgeVariant(variant) {
-  return Object.prototype.hasOwnProperty.call(VARIANT_SIZES, variant) ? variant : "compact";
+function cleanSlug(value) {
+  return String(value || "").trim().replace(/-+$/, "");
 }
 
-export function getBadgeEmbedSize(variant) {
-  return VARIANT_SIZES[normalizeBadgeVariant(variant)];
+function cleanHex(value) {
+  const raw = String(value || "").trim();
+  return /^#?[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(raw)
+    ? (raw.startsWith("#") ? raw : `#${raw}`).toLowerCase()
+    : "";
 }
 
-export function buildBadgeImageUrl({ token, apiBase, variant = "compact", showMetric = true }) {
+function escapeHtmlAttr(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+export function getBadgeEmbedSize() {
+  return OFFICIAL_BADGE_SIZE;
+}
+
+export function buildBadgeImageUrl({ token, apiBase }) {
   const base = cleanBaseUrl(apiBase, "https://api.greentracer.org");
-  const publicToken = cleanToken(token);
-  const params = new URLSearchParams();
-  if (normalizeBadgeVariant(variant) !== "compact") params.set("variant", variant);
-  if (!showMetric) params.set("metric", "false");
-  const query = params.toString();
-  return `${base}/api/badge/${encodeURIComponent(publicToken)}${query ? `?${query}` : ""}`;
+  return `${base}/api/badge/${encodeURIComponent(cleanToken(token) || "gtb_xxxxx")}`;
 }
 
-export function buildBadgeVerifyUrl({ token, siteBase }) {
+export function buildBadgeVerifyUrl({ token, domain = "", siteBase }) {
   const base = cleanBaseUrl(siteBase, "https://www.greentracer.org");
-  return `${base}/verify/${encodeURIComponent(cleanToken(token))}`;
+  const normalizedDomain = String(domain || "").trim().replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0];
+  if (normalizedDomain) return `${base}/verified/${encodeURIComponent(normalizedDomain)}`;
+  return `${base}/verify/${encodeURIComponent(cleanToken(token) || "gtb_xxxxx")}`;
 }
 
 export function buildBadgeEmbedCode({
-  token,
+  badgeType = "greentracer_verified",
+  token = "",
+  domain = "",
+  resultSlug = "",
   apiBase,
-  siteBase,
-  variant = "compact",
-  showMetric = true,
+  backgroundColor = "",
+  accentColor = "",
 }) {
-  const normalizedVariant = normalizeBadgeVariant(variant);
-  const { width, height } = getBadgeEmbedSize(normalizedVariant);
-  const publicToken = cleanToken(token);
-  const href = buildBadgeVerifyUrl({ token: publicToken, siteBase });
-  const src = buildBadgeImageUrl({
-    token: publicToken,
-    apiBase,
-    variant: normalizedVariant,
-    showMetric,
-  });
+  const type = normalizeBadgeType(badgeType);
+  const base = cleanBaseUrl(apiBase, "https://api.greentracer.org");
+  const attrs = [
+    `class="greentrace-badge"`,
+    `data-badge-type="${escapeHtmlAttr(type)}"`,
+  ];
 
-  return `<a href="${href}" target="_blank" rel="noopener">
-  <img
-    src="${src}"
-    alt="GreenTracer Verified"
-    width="${width}"
-    height="${height}"
-  />
-</a>`;
+  if (domain) attrs.push(`data-domain="${escapeHtmlAttr(domain)}"`);
+
+  if (type === "greentracer_verified") {
+    attrs.push(`data-public-token="${escapeHtmlAttr(cleanToken(token) || "gtb_xxxxx")}"`);
+  } else {
+    const slug = cleanSlug(resultSlug);
+    if (slug) attrs.push(`data-result-slug="${escapeHtmlAttr(slug)}"`);
+    if (!slug && domain) attrs.push(`data-site="${escapeHtmlAttr(domain)}"`);
+  }
+
+  const bg = cleanHex(backgroundColor);
+  const accent = cleanHex(accentColor);
+  if (bg) attrs.push(`data-bg-color="${escapeHtmlAttr(bg)}"`);
+  if (accent) attrs.push(`data-accent-color="${escapeHtmlAttr(accent)}"`);
+
+  return `<div
+  ${attrs.join("\n  ")}
+></div>
+<script src="${base}/greentrace-badge.js" async></script>`;
 }

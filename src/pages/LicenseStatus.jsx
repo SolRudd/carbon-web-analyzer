@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams } from "react-router-dom";
 import { FaArrowRight, FaCheckCircle, FaInfoCircle, FaShieldAlt } from "react-icons/fa";
-import { API_BASE, RESULTS_BASE } from "../config";
-import { buildBadgeEmbedCode } from "../lib/badges/embed";
+import { API_BASE } from "../config";
 
 const STATUS_STYLES = {
   active: "text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30",
@@ -27,7 +26,7 @@ const normalizeDomainInput = (value) =>
 const ISSUE_LABELS = {
   missing_script: "Badge container found, but script tag is missing.",
   missing_badge_container: "Script found, but .greentrace-badge container was not found.",
-  missing_data_url: "Badge container found, but data-url is missing or empty.",
+  missing_badge_identity: "Badge container found, but no domain or public token was found.",
   expected_badge_type_mismatch: "Badge is installed, but not using the selected badge type.",
   site_fetch_failed: "Could not fetch the website HTML automatically.",
   missing_verification_link: "Badge image found, but the verification page link is missing.",
@@ -39,15 +38,12 @@ export default function LicenseStatus() {
   const initialToken = String(params.get("token") || "").trim();
   const checkoutSuccess = params.get("checkout") === "success";
   const initialAction = String(params.get("action") || "").toLowerCase();
-  const initialBadgeVariantRaw = String(params.get("variant") || "").toLowerCase();
-  const initialBadgeVariant = ["compact", "standard"].includes(initialBadgeVariantRaw) ? initialBadgeVariantRaw : "compact";
 
   const [domain, setDomain] = useState(initialDomain);
-  const [token, setToken] = useState(initialToken);
+  const token = initialToken;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
-  const [installBadgeVariant, setInstallBadgeVariant] = useState(initialBadgeVariant);
   const [verifyDomain, setVerifyDomain] = useState(initialDomain);
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyError, setVerifyError] = useState("");
@@ -62,12 +58,10 @@ export default function LicenseStatus() {
   const effectiveDomain = normalizeDomainInput(verifyDomain || result?.domain || domain);
 
   const actionLinks = useMemo(() => {
-    const actionDomain = normalizeDomainInput(result?.domain || domain || verifyDomain);
-    const badgeSetupTo = actionDomain ? `/badge?site=${encodeURIComponent(actionDomain)}` : "/badge";
     if (["active", "trial", "charity", "partner", "internal"].includes(status)) {
       return [
-        { to: badgeSetupTo, label: "Configure Your Badge", type: "internal" },
-        { to: "/result", label: "Run a Fresh Scan", type: "internal" },
+        { to: "/dashboard", label: "Manage Verified Badge", type: "internal" },
+        { to: "/dashboard#owned-domains", label: "Run Scan from Dashboard", type: "internal" },
       ];
     }
     if (status === "suspended") {
@@ -77,30 +71,13 @@ export default function LicenseStatus() {
       { to: "/pricing", label: "View Pricing", type: "internal" },
       { to: "https://buzzboost.co.uk/contact/", label: "Request Licensing Help", type: "external" },
     ];
-  }, [status, result?.domain, domain, verifyDomain]);
-
-  const getEmbedCode = () => {
-    return buildBadgeEmbedCode({
-      token: result?.badgePublicToken || "PUBLIC_TOKEN",
-      apiBase: API_BASE,
-      siteBase: RESULTS_BASE,
-      variant: installBadgeVariant,
-    });
-  };
-
-  const copyEmbedCode = async () => {
-    try {
-      await navigator.clipboard.writeText(getEmbedCode());
-    } catch {
-      // Ignore clipboard failures in restricted browsers.
-    }
-  };
+  }, [status]);
 
   const fetchLicenseStatus = async ({ domainInput, tokenInput, resetResult = false }) => {
     const cleanDomain = normalizeDomainInput(domainInput);
     const cleanToken = String(tokenInput || "").trim();
     if (!cleanDomain && !cleanToken) {
-      throw new Error("Enter a domain or token to check license status.");
+      throw new Error("Enter a domain to check license status.");
     }
 
     setLoading(true);
@@ -114,8 +91,10 @@ export default function LicenseStatus() {
       const res = await fetch(`${API_BASE}/api/license/check?${query.toString()}`);
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const details = data.details ? ` Details: ${data.details}` : "";
-        throw new Error(`${data.error || "License check failed."}${details}`);
+        if (data.code === "LICENSE_TABLE_MISSING") {
+          throw new Error("License status is not available yet. The license database migration needs to be applied.");
+        }
+        throw new Error(data.error || "License check failed.");
       }
       setResult(data);
       if (data?.domain) {
@@ -287,13 +266,6 @@ export default function LicenseStatus() {
               >
                 {loading ? "Checking..." : "Check Status"}
               </button>
-              <input
-                type="text"
-                placeholder="Optional token"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                className="md:col-span-3 h-11 px-4 rounded-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
             </form>
 
             {error && (
@@ -328,7 +300,7 @@ export default function LicenseStatus() {
 
                 <p className="inline-flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                   <FaInfoCircle />
-                  Badge usage remains technically available; licensing state is for commercial verification and entitlement tracking.
+                  Badge access is controlled from your account dashboard after payment and domain verification.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -360,10 +332,10 @@ export default function LicenseStatus() {
                 {showVerificationPanel && (
                   <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/40 p-5 space-y-4">
                     <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                      Next Step: Install and Verify Your Verification Badge
+                      Next Step: Manage Your Verified Badge
                     </h2>
                     <p className="text-sm text-slate-600 dark:text-slate-300">
-                      This badge confirms the public GreenTracer verification record for this domain. It links visitors to a public verification page and does not expose private account or billing details.
+                      Your dashboard will show the official embed code once the domain is verified and Prime is active.
                     </p>
                     {!hasMemberLicense && (
                       <p className="text-sm rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/25 px-3 py-2 text-amber-800 dark:text-amber-300">
@@ -372,18 +344,7 @@ export default function LicenseStatus() {
                     )}
 
                     <div className="grid sm:grid-cols-3 gap-3">
-                      <label className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide sm:col-span-1">
-                        Badge Variant
-                        <select
-                          value={installBadgeVariant}
-                          onChange={(e) => setInstallBadgeVariant(e.target.value)}
-                          className="mt-1 h-10 w-full rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 px-3 text-sm text-slate-900 dark:text-white"
-                        >
-                          <option value="compact">Compact (Recommended)</option>
-                          <option value="standard">Standard</option>
-                        </select>
-                      </label>
-                      <label className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide sm:col-span-2">
+                      <label className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide sm:col-span-3">
                         Domain to Verify
                         <input
                           type="text"
@@ -395,19 +356,12 @@ export default function LicenseStatus() {
                       </label>
                     </div>
 
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
-                      <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
-                        Embed Snippet
-                      </p>
-                      <pre className="text-xs whitespace-pre-wrap break-all text-slate-700 dark:text-slate-200">{getEmbedCode()}</pre>
-                      <button
-                        type="button"
-                        onClick={copyEmbedCode}
-                        className="mt-3 inline-flex items-center rounded-full bg-slate-900 dark:bg-slate-100 px-4 py-2 text-xs font-semibold text-white dark:text-slate-900"
-                      >
-                        Copy Embed Code
-                      </button>
-                    </div>
+                    <Link
+                      to="/dashboard"
+                      className="inline-flex w-fit items-center rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white dark:bg-slate-100 dark:text-slate-900"
+                    >
+                      Open dashboard
+                    </Link>
 
                     <form onSubmit={runBadgeVerification} className="space-y-3">
                       <button

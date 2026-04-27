@@ -8,19 +8,14 @@ import {
   FaCheckCircle,
   FaChartLine,
   FaClipboardCheck,
-  FaExternalLinkAlt,
   FaFilePdf,
-  FaLeaf,
   FaRedo,
   FaServer,
   FaShieldAlt,
 } from "react-icons/fa";
 
 import LoadingOverlay from "../components/LoadingOverlay";
-import ImpactStats from "../components/ImpactStats";
 import BadgePromo from "../components/BadgePromo";
-import TestCTA from "../components/TestCTA";
-import CompanyInfoSection from "../components/CompanyInfoSection";
 import { API_BASE } from "../config";
 
 const INDEX_RESULTS_FLAG = String(import.meta.env.VITE_INDEX_RESULTS || "").toLowerCase() === "true";
@@ -66,6 +61,52 @@ const scoreToneClass = (score) => {
   if (score >= 50) return "text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700";
   return "text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700";
 };
+
+function ReportSection({ eyebrow, title, description, children, id = "" }) {
+  return (
+    <section id={id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_18px_56px_-38px_rgba(15,23,42,0.45)] dark:border-slate-700 dark:bg-slate-900 sm:p-7">
+      <div className="mb-5">
+        {eyebrow && (
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+            {eyebrow}
+          </p>
+        )}
+        <h2 className="mt-2 text-xl font-semibold tracking-[-0.01em] text-slate-900 dark:text-white sm:text-2xl">
+          {title}
+        </h2>
+        {description && (
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+            {description}
+          </p>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function SignalCard({ label, value, detail, tone = "slate", icon: Icon }) {
+  const toneClasses = {
+    emerald: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-200",
+    amber: "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200",
+    rose: "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-900/20 dark:text-rose-200",
+    sky: "border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-900/20 dark:text-sky-200",
+    slate: "border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-200",
+  };
+
+  return (
+    <article className={`rounded-2xl border p-4 ${toneClasses[tone] || toneClasses.slate}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] opacity-70">{label}</p>
+          <p className="mt-2 text-2xl font-semibold tracking-[-0.02em]">{value}</p>
+        </div>
+        {Icon && <Icon className="mt-1 shrink-0 opacity-70" aria-hidden="true" />}
+      </div>
+      {detail && <p className="mt-3 text-sm leading-6 opacity-80">{detail}</p>}
+    </article>
+  );
+}
 
 const pdfEscape = (value) =>
   String(value ?? "")
@@ -149,8 +190,8 @@ const createPdfBlob = (report) => {
   drawRectTop(36, 448, 523, 110, "0.95 0.97 0.99");
   drawTextTop(52, 472, "Hosting and Badge Status", { size: 12, font: "F2", color: "0.06 0.32 0.49" });
   drawTextTop(52, 496, report.greenHost
-    ? "Green hosting is verified for this report. Green Hosting Verified badge eligibility is active."
-    : "Green hosting is not currently verified. Green Hosting Verified badge is unavailable until hosting is verified.", {
+    ? "Green hosting was detected for this report. Green Hosting Detected badge eligibility is active."
+    : "Green hosting was not detected for this report. The Green Hosting badge is not active for this result.", {
     size: 10,
     maxLen: 88,
     lineGap: 13
@@ -204,7 +245,7 @@ export default function ResultPage() {
     setLoading(true);
     setError(null);
 
-    fetch(`${API_BASE}/api/trace-or-check?site=${slug}`)
+    fetch(`${API_BASE}/api/results/${encodeURIComponent(slug)}`)
       .then((res) => {
         if (!res.ok) {
           throw new Error("Could not find a report for this URL. Please try testing it from the homepage.");
@@ -236,7 +277,8 @@ export default function ResultPage() {
   const pageTitle = `Carbon Report for ${result.url} | GreenTracer`;
   const pageDescription = `An automated carbon footprint analysis for ${result.url}, showing a score of ${result.carbonEstimate}g CO₂e per page view and a grade of ${result.grade}.`;
 
-  const testedOn = new Date(result.timestamp).toLocaleDateString(undefined, {
+  const resultTime = result.timestamp || result.created_at || result.createdAt;
+  const testedOn = new Date(resultTime).toLocaleDateString(undefined, {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -252,16 +294,44 @@ export default function ResultPage() {
 
   const gradeColor = gradeColorMap[result.grade] || "text-slate-500";
   const percentileValue = Math.max(0, Math.min(100, Math.round(Number(result.percentile || 0))));
-  const progressAngle = Math.round((percentileValue / 100) * 360);
   const lighthouseScores = result.lighthouseScores || {};
   const perfScore = formatScore(lighthouseScores.performance);
   const seoScore = formatScore(lighthouseScores.seo);
   const accessibilityScore = formatScore(lighthouseScores.accessibility);
   const bestPracticesScore = formatScore(lighthouseScores["best-practices"] ?? lighthouseScores.bestPractices);
   const trustScores = [
+    { label: "Performance", icon: FaBolt, value: perfScore },
     { label: "SEO", icon: FaChartLine, value: seoScore },
     { label: "Accessibility", icon: FaShieldAlt, value: accessibilityScore },
     { label: "Best practices", icon: FaCheckCircle, value: bestPracticesScore },
+  ];
+  const carbonValue = Number(result.carbonEstimate || 0);
+  const gradeTone = ["A+", "A", "B"].includes(result.grade)
+    ? "emerald"
+    : ["C", "D"].includes(result.grade)
+      ? "amber"
+      : "rose";
+  const recommendationCards = [
+    {
+      title: "Reduce transfer weight",
+      body: "Prioritize image compression, script pruning, and critical-path CSS. Lower payload directly reduces the estimated carbon per page view.",
+      action: "Review methodology",
+      to: "/how-it-works",
+    },
+    {
+      title: result.greenHost ? "Keep hosting evidence current" : "Review hosting provider",
+      body: result.greenHost
+        ? "Green hosting was detected for this scan. Re-run scans after infrastructure or CDN changes so the public badge remains accurate."
+        : "Green hosting was not detected. Moving to a provider listed by the Green Web Foundation can improve the hosting signal.",
+      action: result.greenHost ? "Get hosting badge" : "Request hosting review",
+      href: result.greenHost ? "#badge-options" : "https://buzzboost.co.uk/contact/",
+    },
+    {
+      title: "Publish the right trust signal",
+      body: "Use free report-backed badges for scan facts. GreenTracer Verified is a paid supporter/member signal and does not require a perfect carbon score.",
+      action: "Badge actions",
+      href: "#badge-options",
+    },
   ];
   const handleDownloadPdf = () => {
     const blob = createPdfBlob({
@@ -272,7 +342,7 @@ export default function ResultPage() {
       grade: result.grade || "Unavailable",
       percentile: `${percentileValue}% cleaner than tested pages`,
       greenHost: !!result.greenHost,
-      greenHosting: result.greenHost ? "Verified" : "Not Verified",
+      greenHosting: result.greenHost ? "Detected" : "Not detected",
       scores: {
         performance: perfScore,
         accessibility: accessibilityScore,
@@ -299,7 +369,7 @@ export default function ResultPage() {
         description: pageDescription,
         url: canonical,
         author: { "@type": "Organization", name: "GreenTracer" },
-        datePublished: new Date(result.timestamp).toISOString(),
+        datePublished: new Date(resultTime).toISOString(),
       }
     : null;
 
@@ -323,210 +393,187 @@ export default function ResultPage() {
         {reportSchema && <script type="application/ld+json">{JSON.stringify(reportSchema)}</script>}
       </Helmet>
 
-      <section className="relative min-h-screen bg-slate-100/70 dark:bg-[#020f1e] py-12 sm:py-14 px-4 sm:px-6">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-44 left-1/3 h-[30rem] w-[30rem] rounded-full bg-green-500/10 blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 h-[24rem] w-[24rem] rounded-full bg-cyan-500/10 blur-3xl" />
-        </div>
-
-        <div className="relative mx-auto max-w-6xl space-y-14">
-          <header className="rounded-[2rem] border border-slate-200/90 dark:border-slate-700/70 bg-white/92 dark:bg-slate-900/80 p-7 sm:p-9 lg:p-11 shadow-[0_18px_56px_-34px_rgba(15,23,42,0.5)]">
-            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-              <div className="space-y-5">
-                <p className="inline-flex items-center gap-2 rounded-full border border-green-600/20 bg-green-600/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-green-700 dark:text-green-300">
-                  <FaClipboardCheck />
-                  Website Sustainability Report
+      <section className="min-h-screen bg-slate-100/70 px-4 py-10 text-slate-900 dark:bg-[#020f1e] dark:text-white sm:px-6 sm:py-12">
+        <div className="mx-auto max-w-6xl space-y-6">
+          <header className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_18px_56px_-38px_rgba(15,23,42,0.45)] dark:border-slate-700 dark:bg-slate-900 sm:p-8 lg:p-9">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0">
+                <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300">
+                  <FaClipboardCheck aria-hidden="true" />
+                  Website audit report
                 </p>
-                <div>
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white tracking-[-0.02em] leading-[1.05]">
-                    {hostname}
-                  </h1>
-                  <p className="mt-3 text-[15px] text-slate-600 dark:text-slate-300">
-                    Latest saved analysis on {testedOn}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className={`inline-flex items-center rounded-full border border-slate-300/80 dark:border-slate-600 bg-white/80 dark:bg-slate-900/65 px-4 py-1.5 text-sm font-semibold ${gradeColor}`}>
-                    Grade {result.grade}
-                  </span>
-                  <span className="inline-flex items-center rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/70 px-4 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
-                    {Number(result.percentile || 0)}% cleaner than tested pages
-                  </span>
-                </div>
+                <h1 className="mt-4 break-words text-3xl font-semibold tracking-[-0.03em] text-slate-950 dark:text-white sm:text-5xl">
+                  {hostname}
+                </h1>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  Saved GreenTracer analysis for {result.url}. This report combines page carbon estimate, green hosting detection, performance signals, and badge eligibility.
+                </p>
               </div>
-
-              <div className="rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-900 px-6 py-5 min-w-[270px]">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Carbon Intensity</p>
-                    <p className="mt-1.5 text-3xl font-bold text-slate-900 dark:text-white tracking-[-0.02em]">
-                      {Number(result.carbonEstimate || 0).toFixed(2)}
-                      <span className="ml-1 text-lg font-semibold text-slate-500 dark:text-slate-400">g CO₂/view</span>
-                    </p>
-                  </div>
-                  <div
-                    className="grid h-[72px] w-[72px] place-items-center rounded-full border border-slate-300/80 dark:border-slate-600"
-                    style={{
-                      background: `conic-gradient(#16a34a ${progressAngle}deg, rgba(148,163,184,0.25) ${progressAngle}deg 360deg)`,
-                    }}
-                  >
-                    <div className="grid h-14 w-14 place-items-center rounded-full bg-white dark:bg-[#020f1e] text-xs font-semibold text-slate-700 dark:text-slate-200">
-                      {percentileValue}%
-                    </div>
-                  </div>
-                </div>
-                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Relative efficiency percentile</p>
+              <div className="flex flex-wrap gap-2 lg:justify-end">
+                <button
+                  type="button"
+                  onClick={handleDownloadPdf}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                >
+                  <FaFilePdf className="text-xs" aria-hidden="true" />
+                  Export PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={fetchData}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                >
+                  <FaRedo className="text-xs" aria-hidden="true" />
+                  Refresh
+                </button>
               </div>
             </div>
 
-            <div className="mt-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <a
-                  href="https://buzzboost.co.uk/contact/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 dark:bg-slate-100 px-5 py-2.5 text-sm font-semibold text-white dark:text-slate-900 hover:opacity-90 transition-all duration-200"
-                >
-                  Book a Free Review
-                  <FaExternalLinkAlt className="text-xs" />
-                </a>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <a
-                  href={result.greenHost ? "https://buzzboost.co.uk/websites/support-plans/" : "https://buzzboost.co.uk/contact/"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                    result.greenHost
-                      ? "border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/45"
-                      : "border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/45"
-                  }`}
-                >
-                  {result.greenHost ? "Improve This Score" : "Explore Green Hosting Upgrade"}
-                  <FaArrowRight className="text-xs" />
-                </a>
-                <Link
-                  to="/badge"
-                  className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-green-600 to-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-[0_10px_28px_-16px_rgba(22,163,74,0.8)]"
-                >
-                  Configure Badges
-                </Link>
-              <button
-                onClick={handleDownloadPdf}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 dark:border-slate-600 bg-white/85 dark:bg-slate-900/80 px-5 py-2.5 text-sm font-semibold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
-              >
-                <FaFilePdf className="text-xs" />
-                Download PDF Report
-              </button>
-              <button
-                onClick={fetchData}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 dark:border-slate-600 bg-white/85 dark:bg-slate-900/80 px-5 py-2.5 text-sm font-semibold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
-              >
-                <FaRedo className="text-xs" />
-                Refresh Report
-              </button>
-              </div>
+            <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <SignalCard label="Domain" value={hostname} detail="Normalized scan target" tone="slate" />
+              <SignalCard label="Grade" value={result.grade || "N/A"} detail={`${percentileValue}% efficiency percentile`} tone={gradeTone} />
+              <SignalCard label="Carbon" value={`${carbonValue.toFixed(2)}g`} detail="CO₂e per page view" tone="sky" />
+              <SignalCard
+                label="Hosting"
+                value={result.greenHost ? "Green detected" : "Not detected"}
+                detail={result.greenHost ? "Eligible for Green Hosting badge" : "No green-hosting claim for this report"}
+                tone={result.greenHost ? "emerald" : "amber"}
+                icon={FaServer}
+              />
+              <SignalCard label="Last scanned" value={testedOn} detail="Saved public result" tone="slate" />
             </div>
           </header>
 
-          <section className="space-y-2">
-            <h2 className="text-xl sm:text-2xl font-semibold tracking-[-0.01em] text-slate-900 dark:text-white">
-              Report Insights
-            </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-300">
-              Built from currently available GreenTracer result data.
-            </p>
-          </section>
-
-          <section className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
-            <article className="rounded-2xl border border-slate-200/90 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 shadow-[0_8px_20px_-18px_rgba(15,23,42,0.45)]">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Carbon Result</p>
-              <p className="mt-2.5 text-2xl font-semibold text-slate-900 dark:text-white tracking-[-0.01em]">
-                {Number(result.carbonEstimate || 0).toFixed(2)}g
-              </p>
-              <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-300">Per page view (cached report)</p>
-              <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{percentileValue}% efficiency percentile</p>
-            </article>
-
-            <article className={`rounded-2xl border p-5 shadow-[0_8px_20px_-18px_rgba(15,23,42,0.45)] ${
-              result.greenHost
-                ? "border-emerald-200/90 dark:border-emerald-800 bg-white dark:bg-slate-900"
-                : "border-amber-200/90 dark:border-amber-800 bg-white dark:bg-slate-900"
-            }`}>
-              <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Green Hosting</p>
-              <p className={`mt-2.5 inline-flex items-center gap-2 text-lg font-semibold ${result.greenHost ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}`}>
-                <FaServer className="text-sm opacity-80" />
-                {result.greenHost ? "Verified" : "Not Verified"}
-              </p>
-              <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-300">
-                {result.greenHost
-                  ? `Estimated overall reduction ~${Math.round(Number(result.reductionPct || 0))}%`
-                  : "Green Hosting Verified badge is unavailable for this result."}
-              </p>
-              {!result.greenHost ? (
-                <a
-                  href="https://buzzboost.co.uk/contact/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300 hover:underline"
-                >
-                  Request hosting review
-                  <FaExternalLinkAlt className="text-[10px]" />
-                </a>
-              ) : (
-                <p className="mt-3 text-xs font-medium text-emerald-700 dark:text-emerald-300">Eligible for Green Hosting Verified badge</p>
-              )}
-            </article>
-
-            <article className="rounded-2xl border border-slate-200/90 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 shadow-[0_8px_20px_-18px_rgba(15,23,42,0.45)]">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Performance Insight</p>
-              <div className="mt-2.5 flex items-center justify-between gap-2 text-slate-900 dark:text-white">
-                <div className="inline-flex items-center gap-2">
-                <FaBolt className="text-green-600 dark:text-green-400" />
-                <p className="font-semibold">
-                    Lighthouse performance
-                </p>
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+            <ReportSection
+              eyebrow="Carbon result"
+              title="Page carbon estimate"
+              description="GreenTracer estimates carbon from measured page weight, energy intensity, grid intensity, and hosting state. The figure below is per page view."
+            >
+              <div className="grid gap-4 sm:grid-cols-[220px_1fr] sm:items-center">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center dark:border-slate-700 dark:bg-slate-800/40">
+                  <p className={`text-6xl font-semibold tracking-[-0.06em] ${gradeColor}`}>{result.grade}</p>
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Report grade</p>
                 </div>
-                <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${scoreToneClass(perfScore)}`}>
-                  {typeof perfScore === "number" ? `${perfScore}/100` : "Unavailable"}
-                </span>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Carbon intensity</p>
+                    <p className="mt-1 text-4xl font-semibold tracking-[-0.04em] text-slate-950 dark:text-white">
+                      {carbonValue.toFixed(2)}
+                      <span className="ml-2 text-base font-medium tracking-normal text-slate-500 dark:text-slate-400">g CO₂e/view</span>
+                    </p>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                    <div className="h-full rounded-full bg-emerald-500" style={{ width: `${percentileValue}%` }} />
+                  </div>
+                  <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
+                    This page is estimated to be cleaner than {percentileValue}% of tested pages in the current GreenTracer dataset.
+                  </p>
+                </div>
               </div>
-              <p className="mt-2.5 text-sm text-slate-600 dark:text-slate-300">
-                {perfScore
-                  ? `${getPerformanceInsight(result.percentile)}`
-                  : "This cached report predates Lighthouse category capture. Re-run a test to include it."}
-              </p>
-            </article>
+            </ReportSection>
 
-            <article className="rounded-2xl border border-slate-200/90 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 shadow-[0_8px_20px_-18px_rgba(15,23,42,0.45)]">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Lighthouse Categories</p>
-              <div className="mt-2.5 space-y-2.5">
-                {trustScores.map(({ label, icon, value }) => (
-                  <div key={label} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="inline-flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                      {React.createElement(icon, { className: "text-slate-400" })}
+            <ReportSection
+              eyebrow="Hosting"
+              title={result.greenHost ? "Green hosting detected" : "Green hosting not detected"}
+              description={result.greenHost
+                ? "This report supports the free Green Hosting badge. Keep the scan current after infrastructure changes."
+                : "This result should not publish a Green Hosting badge. The Carbon Tested badge remains available from the saved report."}
+            >
+              <div className={`rounded-2xl border p-4 ${
+                result.greenHost
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-200"
+                  : "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200"
+              }`}>
+                <div className="flex items-start gap-3">
+                  <FaServer className="mt-1 shrink-0" aria-hidden="true" />
+                  <div>
+                    <p className="font-semibold">{result.greenHost ? "Hosting evidence supports a public badge." : "No green hosting evidence was found."}</p>
+                    <p className="mt-2 text-sm leading-6 opacity-85">
+                      {result.greenHost
+                        ? `Estimated hosting-related reduction is about ${Math.round(Number(result.reductionPct || 0))}%.`
+                        : "If the site uses green hosting behind a CDN or proxy, run another scan after DNS/provider changes or review provider data."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </ReportSection>
+          </div>
+
+          <ReportSection
+            eyebrow="Performance signals"
+            title="Technical quality indicators"
+            description="Lighthouse category scores are included when the saved measurement contains them. Missing scores are shown as unavailable rather than inferred."
+          >
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {trustScores.map(({ label, icon, value }) => (
+                <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/40">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                      {React.createElement(icon, { className: "text-slate-400", "aria-hidden": true })}
                       {label}
                     </span>
                     <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${scoreToneClass(value)}`}>
                       {typeof value === "number" ? `${value}/100` : "Unavailable"}
                     </span>
                   </div>
-                ))}
-              </div>
-              <p className="mt-2.5 text-xs text-slate-500 dark:text-slate-400">
-                Scores are shown only when present in the saved Lighthouse payload.
-              </p>
-            </article>
-          </section>
+                  {label === "Performance" && (
+                    <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                      {typeof value === "number" ? getPerformanceInsight(result.percentile) : "Re-run a scan to capture this signal."}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </ReportSection>
 
-          <BadgePromo siteUrl={result.url} greenHost={!!result.greenHost} />
+          <ReportSection
+            eyebrow="Recommendations"
+            title="Next actions"
+            description="These actions keep the report practical: reduce page weight, keep hosting claims current, and publish only the badge that the data supports."
+          >
+            <div className="grid gap-3 lg:grid-cols-3">
+              {recommendationCards.map((item) => (
+                <article key={item.title} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/40">
+                  <h3 className="text-sm font-semibold text-slate-950 dark:text-white">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{item.body}</p>
+                  {item.to ? (
+                    <Link to={item.to} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200">
+                      {item.action}
+                      <FaArrowRight className="text-xs" aria-hidden="true" />
+                    </Link>
+                  ) : (
+                    <a href={item.href} target={item.href?.startsWith("#") ? undefined : "_blank"} rel={item.href?.startsWith("#") ? undefined : "noopener noreferrer"} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200">
+                      {item.action}
+                      <FaArrowRight className="text-xs" aria-hidden="true" />
+                    </a>
+                  )}
+                </article>
+              ))}
+            </div>
+          </ReportSection>
 
-          <ImpactStats carbonPerView={result.carbonEstimate} siteUrl={result.url} grade={result.grade} />
-          <TestCTA />
-        </div>
+          <BadgePromo
+            siteUrl={result.url}
+            greenHost={!!result.greenHost}
+            resultSlug={result.slug || slug}
+            grade={result.grade}
+          />
 
-        <div className="relative mt-16">
-          <CompanyInfoSection />
+          <ReportSection
+            eyebrow="Verified badge"
+            title="Paid verification is a supporter/member signal"
+            description="GreenTracer Verified does not mean the site has a perfect carbon score. It means the organization has an active paid or manually approved supporter status, a managed domain, and a profile/directory path."
+          >
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link to="/pricing" className="inline-flex h-10 items-center justify-center rounded-full bg-slate-900 px-4 text-sm font-semibold text-white dark:bg-slate-100 dark:text-slate-900">
+                View verified plans
+              </Link>
+              <Link to="/dashboard" className="inline-flex h-10 items-center justify-center rounded-full border border-slate-300 px-4 text-sm font-semibold text-slate-700 dark:border-slate-600 dark:text-slate-200">
+                Manage verified badge
+              </Link>
+            </div>
+          </ReportSection>
         </div>
       </section>
     </>

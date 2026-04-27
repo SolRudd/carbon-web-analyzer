@@ -10,12 +10,6 @@ import logoAvif from "../assets/GreenTraceLogo.avif";
 
 export default function Footer() {
   const year = new Date().getFullYear();
-
-  // Safe in SSR/prerender too:
-  const siteUrl =
-    typeof window !== "undefined" && window.location
-      ? window.location.origin
-      : "";
   const badgeToken = import.meta.env.VITE_GREENTRACER_BADGE_TOKEN || "";
 
   return (
@@ -47,7 +41,7 @@ export default function Footer() {
           </Link>
 
           <div className="min-h-[40px] flex items-center justify-center md:justify-end">
-            <CarbonBadge url={siteUrl} token={badgeToken} variant="compact" />
+            <CarbonBadge token={badgeToken} />
           </div>
         </div>
 

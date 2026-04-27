@@ -92,7 +92,7 @@ export default function Post() {
           Precision beats aspiration.
         </p>
         <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
-          “Green hosting verified” is stronger than a paragraph of broad sustainability language because it tells the
+          “Green hosting detected” is stronger than a paragraph of broad sustainability language because it tells the
           buyer exactly what they are being asked to trust.
         </p>
       </div>

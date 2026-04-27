@@ -2,24 +2,22 @@ import React from "react";
 import GreenTracerBadge from "./GreenTracerBadge";
 
 export default function GreenTracerBadgePreview({
-  variant = "compact",
-  status = "verified",
-  metric = 0.21,
-  metricText = "",
+  status = "active",
+  badgeType = "greentracer_verified",
   domain = "example.com",
-  showMetric = true,
   href = "",
+  valueText = "",
+  customColors = null,
   className = "",
 }) {
   return (
     <GreenTracerBadge
-      variant={variant}
       status={status}
-      metric={metric}
-      metricText={metricText}
+      badgeType={badgeType}
       domain={domain}
       href={href}
-      showMetric={showMetric}
+      valueText={valueText}
+      customColors={customColors}
       className={className}
       ariaLabel="GreenTracer verification badge preview"
     />

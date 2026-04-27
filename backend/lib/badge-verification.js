@@ -26,7 +26,9 @@ function inspectBadgeHtml(html, expectedBadgeType = null) {
   const scriptDetected = /<script\b[^>]*\bsrc\s*=\s*["'][^"']*greentrace-badge\.js(?:\?[^"']*)?["'][^>]*>/i.test(markup);
   const svgBadgeImageDetected = /<img\b[^>]*\bsrc\s*=\s*["'][^"']*\/api\/badge\/[A-Za-z0-9_-]+(?:\?[^"']*)?["'][^>]*>/i.test(markup)
     || /<img\b[^>]*\bsrc\s*=\s*["'][^"']*\/api\/badge\.svg\?[^"']*\btoken=/i.test(markup);
-  const verificationLinkDetected = /<a\b[^>]*\bhref\s*=\s*["'][^"']*\/verify\/[A-Za-z0-9_-]+(?:\?[^"']*)?["'][^>]*>/i.test(markup);
+  const verificationLinkDetected =
+    /<a\b[^>]*\bhref\s*=\s*["'][^"']*\/verify\/[A-Za-z0-9_-]+(?:\?[^"']*)?["'][^>]*>/i.test(markup) ||
+    /<a\b[^>]*\bhref\s*=\s*["'][^"']*\/verified\/[^"']+(?:\?[^"']*)?["'][^>]*>/i.test(markup);
   const allTags = markup.match(/<[^>]+>/g) || [];
   const badgeTags = allTags.filter((tag) => {
     const attrs = parseAttributes(tag);
@@ -36,25 +38,51 @@ function inspectBadgeHtml(html, expectedBadgeType = null) {
   const containerDetected = badgeTags.length > 0;
   const dataUrlDetected = badgeTags.some((tag) => {
     const attrs = parseAttributes(tag);
-    return Boolean(String(attrs['data-url'] || '').trim());
+    return Boolean(String(
+      attrs['data-url'] ||
+      attrs['data-domain'] ||
+      attrs['data-site'] ||
+      attrs['data-result-slug'] ||
+      attrs['data-public-token'] ||
+      attrs['data-badge-token'] ||
+      attrs['data-token'] ||
+      ''
+    ).trim());
   });
+
+  const aliases = {
+    carbon: 'carbon_tested',
+    carbon_tested: 'carbon_tested',
+    tested: 'carbon_tested',
+    hosting: 'green_hosting',
+    green_hosting: 'green_hosting',
+    green_hosting_checked: 'green_hosting',
+    verified: 'greentracer_verified',
+    member: 'greentracer_verified',
+    greentracer_verified: 'greentracer_verified',
+  };
+  const normalizeBadgeType = (value) => {
+    const raw = String(value || '').toLowerCase().replace(/-/g, '_');
+    return aliases[raw] || null;
+  };
 
   const detectedTypes = new Set();
   badgeTags.forEach((tag) => {
     const attrs = parseAttributes(tag);
-    const badgeType = String(attrs['data-badge-type'] || 'carbon').toLowerCase();
-    if (['carbon', 'hosting', 'member'].includes(badgeType)) {
+    const badgeType = normalizeBadgeType(attrs['data-badge-type'] || attrs['data-type'] || 'carbon_tested');
+    if (badgeType) {
       detectedTypes.add(badgeType);
     }
   });
 
   const detectedBadgeTypes = Array.from(detectedTypes);
-  const hasExpectedType = expectedBadgeType ? detectedBadgeTypes.includes(expectedBadgeType) : true;
+  const normalizedExpectedType = normalizeBadgeType(expectedBadgeType);
+  const hasExpectedType = normalizedExpectedType ? detectedBadgeTypes.includes(normalizedExpectedType) : true;
 
   const issues = [];
   if (containerDetected && !scriptDetected) issues.push('missing_script');
   if (scriptDetected && !containerDetected) issues.push('missing_badge_container');
-  if (containerDetected && !dataUrlDetected) issues.push('missing_data_url');
+  if (containerDetected && !dataUrlDetected) issues.push('missing_badge_identity');
   if (expectedBadgeType && containerDetected && !hasExpectedType) issues.push('expected_badge_type_mismatch');
   if (svgBadgeImageDetected && !verificationLinkDetected) issues.push('missing_verification_link');
 
@@ -71,6 +99,7 @@ function inspectBadgeHtml(html, expectedBadgeType = null) {
       scriptDetected,
       containerDetected,
       dataUrlDetected,
+      badgeIdentityDetected: dataUrlDetected,
       svgBadgeImageDetected,
       verificationLinkDetected,
     },

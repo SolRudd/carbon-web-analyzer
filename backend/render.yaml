@@ -14,8 +14,8 @@ services:
       # These are the correct variables for your Supabase backend
       - key: SUPABASE_URL
         fromEnvironmentVar: SECRET_SUPABASE_URL
-      - key: SUPABASE_SERVICE_KEY
-        fromEnvironmentVar: SECRET_SUPABASE_SERVICE_KEY
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        fromEnvironmentVar: SECRET_SUPABASE_SERVICE_ROLE_KEY
       - key: SUPABASE_ANON_KEY
         fromEnvironmentVar: SECRET_SUPABASE_ANON_KEY
       - key: PAGESPEED_API_KEY

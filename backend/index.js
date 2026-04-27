@@ -11,7 +11,8 @@ const helmet     = require('helmet');
 const cors       = require('cors');
 const rateLimit  = require('express-rate-limit');
 const axios      = require('axios');
-const { createClient } = require('@supabase/supabase-js');
+const { createSupabaseAdminClient, readSupabaseAdminConfig } = require('./lib/supabase-admin');
+const { logSupabaseError } = require('./lib/supabase-logging');
 const { inspectBadgeHtml } = require('./lib/badge-verification');
 const { parseLeadCapturePayload } = require('./lib/lead-capture');
 const { getLeadCaptureErrorMessage } = require('./lib/lead-capture-error');
@@ -21,7 +22,14 @@ const {
   toPublicBadgeJson,
   unavailableBadgeData,
 } = require('./lib/badges/get-public-badge-data');
-const { booleanFromQuery } = require('./lib/badges/formatters');
+const { getUserBadgeEntitlement } = require('./lib/badges/entitlement');
+const {
+  classifyBadgePingInput,
+  getBadgeInstallSummaryForDomain,
+  normalizeBadgeHost,
+  normalizeBadgeType,
+  recordBadgePing,
+} = require('./lib/badges/install-tracking');
 const {
   calcCO2,
   gradeFor,
@@ -32,17 +40,17 @@ const {
 // ── App Initialization ─────────────────────────────
 const app   = express();
 const PORT  = Number(process.env.PORT) || 8080;
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+const supabaseAdminConfig = readSupabaseAdminConfig();
+const supabase = createSupabaseAdminClient();
 
 if (process.env.NODE_ENV !== 'production') {
   console.info('[startup-env]', {
     cwd: process.cwd(),
     envFilePath: ENV_FILE_PATH,
-    hasSupabaseUrl: Boolean((process.env.SUPABASE_URL || '').trim()),
-    hasSupabaseServiceKey: Boolean((process.env.SUPABASE_SERVICE_KEY || '').trim()),
+    hasSupabaseUrl: supabaseAdminConfig.hasUrl,
+    hasSupabaseServiceRoleKey: supabaseAdminConfig.hasServiceRoleKey,
+    hasLegacySupabaseServiceKey: supabaseAdminConfig.hasLegacyServiceKey,
+    supabaseAdminKeySource: supabaseAdminConfig.keySource,
     hasSupabaseAnonKey: Boolean((process.env.SUPABASE_ANON_KEY || '').trim()),
     hasSupabasePublishableKey: Boolean((process.env.SUPABASE_PUBLISHABLE_KEY || '').trim()),
     hasSupabasePublishable: Boolean((process.env.SUPABASE_PUBLISHABLE || '').trim()),
@@ -86,16 +94,85 @@ app.get('/greentrace-badge.js', badgeCors, limiterBadge, (req,res) => {
   res.sendFile(path.join(__dirname,'public','greentrace-badge.js'));
 });
 
-app.get('/api/badge/:token/data', badgeCors, limiterBadge, async (req, res) => {
-  const showMetric = booleanFromQuery(req.query.metric, true);
-  const data = await getPublicBadgeData(supabase, req.params.token, {
+app.get('/api/badge/result/latest/data', badgeCors, limiterBadge, async (req, res) => {
+  const requestedDomain = normalizeDomain(req.query.domain || req.query.url || req.query.site || req.query.declared_domain);
+  const row = requestedDomain ? await getLatestResultRowByDomain(requestedDomain) : null;
+  const data = applyBadgeRequestDomainState(toResultBadgeData(row, {
+    badgeType: req.query.type,
     siteBase: resolveSiteBase(req),
-    markRequest: false,
-    showMetric,
+    requestedDomain,
+  }), req);
+
+  res.set({
+    'Cache-Control': data.publicStatus === 'active'
+      ? 'public,max-age=300,stale-while-revalidate=1800'
+      : 'public,max-age=120',
+  });
+  return res.json(toPublicBadgeJson(data));
+});
+
+app.get('/api/badge/result/latest', badgeCors, limiterBadge, async (req, res) => {
+  const requestedDomain = normalizeDomain(req.query.domain || req.query.url || req.query.site || req.query.declared_domain);
+  const row = requestedDomain ? await getLatestResultRowByDomain(requestedDomain) : null;
+  const data = applyBadgeRequestDomainState(toResultBadgeData(row, {
+    badgeType: req.query.type,
+    siteBase: resolveSiteBase(req),
+    requestedDomain,
+  }), req);
+  const svg = renderBadgeSvg(data, getBadgeRenderOptions(req));
+
+  res.set({
+    'Content-Type': 'image/svg+xml; charset=utf-8',
+    'Cache-Control': data.publicStatus === 'active'
+      ? 'public,max-age=1800,stale-while-revalidate=86400'
+      : 'public,max-age=300',
+    'X-Content-Type-Options': 'nosniff',
+  });
+  return res.status(200).send(svg);
+});
+
+app.get('/api/badge/result/:slug/data', badgeCors, limiterBadge, async (req, res) => {
+  const row = await getResultRowBySlug(req.params.slug);
+  const data = toResultBadgeData(row, {
+    badgeType: req.query.type,
+    siteBase: resolveSiteBase(req),
   });
 
   res.set({
-    'Cache-Control': data.publicStatus === 'verified'
+    'Cache-Control': data.publicStatus === 'active'
+      ? 'public,max-age=300,stale-while-revalidate=1800'
+      : 'public,max-age=120',
+  });
+  return res.json(toPublicBadgeJson(data));
+});
+
+app.get('/api/badge/result/:slug', badgeCors, limiterBadge, async (req, res) => {
+  const row = await getResultRowBySlug(req.params.slug);
+  const data = toResultBadgeData(row, {
+    badgeType: req.query.type,
+    siteBase: resolveSiteBase(req),
+  });
+  const svg = renderBadgeSvg(data, getBadgeRenderOptions(req));
+
+  res.set({
+    'Content-Type': 'image/svg+xml; charset=utf-8',
+    'Cache-Control': data.publicStatus === 'active'
+      ? 'public,max-age=1800,stale-while-revalidate=86400'
+      : 'public,max-age=300',
+    'X-Content-Type-Options': 'nosniff',
+  });
+  return res.status(200).send(svg);
+});
+
+app.get('/api/badge/:token/data', badgeCors, limiterBadge, async (req, res) => {
+  const data = applyBadgeRequestDomainState(await getPublicBadgeData(supabase, req.params.token, {
+    siteBase: resolveSiteBase(req),
+    markRequest: false,
+    showMetric: true,
+  }), req);
+
+  res.set({
+    'Cache-Control': data.publicStatus === 'active'
       ? 'public,max-age=120,stale-while-revalidate=600'
       : 'public,max-age=60',
   });
@@ -103,20 +180,16 @@ app.get('/api/badge/:token/data', badgeCors, limiterBadge, async (req, res) => {
 });
 
 app.get('/api/badge/:token', badgeCors, limiterBadge, async (req, res) => {
-  const showMetric = booleanFromQuery(req.query.metric, true);
-  const data = await getPublicBadgeData(supabase, req.params.token, {
+  const data = applyBadgeRequestDomainState(await getPublicBadgeData(supabase, req.params.token, {
     siteBase: resolveSiteBase(req),
     markRequest: true,
-    showMetric,
-  });
-  const svg = renderBadgeSvg(data, {
-    variant: req.query.variant,
-    showMetric,
-  });
+    showMetric: false,
+  }), req);
+  const svg = renderBadgeSvg(data, getBadgeRenderOptions(req));
 
   res.set({
     'Content-Type': 'image/svg+xml; charset=utf-8',
-    'Cache-Control': data.publicStatus === 'verified'
+    'Cache-Control': data.publicStatus === 'active'
       ? 'public,max-age=3600,stale-while-revalidate=86400'
       : 'public,max-age=300',
     'X-Content-Type-Options': 'nosniff',
@@ -126,23 +199,31 @@ app.get('/api/badge/:token', badgeCors, limiterBadge, async (req, res) => {
 
 app.get('/api/badge.svg', badgeCors, limiterBadge, async (req, res) => {
   const token = req.query.token || req.query.publicToken || req.query.public_token;
-  const showMetric = booleanFromQuery(req.query.metric, true);
-  const data = token
-    ? await getPublicBadgeData(supabase, token, {
+  const requestedDomain = normalizeDomain(req.query.domain || req.query.url || req.query.site || req.query.declared_domain);
+  let data;
+
+  if (token) {
+    data = applyBadgeRequestDomainState(await getPublicBadgeData(supabase, token, {
       siteBase: resolveSiteBase(req),
       markRequest: true,
-      showMetric,
-    })
-    : unavailableBadgeData(resolveSiteBase(req), 'token_required');
+      showMetric: false,
+    }), req);
+  } else if (requestedDomain || normalizeBadgeType(req.query.type || req.query.badge_type || 'carbon_tested') !== 'greentracer_verified') {
+    const row = await getLatestResultRowByDomain(requestedDomain);
+    data = applyBadgeRequestDomainState(toResultBadgeData(row, {
+      badgeType: req.query.type || req.query.badge_type || 'carbon_tested',
+      siteBase: resolveSiteBase(req),
+      requestedDomain,
+    }), req);
+  } else {
+    data = unavailableBadgeData(resolveSiteBase(req), 'token_required');
+  }
 
-  const svg = renderBadgeSvg(data, {
-    variant: req.query.variant,
-    showMetric,
-  });
+  const svg = renderBadgeSvg(data, getBadgeRenderOptions(req));
 
   res.set({
     'Content-Type': 'image/svg+xml; charset=utf-8',
-    'Cache-Control': data.publicStatus === 'verified'
+    'Cache-Control': data.publicStatus === 'active'
       ? 'public,max-age=3600,stale-while-revalidate=86400'
       : 'public,max-age=300',
     'X-Content-Type-Options': 'nosniff',
@@ -276,12 +357,20 @@ app.get('/api/license/check', limiterLicenseRead, async (req, res) => {
     .order('updated_at', { ascending: false })
     .limit(1);
   if (error) {
-    return res.status(500).json({
-      error: 'License lookup failed.',
-      details: process.env.NODE_ENV === 'production'
-        ? undefined
-        : `${error.message || String(error)} (domain=${domain || 'none'}, tokenProvided=${Boolean(token)})`
+    if (isMissingSupabaseRelation(error, 'licenses')) {
+      return res.status(503).json({
+        error: 'License system is not configured.',
+        code: 'LICENSE_TABLE_MISSING',
+      });
+    }
+
+    logSupabaseError({
+      route: 'GET /api/license/check',
+      table: 'licenses',
+      operation: 'select',
+      error,
     });
+    return res.status(500).json({ error: 'License lookup failed.' });
   }
   const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
   if (!row) return res.json({ licensed: false, status: 'none', domain: domain || null });
@@ -293,8 +382,8 @@ app.get('/api/license/check', limiterLicenseRead, async (req, res) => {
 app.get('/api/license/verify-badge', limiterLicenseRead, async (req, res) => {
   const domain = normalizeDomain(req.query.domain);
   const expectedBadgeTypeRaw = String(req.query.expectedBadgeType || '').toLowerCase();
-  const expectedBadgeType = ['carbon', 'hosting', 'member'].includes(expectedBadgeTypeRaw)
-    ? expectedBadgeTypeRaw
+  const expectedBadgeType = expectedBadgeTypeRaw
+    ? normalizeBadgeType(expectedBadgeTypeRaw)
     : null;
 
   if (!domain) {
@@ -425,9 +514,11 @@ async function requireAccountAuth(req, res, next) {
 
 app.get('/api/account/me/dashboard', limiterLicenseRead, requireAccountAuth, async (req, res) => {
   const userId = req.accountUser.id;
+  const siteBase = resolveSiteBase(req);
+  const apiBase = resolveApiBase(req);
   const { data, error } = await supabase
     .from('account_domains')
-    .select('domain')
+    .select('*')
     .eq('user_id', userId)
     .order('domain', { ascending: true });
 
@@ -439,16 +530,173 @@ app.get('/api/account/me/dashboard', limiterLicenseRead, requireAccountAuth, asy
   }
 
   const domains = await Promise.all(
-    (data || []).map(async (row) => ({
-      domain: row.domain,
-      license: await getLicenseStateForDomain(row.domain)
-    }))
+    (data || []).map(async (row) => {
+      const license = await getLicenseStateForDomain(row.domain);
+      const latestResult = await getLatestResultRowByDomain(row.domain);
+      const reportUrl = buildReportUrl({ slug: latestResult?.slug, siteBase });
+      const directoryUrl = buildDirectoryUrl({ domain: row.domain, siteBase });
+      let badgeInstalls;
+      try {
+        const [carbonTested, greenHosting, greentracerVerified] = await Promise.all([
+          getBadgeInstallSummaryForDomain(supabase, {
+            domain: row.domain,
+            badgeType: 'carbon_tested'
+          }),
+          getBadgeInstallSummaryForDomain(supabase, {
+            domain: row.domain,
+            badgeType: 'green_hosting'
+          }),
+          getBadgeInstallSummaryForDomain(supabase, {
+            domain: row.domain,
+            token: row.badge_public_token,
+            badgeType: 'greentracer_verified'
+          })
+        ]);
+        badgeInstalls = {
+          carbon_tested: carbonTested,
+          green_hosting: greenHosting,
+          greentracer_verified: greentracerVerified
+        };
+      } catch (err) {
+        const unavailableInstall = {
+          state: 'unavailable',
+          status: 'unavailable',
+          label: 'Unavailable',
+          lastSeenAt: null,
+          loadCount: 0,
+          detectedHost: null,
+          declaredDomain: row.domain,
+          badgeType: null,
+          error: process.env.NODE_ENV === 'production' ? undefined : (err.message || String(err))
+        };
+        badgeInstalls = {
+          carbon_tested: unavailableInstall,
+          green_hosting: unavailableInstall,
+          greentracer_verified: unavailableInstall
+        };
+      }
+      const verifiedStatus = resolveVerifiedBadgeState({ row, license });
+
+      return {
+        domain: row.domain,
+        verificationStatus: row.verification_status || 'pending',
+        badgeEnabled: row.badge_enabled !== false,
+        badgePublicToken: row.badge_public_token || null,
+        license,
+        latestResult: latestResult ? toPublicResult(latestResult) : null,
+        badges: {
+          carbon_tested: {
+            badgeType: 'carbon_tested',
+            status: 'active',
+            label: 'Carbon Tested',
+            reportUrl,
+            embedCode: buildLoaderBadgeEmbedCode({
+              badgeType: 'carbon_tested',
+              domain: row.domain,
+              resultSlug: latestResult?.slug || '',
+              grade: latestResult?.grade,
+              apiBase
+            }),
+            install: badgeInstalls.carbon_tested
+          },
+          green_hosting: {
+            badgeType: 'green_hosting',
+            status: latestResult?.green_host === true ? 'active' : 'green_hosting_not_detected',
+            label: latestResult?.green_host === true ? 'Green Hosting Detected' : 'Green Hosting Checked',
+            reportUrl,
+            embedCode: buildLoaderBadgeEmbedCode({
+              badgeType: 'green_hosting',
+              domain: row.domain,
+              resultSlug: latestResult?.slug || '',
+              apiBase
+            }),
+            install: badgeInstalls.green_hosting
+          },
+          greentracer_verified: {
+            badgeType: 'greentracer_verified',
+            status: verifiedStatus,
+            label: getDashboardBadgeStatusLabel(verifiedStatus),
+            directoryUrl,
+            embedCode: row.badge_public_token ? buildLoaderBadgeEmbedCode({
+              badgeType: 'greentracer_verified',
+              domain: row.domain,
+              token: row.badge_public_token,
+              apiBase
+            }) : null,
+            install: badgeInstalls.greentracer_verified
+          }
+        },
+        badgeInstall: badgeInstalls.greentracer_verified
+      };
+    })
   );
+  let badge;
+  try {
+    badge = await getUserBadgeEntitlement(supabase, userId, {
+      siteBase,
+      apiBase
+    });
+  } catch (err) {
+    return res.status(500).json({
+      error: 'Failed to load badge entitlement.',
+      details: process.env.NODE_ENV === 'production' ? undefined : (err.message || String(err))
+    });
+  }
 
   return res.json({
     user: req.accountUser,
-    domains
+    domains,
+    badge
   });
+});
+
+app.get('/api/account/me/badge', limiterLicenseRead, requireAccountAuth, async (req, res) => {
+  try {
+    const badge = await getUserBadgeEntitlement(supabase, req.accountUser.id, {
+      siteBase: resolveSiteBase(req),
+      apiBase: resolveApiBase(req)
+    });
+    return res.json(badge);
+  } catch (err) {
+    return res.status(500).json({
+      error: 'Failed to load badge entitlement.',
+      details: process.env.NODE_ENV === 'production' ? undefined : (err.message || String(err))
+    });
+  }
+});
+
+app.post('/api/account/check-carbon', limiterCheck, requireAccountAuth, async (req, res) => {
+  const site = normalizeScanUrl(req.body?.url || req.body?.domain);
+  if (!site) return res.status(400).json({ error: 'Valid domain or URL is required.', code: 'VALIDATION_ERROR' });
+
+  let host;
+  try {
+    host = new URL(site).hostname;
+  } catch {
+    return res.status(400).json({ error: 'Bad URL.', code: 'VALIDATION_ERROR' });
+  }
+
+  try {
+    const data = await performCarbonCheck(site, host);
+    const accountLink = await attachAccountScanResult({
+      userId: req.accountUser.id,
+      result: data,
+      requestedUrl: site,
+    });
+
+    return res.json({
+      ...data,
+      accountLinked: true,
+      accountDomain: accountLink.domain,
+    });
+  } catch (err) {
+    console.error('[/api/account/check-carbon] failed:', err.message);
+    const statusCode = Number(err.statusCode) || 500;
+    return res.status(statusCode).json({
+      error: statusCode >= 500 ? 'Failed to run dashboard scan.' : err.message,
+      code: err.code || (statusCode >= 500 ? 'ACCOUNT_SCAN_FAILED' : 'VALIDATION_ERROR'),
+    });
+  }
 });
 
 app.post('/api/account/me/domains', limiterLicenseWrite, requireAccountAuth, async (req, res) => {
@@ -630,39 +878,20 @@ const limiterBadgePing = rateLimit({ windowMs: 60*1000, max: 30 });
 
 app.post('/api/badge/ping', badgeCors, limiterBadgePing, async (req, res) => {
   // Respond immediately – tracking is best-effort, never blocks rendering
-  res.json({ ok: true });
+  res.status(204).end();
 
   try {
-    const siteUrl  = String(req.body?.site  || '').trim().slice(0, 500);
-    const hostDomain = String(req.body?.host || '').trim().slice(0, 255);
-    const badgeType  = ['carbon','hosting','member'].includes(req.body?.type)
-      ? req.body.type
-      : 'carbon';
+    const body = req.body || {};
+    const classified = await classifyBadgePingInput(supabase, {
+      token: body.public_token || body.publicToken || body.badge_public_token || body.token,
+      declaredDomain: body.declared_domain || body.declaredDomain || body.domain || body.site || body.url,
+      detectedHost: body.detected_host || body.detectedHost || body.host || getRequestSourceHost(req),
+      badgeType: body.badge_type || body.badgeType || body.type,
+      resultSlug: body.result_slug || body.resultSlug || body.slug,
+      sourceUrl: body.source_url || body.sourceUrl || getSafeBadgeSourceUrl(req),
+    });
 
-    if (!siteUrl) return;
-
-    await supabase
-      .from('badge_pings')
-      .upsert(
-        {
-          site_url:     siteUrl,
-          host_domain:  hostDomain,
-          badge_type:   badgeType,
-          last_seen_at: new Date().toISOString(),
-          ping_count:   1
-        },
-        {
-          onConflict: 'site_url,host_domain',
-          ignoreDuplicates: false
-        }
-      );
-
-    // Increment ping_count on conflict (Supabase doesn't support expressions in upsert,
-    // so we do a separate update if the row already existed)
-    await supabase.rpc('increment_badge_ping', {
-      p_site_url:    siteUrl,
-      p_host_domain: hostDomain
-    }).catch(() => null); // non-critical – ignore if RPC not set up yet
+    await recordBadgePing(supabase, classified);
   } catch (err) {
     // Swallow – tracking must never affect badge rendering
     if (process.env.NODE_ENV !== 'production') {
@@ -679,19 +908,7 @@ app.get('/api/trace-or-check', badgeCors, limiterTraceOrCheck, async (req,res) =
   const isUrl = /^https?:\/\//i.test(site);
   const lookupKey = isUrl ? slugify(site) : site;
   const cached = await getCached(lookupKey);
-  if (cached) {
-    if (hasAnyLighthouseScore(cached.lighthouseScores)) return res.json(cached);
-    if (cached.url) {
-      try {
-        const host = new URL(cached.url).hostname;
-        const refreshed = await performCarbonCheck(cached.url, host);
-        return res.json(refreshed);
-      } catch {
-        return res.json(cached);
-      }
-    }
-    return res.json(cached);
-  }
+  if (cached) return res.json(cached);
 
   if (!isUrl) {
     return res.status(404).json({ error:'No cached result for this slug. Run a fresh check first.' });
@@ -711,37 +928,79 @@ app.get('/api/trace-or-check', badgeCors, limiterTraceOrCheck, async (req,res) =
   }
 });
 
+app.get('/api/results/all-slugs', badgeCors, limiterLicenseRead, async (_req, res) => {
+  const { data, error, status, statusText } = await supabase
+    .from('results')
+    .select('slug')
+    .not('slug', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(1000);
+
+  if (error) {
+    logSupabaseError({
+      route: 'GET /api/results/all-slugs',
+      table: 'results',
+      operation: 'select',
+      error,
+      status,
+      statusText,
+    });
+    return res.status(500).json({ error: 'Failed to load public result slugs.' });
+  }
+
+  return res.json({
+    slugs: (data || []).map((row) => row.slug).filter(Boolean),
+  });
+});
+
+app.get('/api/results/:slug', badgeCors, limiterLicenseRead, async (req, res) => {
+  const slug = normalizeResultSlug(req.params.slug);
+  if (!slug) return res.status(404).json({ error: 'Result not found.' });
+
+  const { data, error, status, statusText } = await supabase
+    .from('results')
+    .select('slug,url,green_host,carbon_estimate,percentile,reduction_pct,grade,created_at')
+    .eq('slug', slug)
+    .limit(1);
+
+  if (error) {
+    logSupabaseError({
+      route: 'GET /api/results/:slug',
+      table: 'results',
+      operation: 'select',
+      error,
+      status,
+      statusText,
+    });
+    return res.status(500).json({ error: 'Failed to load result.' });
+  }
+
+  const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
+  if (!row) return res.status(404).json({ error: 'Result not found.' });
+
+  return res.json(toPublicResult(row));
+});
+
 // ── Alias GET for /api/check-carbon ────────────────
 app.get('/api/check-carbon', limiterCheck, async (req,res) => {
-  const site = req.query.url;
-  if (!site) return res.status(400).json({ error:'Missing url query param.' });
-  let host;
-  try { host = new URL(site).hostname; }
-  catch { return res.status(400).json({ error:'Bad URL.' }); }
-
-  try {
-    const data = await performCarbonCheck(site, host);
-    res.json(data);
-  } catch (err) {
-    console.error('[/api/check-carbon GET] failed:', err.message);
-    res.status(500).json({ error:'Failed to perform carbon check.' });
-  }
+  return res.status(405).json({
+    error: 'Use POST /api/check-carbon with url, contactEmail, and contactConsent.',
+    code: 'METHOD_NOT_ALLOWED',
+  });
 });
 
 // ── POST /api/check-carbon ─────────────────────────
 app.post('/api/check-carbon', limiterCheck, async (req,res) => {
-  const site = req.body.url;
-  if (!site) return res.status(400).json({ error:'Missing URL.' });
+  const site = normalizeScanUrl(req.body.url || req.body.domain);
+  if (!site) return res.status(400).json({ error:'Missing URL.', code: 'VALIDATION_ERROR' });
   let host;
   try { host = new URL(site).hostname; }
-  catch { return res.status(400).json({ error:'Bad URL.' }); }
+  catch { return res.status(400).json({ error:'Bad URL.', code: 'VALIDATION_ERROR' }); }
 
   try {
-    const contactSource = String(req.body?.contactSource || '').trim().toLowerCase();
-    const requiresLeadCapture = contactSource === 'homepage_hero';
     const lead = parseLeadCapturePayload(req.body || {}, {
-      requireEmail: requiresLeadCapture,
-      requireConsent: requiresLeadCapture
+      requireEmail: true,
+      requireConsent: true
     });
     const data = await performCarbonCheck(site, host);
     if (lead.shouldCapture) {
@@ -754,7 +1013,7 @@ app.post('/api/check-carbon', limiterCheck, async (req,res) => {
         });
       } catch (leadError) {
         console.error('[/api/check-carbon POST] lead capture failed:', leadError.message);
-        return res.status(500).json({ error: 'Failed to save contact details for this scan.' });
+        // The scan result remains useful even if lead storage is temporarily unavailable.
       }
     }
     res.json(data);
@@ -762,7 +1021,8 @@ app.post('/api/check-carbon', limiterCheck, async (req,res) => {
     console.error('[/api/check-carbon POST] failed:', err.message);
     const statusCode = Number(err.statusCode) || 500;
     res.status(statusCode).json({
-      error: statusCode >= 500 ? 'Failed to perform carbon check.' : err.message
+      error: statusCode >= 500 ? 'Failed to perform carbon check.' : err.message,
+      code: err.code || (statusCode >= 500 ? 'SCAN_FAILED' : 'VALIDATION_ERROR'),
     });
   }
 });
@@ -781,24 +1041,314 @@ function slugify(site) {
   }
 }
 
-function normalizeDomain(input) {
-  if (!input || typeof input !== 'string') return null;
-  const trimmed = input.trim();
-  if (!trimmed) return null;
+function normalizeResultSlug(value) {
+  const slug = String(value || '').trim().toLowerCase().replace(/-+$/,'');
+  if (!/^[a-z0-9-]{3,220}$/.test(slug)) return null;
+  return slug;
+}
+
+function normalizeScanUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+
   try {
-    const normalized = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-    const url = new URL(normalized);
-    return url.hostname.replace(/^www\./i, '').toLowerCase();
+    const parsed = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+    if (!parsed.hostname) return null;
+    parsed.hash = '';
+    return parsed.toString();
   } catch {
-    return trimmed.replace(/^https?:\/\//i, '').replace(/^www\./i, '').split('/')[0].toLowerCase() || null;
+    return null;
   }
+}
+
+function toPublicResult(row) {
+  const createdAt = row?.created_at || null;
+  return {
+    slug: row?.slug || null,
+    url: row?.url || null,
+    green_host: Boolean(row?.green_host),
+    greenHost: Boolean(row?.green_host),
+    carbon_estimate: Number(row?.carbon_estimate || 0),
+    carbonEstimate: Number(row?.carbon_estimate || 0),
+    percentile: Number(row?.percentile || 0),
+    reduction_pct: Number(row?.reduction_pct || 0),
+    reductionPct: Number(row?.reduction_pct || 0),
+    grade: row?.grade || null,
+    created_at: createdAt,
+    createdAt,
+    timestamp: createdAt ? new Date(createdAt).getTime() : null,
+  };
+}
+
+async function getResultRowBySlug(slugInput) {
+  const slug = normalizeResultSlug(slugInput);
+  if (!slug) return null;
+
+  const { data, error, status, statusText } = await supabase
+    .from('results')
+    .select('slug,url,green_host,carbon_estimate,percentile,reduction_pct,grade,created_at')
+    .eq('slug', slug)
+    .limit(1);
+
+  if (error) {
+    logSupabaseError({
+      route: 'internal getResultRowBySlug',
+      table: 'results',
+      operation: 'select',
+      error,
+      status,
+      statusText,
+    });
+    return null;
+  }
+
+  return Array.isArray(data) && data.length > 0 ? data[0] : null;
+}
+
+async function getLatestResultRowByDomain(domain) {
+  const normalized = normalizeDomain(domain);
+  if (!normalized) return null;
+
+  const { data, error, status, statusText } = await supabase
+    .from('results')
+    .select('slug,url,green_host,carbon_estimate,percentile,reduction_pct,grade,created_at')
+    .ilike('url', `%${normalized}%`)
+    .order('created_at', { ascending: false })
+    .limit(25);
+
+  if (error) {
+    logSupabaseError({
+      route: 'internal getLatestResultRowByDomain',
+      table: 'results',
+      operation: 'select',
+      error,
+      status,
+      statusText,
+    });
+    return null;
+  }
+
+  return (data || []).find((row) => normalizeDomain(row.url) === normalized) || null;
+}
+
+function buildReportUrl({ slug, siteBase }) {
+  const base = trimPublicBaseUrl(siteBase, 'https://www.greentracer.org');
+  return slug ? `${base}/result/${encodeURIComponent(slug)}` : null;
+}
+
+function buildDirectoryUrl({ domain, siteBase }) {
+  const normalized = normalizeDomain(domain);
+  const base = trimPublicBaseUrl(siteBase, 'https://www.greentracer.org');
+  return normalized ? `${base}/verified/${encodeURIComponent(normalized)}` : null;
+}
+
+function escapeHtmlAttr(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function buildLoaderBadgeEmbedCode({ badgeType, domain, token = '', resultSlug = '', apiBase }) {
+  const type = normalizeBadgeType(badgeType);
+  const api = trimPublicBaseUrl(apiBase, 'https://api.greentracer.org');
+  const attrs = [
+    'class="greentrace-badge"',
+    `data-badge-type="${escapeHtmlAttr(type)}"`,
+    `data-domain="${escapeHtmlAttr(domain || '')}"`,
+  ];
+
+  if (type === 'greentracer_verified') {
+    attrs.push(`data-public-token="${escapeHtmlAttr(token)}"`);
+  } else {
+    if (resultSlug) attrs.push(`data-result-slug="${escapeHtmlAttr(resultSlug)}"`);
+    if (!resultSlug && domain) attrs.push(`data-site="${escapeHtmlAttr(domain)}"`);
+  }
+
+  return `<div
+  ${attrs.join('\n  ')}
+></div>
+<script src="${api}/greentrace-badge.js" async></script>`;
+}
+
+function resolveVerifiedBadgeState({ row, license }) {
+  if (!license?.licensed) return license?.status && license.status !== 'none' ? 'licence_inactive' : 'not_active';
+  const status = String(row?.verification_status || '').trim().toLowerCase();
+  if (['verified', 'active', 'approved'].includes(status)) return 'active';
+  return 'pending';
+}
+
+function getDashboardBadgeStatusLabel(status) {
+  const labels = {
+    active: 'Verified Supporter',
+    pending: 'Verification pending',
+    not_active: 'Badge not active',
+    licence_inactive: 'Licence inactive',
+    domain_mismatch: 'Domain mismatch',
+    green_hosting_not_detected: 'Green hosting not detected',
+    unavailable: 'Unavailable'
+  };
+  return labels[status] || labels.unavailable;
+}
+
+function toResultBadgeData(row, { badgeType, siteBase, requestedDomain } = {}) {
+  const type = normalizeBadgeType(badgeType || 'carbon_tested');
+  const result = row || null;
+  const domain = normalizeDomain(result?.url) || normalizeDomain(requestedDomain);
+  const reportUrl = buildReportUrl({ slug: result?.slug, siteBase });
+
+  if (!result || !domain) {
+    if (type === 'carbon_tested') {
+      return {
+        publicStatus: 'active',
+        badgeType: type,
+        label: 'Carbon Tested',
+        domain: domain || null,
+        showMetric: false,
+        valueText: '',
+        reportUrl: null,
+        verificationUrl: null,
+        isClickable: false,
+        resultSlug: null,
+        internalReason: 'result_missing_fail_open',
+      };
+    }
+
+    return {
+      publicStatus: type === 'green_hosting' ? 'green_hosting_not_detected' : 'not_active',
+      badgeType: type,
+      label: type === 'green_hosting' ? 'Green hosting not detected' : 'Badge not active',
+      domain: domain || null,
+      showMetric: false,
+      reportUrl: null,
+      verificationUrl: null,
+      isClickable: false,
+      resultSlug: null,
+    };
+  }
+
+  if (type === 'green_hosting' && result.green_host !== true) {
+    return {
+      publicStatus: 'green_hosting_not_detected',
+      badgeType: type,
+      label: 'Green hosting not detected',
+      domain,
+      latestScanAt: result.created_at || null,
+      showMetric: false,
+      reportUrl,
+      verificationUrl: reportUrl,
+      isClickable: Boolean(reportUrl),
+      resultSlug: result.slug || null,
+    };
+  }
+
+  const grade = String(result.grade || '').trim();
+  return {
+    publicStatus: 'active',
+    badgeType: type,
+    label: type === 'green_hosting' ? 'Green Hosting Detected' : 'Carbon Tested',
+    domain,
+    metric: result.carbon_estimate ?? null,
+    metricText: null,
+    showMetric: false,
+    valueText: type === 'carbon_tested' && grade ? `Grade ${grade}` : '',
+    gradeText: type === 'carbon_tested' && grade ? `Grade ${grade}` : '',
+    latestScanAt: result.created_at || null,
+    reportUrl,
+    verificationUrl: reportUrl,
+    isClickable: Boolean(reportUrl),
+    resultSlug: result.slug || null,
+  };
+}
+
+function trimPublicBaseUrl(value, fallback) {
+  const raw = String(value || '').trim();
+  if (/^https?:\/\//i.test(raw)) return raw.replace(/\/+$/, '');
+  return fallback;
+}
+
+function normalizeDomain(input) {
+  return typeof input === 'string' ? normalizeBadgeHost(input) : null;
+}
+
+function isMissingSupabaseRelation(error, relationName) {
+  const code = String(error?.code || '').trim();
+  const message = String(error?.message || '').toLowerCase();
+  const relation = String(relationName || '').toLowerCase();
+  return code === '42P01' || Boolean(relation && message.includes(`public.${relation}`) && message.includes('does not exist'));
+}
+
+function hostFromHeaderUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  try {
+    return normalizeBadgeHost(new URL(raw).hostname);
+  } catch {
+    return normalizeBadgeHost(raw);
+  }
+}
+
+function getSafeBadgeSourceUrl(req) {
+  const raw = String(req.get('referer') || req.get('referrer') || req.get('origin') || '').trim();
+  if (!raw || raw.length > 500) return '';
+  try {
+    const parsed = new URL(raw);
+    parsed.username = '';
+    parsed.password = '';
+    parsed.search = '';
+    parsed.hash = '';
+    return parsed.toString().slice(0, 500);
+  } catch {
+    return '';
+  }
+}
+
+function getRequestSourceHost(req) {
+  return (
+    normalizeBadgeHost(req.query.detected_host || req.query.detectedHost || req.query.host) ||
+    hostFromHeaderUrl(req.get('origin')) ||
+    hostFromHeaderUrl(req.get('referer')) ||
+    hostFromHeaderUrl(req.get('referrer')) ||
+    null
+  );
+}
+
+function getBadgeRenderOptions(req) {
+  return {
+    colors: {
+      backgroundColor: req.query.bg || req.query.background || req.query.bgColor || req.query.backgroundColor,
+      accentColor: req.query.accent || req.query.accentColor,
+    },
+  };
+}
+
+function applyBadgeRequestDomainState(data, req) {
+  const domain = normalizeBadgeHost(data?.domain);
+  if (!domain) return data;
+
+  const declaredDomain = normalizeBadgeHost(req.query.declared_domain || req.query.declaredDomain || req.query.domain);
+  const detectedHost = normalizeBadgeHost(req.query.detected_host || req.query.detectedHost || req.query.host);
+  const mismatch = (declaredDomain && declaredDomain !== domain) || (detectedHost && detectedHost !== domain);
+
+  if (!mismatch) return data;
+
+  return {
+    ...data,
+    publicStatus: 'domain_mismatch',
+    label: 'Domain mismatch',
+    metric: null,
+    metricText: null,
+    showMetric: false,
+    internalReason: 'domain_mismatch',
+  };
 }
 
 async function captureContactLead({ lead, siteUrl, domain, resultSlug }) {
   if (!lead?.shouldCapture || !lead.email || !domain || !siteUrl) return;
 
-  if (!(process.env.SUPABASE_URL || '').trim() || !(process.env.SUPABASE_SERVICE_KEY || '').trim()) {
-    const configError = new Error('Lead capture backend is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_KEY.');
+  if (!supabaseAdminConfig.hasUrl || !supabaseAdminConfig.key) {
+    const configError = new Error('Lead capture backend is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.');
     configError.code = 'CONFIG_MISSING';
     throw configError;
   }
@@ -813,25 +1363,102 @@ async function captureContactLead({ lead, siteUrl, domain, resultSlug }) {
     updated_at: new Date().toISOString()
   };
 
-  const { error } = await supabase
+  const { error, status, statusText } = await supabase
     .from('contact_leads')
     .upsert(payload, { onConflict: 'email,domain,source' });
 
   if (error) {
-    const wrappedError = new Error(getLeadCaptureErrorMessage(error));
+    logSupabaseError({
+      route: 'POST /api/check-carbon',
+      table: 'contact_leads',
+      operation: 'upsert',
+      error,
+      payload,
+      status,
+      statusText,
+    });
+    const wrappedError = new Error(getLeadCaptureErrorMessage({ ...error, status }));
     wrappedError.code = error.code || null;
     wrappedError.details = error.details || null;
     wrappedError.hint = error.hint || null;
+    wrappedError.status = status || null;
+    wrappedError.statusText = statusText || null;
     wrappedError.cause = error;
     throw wrappedError;
   }
+}
+
+async function attachAccountScanResult({ userId, result, requestedUrl }) {
+  const domain = normalizeDomain(result?.url || requestedUrl);
+  if (!userId || !domain) {
+    const error = new Error('Authenticated scan could not be linked to an account domain.');
+    error.statusCode = 400;
+    error.code = 'ACCOUNT_DOMAIN_INVALID';
+    throw error;
+  }
+
+  const basePayload = {
+    user_id: userId,
+    domain,
+  };
+  const latestPayload = {
+    ...basePayload,
+    latest_co2_per_page: result?.carbonEstimate ?? result?.carbon_estimate ?? null,
+    latest_scan_at: result?.createdAt || result?.created_at || new Date().toISOString(),
+    latest_result_slug: result?.slug || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error, status, statusText } = await supabase
+    .from('account_domains')
+    .upsert(latestPayload, { onConflict: 'user_id,domain' });
+
+  if (!error) return { domain };
+
+  if (String(error.message || '').includes('latest_') || String(error.message || '').includes('updated_at')) {
+    const retry = await supabase
+      .from('account_domains')
+      .upsert(basePayload, { onConflict: 'user_id,domain' });
+
+    if (!retry.error) return { domain };
+
+    logSupabaseError({
+      route: 'POST /api/account/check-carbon',
+      table: 'account_domains',
+      operation: 'upsert',
+      error: retry.error,
+      payload: basePayload,
+      status: retry.status,
+      statusText: retry.statusText,
+    });
+    const wrappedError = new Error('Failed to link dashboard scan to your account domain.');
+    wrappedError.code = retry.error.code || 'ACCOUNT_SCAN_SAVE_FAILED';
+    wrappedError.statusCode = 500;
+    wrappedError.cause = retry.error;
+    throw wrappedError;
+  }
+
+  logSupabaseError({
+    route: 'POST /api/account/check-carbon',
+    table: 'account_domains',
+    operation: 'upsert',
+    error,
+    payload: latestPayload,
+    status,
+    statusText,
+  });
+  const wrappedError = new Error('Failed to link dashboard scan to your account domain.');
+  wrappedError.code = error.code || 'ACCOUNT_SCAN_SAVE_FAILED';
+  wrappedError.statusCode = 500;
+  wrappedError.cause = error;
+  throw wrappedError;
 }
 
 function mapLicensePublic(row) {
   const now = new Date();
   const endDate = row.end_date ? new Date(row.end_date) : null;
   const isExpired = !!(endDate && endDate < now);
-  const activeStatuses = new Set(['active', 'trial', 'charity', 'partner', 'internal']);
+  const activeStatuses = new Set(['active', 'trial', 'charity', 'partner', 'internal', 'non_profit', 'nonprofit', 'community', 'manual_lifetime']);
   return {
     id: row.id,
     domain: row.domain,
@@ -840,13 +1467,6 @@ function mapLicensePublic(row) {
     licenseType: row.license_type,
     startDate: row.start_date,
     endDate: row.end_date,
-    badgePublicToken: row.badge_public_token || null,
-    badgeEnabled: row.badge_enabled !== false,
-    verificationStatus: row.verification_status || 'pending',
-    publicVerificationEnabled: row.is_public_verification_enabled !== false,
-    verifiedAt: row.verified_at || null,
-    latestCo2PerPage: row.latest_co2_per_page ?? null,
-    latestScanAt: row.latest_scan_at || null,
     licensed: activeStatuses.has(String(row.status || '').toLowerCase()) && !isExpired,
     expired: isExpired
   };
@@ -855,6 +1475,13 @@ function mapLicensePublic(row) {
 function mapLicenseAdmin(row) {
   return {
     ...mapLicensePublic(row),
+    badgePublicToken: row.badge_public_token || null,
+    badgeEnabled: row.badge_enabled !== false,
+    verificationStatus: row.verification_status || 'pending',
+    publicVerificationEnabled: row.is_public_verification_enabled !== false,
+    verifiedAt: row.verified_at || null,
+    latestCo2PerPage: row.latest_co2_per_page ?? null,
+    latestScanAt: row.latest_scan_at || null,
     paymentReference: row.payment_reference || null,
     notes: row.notes || null
   };
@@ -890,20 +1517,33 @@ async function updateLicenseBadgeMetricFromResult(row) {
   const domain = normalizeDomain(row?.url);
   if (!domain || row?.carbon_estimate === undefined || row?.carbon_estimate === null) return;
 
+  const updates = {
+    latest_co2_per_page: Number(row.carbon_estimate),
+    latest_scan_at: row.created_at || new Date().toISOString(),
+    latest_result_slug: row.slug || null,
+    updated_at: new Date().toISOString()
+  };
+
   try {
     const { error } = await supabase
       .from('licenses')
-      .update({
-        latest_co2_per_page: Number(row.carbon_estimate),
-        latest_scan_at: row.created_at || new Date().toISOString(),
-        latest_result_slug: row.slug || null,
-        updated_at: new Date().toISOString()
-      })
+      .update(updates)
       .eq('domain', domain);
     if (error) throw error;
   } catch (err) {
     if (process.env.NODE_ENV !== 'production') {
       console.warn('[badge-metric] metric update skipped:', err.message);
+    }
+  }
+
+  try {
+    await supabase
+      .from('account_domains')
+      .update(updates)
+      .eq('domain', domain);
+  } catch (err) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[badge-metric] account domain metric update skipped:', err.message);
     }
   }
 }
@@ -916,6 +1556,17 @@ function resolveSiteBase(req) {
   if (/^https?:\/\//i.test(origin)) return origin.replace(/\/+$/, '');
 
   return 'https://www.greentracer.org';
+}
+
+function resolveApiBase(req) {
+  const fromEnv = (process.env.API_PUBLIC_URL || process.env.API_BASE_URL || process.env.BACKEND_URL || '').trim();
+  if (/^https?:\/\//i.test(fromEnv)) return fromEnv.replace(/\/+$/, '');
+
+  const protocol = req.protocol || 'https';
+  const host = String(req.get('host') || '').trim();
+  if (host) return `${protocol}://${host}`.replace(/\/+$/, '');
+
+  return 'https://api.greentracer.org';
 }
 
 function requireLicenseAdmin(req, res, next) {
@@ -1054,29 +1705,27 @@ async function handleStripeEvent(event) {
 
 async function getCached(slug) {
   const s = slug.toLowerCase().replace(/-+$/,'');
-  const { data: row, error } = await supabase
-    .from('results').select('*').eq('slug', s).single();
+  const { data: row, error, status, statusText } = await supabase
+    .from('results')
+    .select('slug,url,green_host,carbon_estimate,percentile,reduction_pct,grade,created_at')
+    .eq('slug', s)
+    .single();
+  if (error) {
+    if (status !== 406) {
+      logSupabaseError({
+        route: 'internal getCached',
+        table: 'results',
+        operation: 'select',
+        error,
+        status,
+        statusText,
+      });
+    }
+    return null;
+  }
   if (error || !row) return null;
   if (TTL!==0 && Date.now() - new Date(row.created_at).getTime() > TTL) return null;
-  const info = row.result_data || {};
-  const lighthouseScores = normalizeLighthouseScores(info.lighthouseScores);
-  const lighthouseMeta = info.lighthouseMeta || {};
-  const license = await getLicenseStateForDomain(normalizeDomain(row.url));
-  return {
-    slug:           row.slug,
-    url:            row.url,
-    greenHost:      !!row.green_host,
-    carbonEstimate: +row.carbon_estimate,
-    percentile:     +row.percentile,
-    reductionPct:   +row.reduction_pct,
-    grade:          row.grade,
-    lighthouseScores,
-    lighthouseStatus: hasAnyLighthouseScore(lighthouseScores) ? 'available' : (info.lighthouseMeta?.status || 'unavailable'),
-    lighthouseSource: lighthouseMeta.source || null,
-    lighthouseReason: lighthouseMeta.reason || null,
-    license,
-    timestamp:      new Date(row.created_at).getTime()
-  };
+  return toPublicResult(row);
 }
 
 async function performCarbonCheck(norm, host) {
@@ -1095,38 +1744,41 @@ async function performCarbonCheck(norm, host) {
     reason: sizeInfo.lighthouseReason || null
   };
 
-  const { data: row, error } = await supabase
+  const payload = {
+    slug,
+    url:             sizeInfo.finalUrl||norm,
+    green_host:      green,
+    carbon_estimate: carbon,
+    percentile,
+    reduction_pct:   reductionPct,
+    grade,
+    result_data:     { sizeInfo, carbon, percentile, reductionPct, grade, lighthouseScores, lighthouseMeta }
+  };
+
+  const { data: row, error, status, statusText } = await supabase
     .from('results')
-    .upsert({
-      slug,
-      url:             sizeInfo.finalUrl||norm,
-      green_host:      green,
-      carbon_estimate: carbon,
-      percentile,
-      reduction_pct:   reductionPct,
-      grade,
-      result_data:     { sizeInfo, carbon, percentile, reductionPct, grade, lighthouseScores, lighthouseMeta }
-    }, { onConflict:['slug'] })
+    .upsert(payload, { onConflict: 'slug' })
     .select().single();
 
-  if (error) throw error;
+  if (error) {
+    logSupabaseError({
+      route: 'POST /api/check-carbon',
+      table: 'results',
+      operation: 'upsert',
+      error,
+      payload,
+      status,
+      statusText,
+    });
+    const wrappedError = new Error('Result save failed.');
+    wrappedError.code = 'RESULT_SAVE_FAILED';
+    wrappedError.statusCode = 500;
+    wrappedError.cause = error;
+    throw wrappedError;
+  }
+
   await updateLicenseBadgeMetricFromResult(row);
-  const license = await getLicenseStateForDomain(normalizeDomain(row.url));
-  return {
-    slug:           row.slug,
-    url:            row.url,
-    greenHost:      !!row.green_host,
-    carbonEstimate: +row.carbon_estimate,
-    percentile:     +row.percentile,
-    reductionPct:   +row.reduction_pct,
-    grade:          row.grade,
-    lighthouseScores,
-    lighthouseStatus,
-    lighthouseSource: lighthouseMeta.source,
-    lighthouseReason: lighthouseMeta.reason,
-    license,
-    timestamp:      new Date(row.created_at).getTime()
-  };
+  return toPublicResult(row);
 }
 
 async function runPSI(url, strat, key) {

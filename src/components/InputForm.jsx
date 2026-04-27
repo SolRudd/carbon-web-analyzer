@@ -9,6 +9,9 @@ import { normalizeWebsiteUrl } from "../lib/url";
 
 export default function InputForm() {
   const [url, setUrl] = useState("");
+  const [email, setEmail] = useState("");
+  const [contactConsent, setContactConsent] = useState(false);
+  const [formError, setFormError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -16,11 +19,21 @@ export default function InputForm() {
     e.preventDefault();
     // We use the new helper function here to clean the URL
     const cleanUrl = normalizeWebsiteUrl(url);
+    const normalizedEmail = email.trim().toLowerCase();
     if (!cleanUrl) {
-      alert("Please enter a valid URL.");
+      setFormError("Please enter a valid URL.");
+      return;
+    }
+    if (!normalizedEmail) {
+      setFormError("Please enter your email address before running a scan.");
+      return;
+    }
+    if (!contactConsent) {
+      setFormError("Please confirm contact permission before submitting your email.");
       return;
     }
 
+    setFormError("");
     setLoading(true);
 
     try {
@@ -30,7 +43,12 @@ export default function InputForm() {
           "Content-Type": "application/json",
         },
         // We send the clean, standardized URL to the backend
-        body: JSON.stringify({ url: cleanUrl }),
+        body: JSON.stringify({
+          url: cleanUrl,
+          contactEmail: normalizedEmail,
+          contactConsent,
+          contactSource: "calculator",
+        }),
       });
 
       const [res] = await Promise.all([
@@ -43,13 +61,24 @@ export default function InputForm() {
       });
 
       if (!res.ok) {
-        throw new Error(data.error || `Server returned ${res.status} status.`);
+        const requestError = new Error(data.error || `Server returned ${res.status} status.`);
+        requestError.code = data.code || "";
+        requestError.status = res.status;
+        throw requestError;
       }
 
       navigate(`/result/${data.slug}`);
     } catch (err) {
       console.error("❌ Error fetching carbon data:", err);
-      alert(`Oops! Something went wrong: ${err.message}. Please try again.`);
+      const code = String(err.code || "");
+      const message = code === "VALIDATION_ERROR"
+        ? err.message
+        : code === "CONTACT_SAVE_FAILED"
+          ? "We could not save your contact details for this scan. Please try again."
+        : code === "RESULT_SAVE_FAILED" || code === "SCAN_FAILED"
+          ? "We could not save this scan result. Please try again."
+          : "The scan service is unavailable right now. Please try again.";
+      setFormError(message);
     } finally {
       setLoading(false);
     }
@@ -93,7 +122,7 @@ export default function InputForm() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !url.trim() || !email.trim() || !contactConsent}
               className="flex items-center justify-center px-6 h-14 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-full font-semibold text-base disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_10px_28px_-16px_rgba(22,163,74,0.8)] col-span-1"
               aria-live="polite"
             >
@@ -109,6 +138,58 @@ export default function InputForm() {
                 </>
               )}
             </button>
+          </div>
+
+          <div className="space-y-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-950/40 p-4">
+            <div>
+              <label
+                htmlFor="calculator-email"
+                className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-100"
+              >
+                Add your email so we can send your report
+              </label>
+              <input
+                id="calculator-email"
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  const nextEmail = e.target.value;
+                  setEmail(nextEmail);
+                  if (!nextEmail.trim()) setContactConsent(false);
+                  setFormError("");
+                }}
+                disabled={loading}
+                placeholder="you@company.com"
+                autoComplete="email"
+                inputMode="email"
+                className="h-12 w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+
+            <label className="flex items-start gap-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+              <input
+                type="checkbox"
+                checked={contactConsent}
+                onChange={(e) => {
+                  setContactConsent(e.target.checked);
+                  setFormError("");
+                }}
+                disabled={loading || !email.trim()}
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-green-600 focus:ring-green-500"
+              />
+              <span>
+                I agree to the privacy policy and I&apos;m happy for GreenTracer to contact me about this result and badge access.{" "}
+                <Link to="/privacy-policy" className="font-medium text-green-700 underline decoration-green-300 underline-offset-2 dark:text-green-400">
+                  Privacy policy
+                </Link>
+              </span>
+            </label>
+
+            {formError && (
+              <p className="text-sm font-medium text-rose-700 dark:text-rose-300">
+                {formError}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row justify-center gap-3 text-sm">

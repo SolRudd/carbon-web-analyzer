@@ -1,674 +1,300 @@
-// src/pages/Faq.jsx
-
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import {
-  FaSearch,
-  FaChevronDown,
-  FaQuestionCircle,
-  FaLightbulb,
-  FaServer,
-  FaCertificate,
-  FaCog,
-  FaRocket,
-  FaShieldAlt,
-  FaGlobe,
-} from "react-icons/fa";
-import { Activity, ArrowRight } from "lucide-react";
+import { Activity, ArrowRight, BadgeCheck, ChevronDown, Database, Search, Server, ShieldCheck, WalletCards } from "lucide-react";
 
-const pageStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap');
-
-  :root {
-    --gt-green: #15803d;
-    --gt-neon: #4ade80;
-  }
-
-  .gt-page { font-family: 'Inter', sans-serif; }
-  .gt-display { font-family: 'Fraunces', serif; letter-spacing: -0.03em; }
-  .gt-mono { font-family: 'JetBrains Mono', monospace; }
-
-  @keyframes gt-reveal {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .gt-bg-data {
-    background-image:
-      linear-gradient(
-        0deg,
-        transparent 24%,
-        rgba(34, 197, 94, .05) 25%,
-        rgba(34, 197, 94, .05) 26%,
-        transparent 27%,
-        transparent 74%,
-        rgba(34, 197, 94, .05) 75%,
-        rgba(34, 197, 94, .05) 76%,
-        transparent 77%,
-        transparent
-      ),
-      linear-gradient(
-        90deg,
-        transparent 24%,
-        rgba(34, 197, 94, .05) 25%,
-        rgba(34, 197, 94, .05) 26%,
-        transparent 27%,
-        transparent 74%,
-        rgba(34, 197, 94, .05) 75%,
-        rgba(34, 197, 94, .05) 76%,
-        transparent 77%,
-        transparent
-      );
-    background-size: 50px 50px;
-  }
-
-  .gt-grid-faint {
-    background-size: 40px 40px;
-    background-image:
-      linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px);
-  }
-
-  .dark .gt-grid-faint {
-    background-image:
-      linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
-  }
-
-  .gt-panel {
-    background: rgba(255, 255, 255, 0.74);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(0,0,0,0.08);
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-
-  .gt-panel:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
-    border-color: rgba(22, 163, 74, 0.3);
-  }
-
-  .dark .gt-panel {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(255,255,255,0.08);
-  }
-
-  .dark .gt-panel:hover {
-    box-shadow: 0 10px 30px -10px rgba(22, 163, 74, 0.1);
-  }
-
-  .gt-soft-ring:focus-visible {
-    outline: none;
-    box-shadow:
-      0 0 0 2px rgba(34,197,94,0.9),
-      0 0 0 5px rgba(34,197,94,0.18);
-  }
-
-  .gt-faq-card {
-    transition: all 0.3s ease;
-  }
-
-  .gt-faq-card:hover {
-    border-color: rgba(22, 163, 74, 0.32);
-  }
-`;
-
-const faqCategories = [
-  {
-    id: "getting-started",
-    title: "Getting Started",
-    icon: <FaRocket className="text-xl" />,
-    color: "from-blue-500 to-cyan-500",
-    bgColor: "bg-blue-50 dark:bg-blue-900/20",
-    borderColor: "border-blue-200 dark:border-blue-700",
-  },
-  {
-    id: "how-it-works",
-    title: "How It Works",
-    icon: <FaCog className="text-xl" />,
-    color: "from-green-500 to-green-600",
-    bgColor: "bg-green-50 dark:bg-green-900/20",
-    borderColor: "border-green-200 dark:border-green-700",
-  },
-  {
-    id: "badge-api",
-    title: "Badge & API",
-    icon: <FaCertificate className="text-xl" />,
-    color: "from-purple-500 to-pink-500",
-    bgColor: "bg-purple-50 dark:bg-purple-900/20",
-    borderColor: "border-purple-200 dark:border-purple-700",
-  },
-  {
-    id: "technical",
-    title: "Technical Details",
-    icon: <FaServer className="text-xl" />,
-    color: "from-orange-500 to-red-500",
-    bgColor: "bg-orange-50 dark:bg-orange-900/20",
-    borderColor: "border-orange-200 dark:border-orange-700",
-  },
+const categories = [
+  { id: "scans", label: "Scans", icon: Activity },
+  { id: "badges", label: "Free badges", icon: BadgeCheck },
+  { id: "verified", label: "Verified", icon: ShieldCheck },
+  { id: "hosting", label: "Hosting", icon: Server },
+  { id: "pricing", label: "Pricing", icon: WalletCards },
+  { id: "data", label: "Data", icon: Database },
 ];
 
 const faqs = [
   {
-    category: "getting-started",
-    question: "How do I check my website's carbon footprint?",
-    answer:
-      "Simply enter your website URL in our calculator on the homepage. Our system will analyze your site using Google PageSpeed Insights API, check for green hosting via the Green Web Foundation, and calculate your CO₂ emissions per page view. Results are ready in about 15-30 seconds.",
-    emoji: "🚀",
-    tags: ["calculator", "getting started", "analysis"],
+    category: "scans",
+    question: "How does a GreenTracer scan work?",
+    answer: "Enter a public URL and GreenTracer measures the page, checks hosting signals, calculates an estimated carbon value per page view, assigns a grade, and saves a public report page that you can share.",
+    tags: ["scan", "report", "carbon"],
   },
   {
-    category: "getting-started",
-    question: "Why should I care about my website's carbon footprint?",
-    answer:
-      "Digital emissions now account for 4% of global greenhouse gases—equivalent to the aviation industry. A typical website produces 60kg CO₂ annually. Beyond environmental responsibility, green websites are faster, cheaper to host, and rank better in search engines. Many countries are implementing digital carbon reporting requirements.",
-    emoji: "🌱",
-    tags: ["environment", "benefits", "performance"],
+    category: "scans",
+    question: "Why does the public scan ask for email and consent?",
+    answer: "The homepage and calculator flows are lead-capture scans. Anonymous visitors provide an email and consent so GreenTracer can send the report and follow up. Logged-in dashboard scans do not ask for email or consent.",
+    tags: ["email", "consent", "dashboard"],
   },
   {
-    category: "getting-started",
-    question: "Is the carbon calculator free to use?",
-    answer:
-      "Yes! Our basic carbon calculator is completely free with no limits. You can test any website and get detailed results including CO₂ per page view, grade (A+ to F), and percentile ranking. Premium features like historical tracking and advanced reports will be available soon.",
-    emoji: "💰",
-    tags: ["pricing", "free", "limits"],
-  },
-
-  {
-    category: "how-it-works",
-    question: "How accurate are your carbon calculations?",
-    answer:
-      "We use industry-standard methodologies: Google PageSpeed Insights for page weight, 0.81 kWh/GB energy intensity (covering data centers + networks), and 442g CO₂/kWh global electricity carbon intensity. Green hosting gets a 9% discount. Our calculations match methods used by Website Carbon Calculator and other recognized tools.",
-    emoji: "🎯",
-    tags: ["accuracy", "methodology", "standards"],
+    category: "badges",
+    question: "Which badges are free?",
+    answer: "Carbon Tested and Green Hosting are free public badges. They come from saved public report data and do not require login, payment, or a verified membership.",
+    tags: ["carbon tested", "green hosting", "free"],
   },
   {
-    category: "how-it-works",
-    question: "What data sources do you use?",
-    answer:
-      "We integrate with Google PageSpeed Insights API for real page weight measurement and the Green Web Foundation database for renewable energy verification. All calculations use peer-reviewed energy intensity factors and global electricity carbon averages from the International Energy Agency.",
-    emoji: "📊",
-    tags: ["data sources", "apis", "methodology"],
+    category: "badges",
+    question: "Where do I get the Carbon Tested badge code?",
+    answer: "Run a scan, open the saved result page, and use the badge actions section. The snippet is generated from the saved result so you do not manually enter grades, scores, or report slugs.",
+    tags: ["carbon tested", "embed", "result"],
   },
   {
-    category: "how-it-works",
-    question: "Why don't results update immediately after I make changes?",
-    answer:
-      "Results are cached for 24 hours to prevent unnecessary API calls and ensure consistent measurements. This also reflects real-world CDN behavior. If you need fresh data sooner, contact us about priority re-testing options coming soon.",
-    emoji: "🔄",
-    tags: ["caching", "updates", "timing"],
+    category: "badges",
+    question: "When can I use the Green Hosting badge?",
+    answer: "Only when the saved report detects green hosting. If green hosting is not detected, GreenTracer shows an explanation instead of giving you a badge that would overstate the evidence.",
+    tags: ["green hosting", "eligibility", "badge"],
   },
   {
-    category: "how-it-works",
-    question: "My green host isn't showing as green, why?",
-    answer:
-      "We rely on the Green Web Foundation's verified database of renewable energy providers. If your host isn't listed, is behind a CDN like Cloudflare, or uses third-party services, the green status may not appear. You can submit your host to Green Web Foundation for verification.",
-    emoji: "🌿",
-    tags: ["green hosting", "verification", "issues"],
-  },
-
-  {
-    category: "badge-api",
-    question: "How do I add the GreenTracer badge to my website?",
-    answer: (
-      <>
-        Add this code where you want the badge:
-        <code className="break-all block bg-slate-100 dark:bg-slate-800 p-3 rounded-xl text-xs mt-3 mb-3 font-mono">
-          {`<a href="https://www.greentracer.org/verify/PUBLIC_TOKEN" target="_blank" rel="noopener">
-  <img
-    src="https://api.greentracer.org/api/badge/PUBLIC_TOKEN"
-    alt="GreenTracer Verified"
-    width="240"
-    height="40"
-  />
-</a>`}
-        </code>
-        Replace PUBLIC_TOKEN with your public badge token. The badge links to a public verification page and does not expose API keys.
-      </>
-    ),
-    emoji: "🏷️",
-    tags: ["badge", "embed", "installation"],
+    category: "verified",
+    question: "What does GreenTracer Verified mean?",
+    answer: "GreenTracer Verified is the paid supporter/member badge. It indicates active licence or manual trial status and domain verification. It does not mean the site has a perfect carbon score.",
+    tags: ["verified", "licence", "member"],
   },
   {
-    category: "badge-api",
-    question: "Can I customize the badge appearance?",
-    answer:
-      "GreenTracer badges use a fixed verified design so the trust mark stays consistent. Choose compact for footers or standard for trust sections.",
-    emoji: "🎨",
-    tags: ["badge", "customization", "styling"],
+    category: "verified",
+    question: "Does verified require a perfect grade?",
+    answer: "No. A company can have a poor carbon score and still be GreenTracer Verified if it has an active supporter licence and verified domain. The scan grade and supporter status are separate claims.",
+    tags: ["verified", "grade", "supporter"],
   },
   {
-    category: "badge-api",
-    question: "Is there an API I can use programmatically?",
-    answer:
-      "Yes! Use GET /api/trace?site=yoursite.com to fetch carbon data for any tested website. Results include CO₂ per view, grade, percentile, and green hosting status. Full API documentation with rate limits and authentication coming soon.",
-    emoji: "⚡",
-    tags: ["api", "integration", "development"],
+    category: "hosting",
+    question: "Why is my host not showing as green?",
+    answer: "GreenTracer depends on available provider and hosting evidence. CDNs, proxies, redirects, or unlisted providers can hide the underlying hosting signal. Re-run a scan after provider or DNS changes.",
+    tags: ["hosting", "cdn", "provider"],
   },
   {
-    category: "badge-api",
-    question: "Can I use the badge on multiple websites?",
-    answer:
-      "Yes, but each verified website should use its own public badge token. Public tokens are safe to embed and only return public verification data.",
-    emoji: "🌐",
-    tags: ["badge", "multiple sites", "domains"],
-  },
-
-  {
-    category: "technical",
-    question: "What technologies power GreenTrace?",
-    answer:
-      "Frontend: React with Tailwind CSS hosted on Vercel. Backend: Node.js with Express, PostgreSQL database for permanent storage, and integrations with Google PageSpeed Insights and Green Web Foundation APIs. All infrastructure runs on renewable energy where possible.",
-    emoji: "⚙️",
-    tags: ["technology", "stack", "infrastructure"],
+    category: "pricing",
+    question: "What will paid plans unlock?",
+    answer: "Paid plans are intended for GreenTracer Verified status, managed domain verification, supporter badge rights, and future directory/profile visibility. Free report-backed badges remain free.",
+    tags: ["pricing", "licence", "plans"],
   },
   {
-    category: "technical",
-    question: "How do you handle data privacy and storage?",
-    answer:
-      "We store only publicly accessible data: URL, page size, hosting provider, and calculated carbon metrics. No personal information, analytics, or tracking data is collected. All data is stored securely in PostgreSQL with 24-hour caching for performance.",
-    emoji: "🔒",
-    tags: ["privacy", "data storage", "security"],
+    category: "data",
+    question: "How accurate is the carbon estimate?",
+    answer: "The result is an estimate based on measured page data and published energy/carbon assumptions. It is useful for comparison and prioritization, not a full lifecycle assessment or regulatory audit.",
+    tags: ["accuracy", "methodology", "estimate"],
   },
   {
-    category: "technical",
-    question: "What are your rate limits and fair use policy?",
-    answer:
-      "Free tier: 20 carbon checks per day, 60 badge loads per minute. We use rate limiting to ensure service availability for all users. Higher limits and priority processing available in our upcoming premium plans. Enterprise options for high-volume usage available on request.",
-    emoji: "⏱️",
-    tags: ["rate limits", "fair use", "limits"],
+    category: "data",
+    question: "Why are some performance signals unavailable?",
+    answer: "Older cached results or failed Lighthouse runs may not include every performance category. GreenTracer labels missing values as unavailable rather than inventing a score.",
+    tags: ["lighthouse", "performance", "data"],
   },
   {
-    category: "technical",
-    question: "Do you offer historical tracking and trends?",
-    answer:
-      "Yes! All carbon checks are permanently stored, enabling historical tracking and trend analysis. You can see how your site's carbon footprint changes over time as you implement optimizations. Detailed trend reports and alerts coming in our premium tier.",
-    emoji: "📈",
-    tags: ["history", "tracking", "trends"],
+    category: "verified",
+    question: "Is the verified directory live?",
+    answer: "The link model is prepared for verified profiles and directory pages. The initial verified badge can point to a placeholder profile while the fuller directory experience is built.",
+    tags: ["directory", "profile", "verified"],
   },
 ];
 
 export default function Faq() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [expandedFaqs, setExpandedFaqs] = useState(new Set());
+  const [expandedFaqs, setExpandedFaqs] = useState(new Set([faqs[0].question]));
 
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: faqs
-      .filter((faq) => typeof faq.answer === "string")
-      .map((faq) => ({
-        "@type": "Question",
-        name: faq.question,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: faq.answer,
-        },
-      })),
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
   };
 
   const filteredFaqs = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
     return faqs.filter((faq) => {
-      const matchesSearch =
-        searchTerm === "" ||
-        (typeof faq.question === "string" &&
-          faq.question.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (typeof faq.answer === "string" &&
-          faq.answer.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (Array.isArray(faq.tags) &&
-          faq.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase())));
-
-      const matchesCategory =
-        selectedCategory === "all" || faq.category === selectedCategory;
-
-      return matchesSearch && matchesCategory;
+      const matchesCategory = selectedCategory === "all" || faq.category === selectedCategory;
+      const matchesSearch = !term ||
+        faq.question.toLowerCase().includes(term) ||
+        faq.answer.toLowerCase().includes(term) ||
+        faq.tags.some((tag) => tag.toLowerCase().includes(term));
+      return matchesCategory && matchesSearch;
     });
   }, [searchTerm, selectedCategory]);
 
-  const toggleFaq = (index) => {
-    const newExpanded = new Set(expandedFaqs);
-    if (newExpanded.has(index)) {
-      newExpanded.delete(index);
-    } else {
-      newExpanded.add(index);
-    }
-    setExpandedFaqs(newExpanded);
-  };
-
-  const getCategoryInfo = (categoryId) => {
-    return faqCategories.find((cat) => cat.id === categoryId) || {};
+  const toggleFaq = (key) => {
+    setExpandedFaqs((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   };
 
   return (
     <>
       <Helmet>
-        <title>FAQ | GreenTracer Support Center</title>
+        <title>FAQ | GreenTracer</title>
         <meta
           name="description"
-          content="Find answers to frequently asked questions about our website carbon calculator, green hosting verification, API, and the GreenTracer badge."
+          content="Answers about GreenTracer scans, free badges, verified badges, green hosting, pricing, data accuracy, and directory plans."
         />
         <link rel="canonical" href="https://www.greentracer.org/faq" />
-
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://www.greentracer.org/faq" />
-        <meta property="og:title" content="FAQ | GreenTracer Support Center" />
-        <meta
-          property="og:description"
-          content="Find answers to frequently asked questions about our website carbon calculator, green hosting verification, API, and the GreenTracer badge."
-        />
+        <meta property="og:title" content="FAQ | GreenTracer" />
+        <meta property="og:description" content="Answers about GreenTracer scans, badges, verification, hosting, pricing, and data accuracy." />
         <meta property="og:image" content="https://www.greentracer.org/GreenFavi.png" />
-
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content="https://www.greentracer.org/faq" />
-        <meta property="twitter:title" content="FAQ | GreenTracer Support Center" />
-        <meta
-          property="twitter:description"
-          content="Find answers to frequently asked questions about our website carbon calculator, green hosting verification, API, and the GreenTracer badge."
-        />
-        <meta property="twitter:image" content="https://www.greentracer.org/GreenFavi.png" />
-
         <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
       </Helmet>
 
-      <div className="gt-page bg-slate-50 dark:bg-[#020f1e] text-slate-900 dark:text-white transition-colors duration-300 min-h-screen">
-        <style>{pageStyles}</style>
-
-        {/* HERO */}
-        <section className="relative pt-32 pb-20 px-6 overflow-hidden bg-white dark:bg-[#020f1e] border-b border-slate-200 dark:border-slate-900">
-          <div className="absolute inset-0 gt-bg-data opacity-30 pointer-events-none" />
-
-          <div className="relative z-10 max-w-6xl mx-auto text-center space-y-8 animate-[gt-reveal_0.8s_ease-out]">
-            <div className="flex justify-center">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded shadow-sm">
-                <Activity className="w-3 h-3 text-green-600 dark:text-green-400" />
-                <span className="gt-mono text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-                  Support Center
-                </span>
-              </div>
-            </div>
-
-            <h1 className="gt-display text-5xl sm:text-7xl font-semibold tracking-tight text-slate-900 dark:text-white leading-[1.05]">
-              Frequently asked <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-400 italic font-light">
-                questions.
-              </span>
-            </h1>
-
-            <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 max-w-4xl mx-auto leading-relaxed font-light">
-              Everything you need to know about measuring, reducing, and tracking your
-              website&apos;s carbon footprint with GreenTracer.
+      <div className="min-h-screen bg-slate-100/70 text-slate-900 dark:bg-[#020f1e] dark:text-white">
+        <section className="border-b border-slate-200 bg-white px-4 pb-12 pt-28 dark:border-slate-900 dark:bg-[#020f1e] sm:px-6">
+          <div className="mx-auto max-w-6xl">
+            <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300">
+              <Activity size={13} aria-hidden="true" />
+              Support center
             </p>
-
-            <div className="flex flex-wrap justify-center gap-8 mt-12">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  {faqs.length}
-                </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400 font-medium">
-                  Questions Answered
-                </div>
+            <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_360px] lg:items-end">
+              <div>
+                <h1 className="text-4xl font-semibold tracking-[-0.04em] text-slate-950 dark:text-white sm:text-6xl">
+                  Frequently asked questions.
+                </h1>
+                <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-300 sm:text-lg">
+                  Focused answers about scans, free report badges, GreenTracer Verified, green hosting, pricing, data quality, and the directory roadmap.
+                </p>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  {faqCategories.length}
-                </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400 font-medium">
-                  Categories
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  24/7
-                </div>
-                <div className="text-sm text-slate-600 dark:text-slate-400 font-medium">
-                  Self-Serve Help
-                </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">Core product model</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  Free badges are report-backed. GreenTracer Verified is the paid supporter/member badge.
+                </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* SEARCH + FILTERS */}
-        <section className="relative py-10 px-6 bg-slate-50 dark:bg-[#020f1e] border-t border-slate-100 dark:border-slate-900 overflow-hidden">
-          <div className="absolute inset-0 gt-grid-faint pointer-events-none opacity-50" />
-
-          <div className="relative z-10 max-w-6xl mx-auto space-y-6">
-            <div className="relative max-w-2xl mx-auto">
-              <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search questions, topics, or keywords..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="gt-soft-ring w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-2xl shadow-sm focus:outline-none text-lg"
-                aria-label="Search frequently asked questions"
-              />
+        <section className="px-4 py-8 sm:px-6">
+          <div className="mx-auto max-w-6xl space-y-5">
+            <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+                <input
+                  type="search"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search scans, badges, hosting, pricing..."
+                  className="h-12 w-full rounded-2xl border border-slate-300 bg-white pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  aria-label="Search frequently asked questions"
+                />
+              </div>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {filteredFaqs.length} of {faqs.length} questions
+              </p>
             </div>
 
-            <div className="flex flex-wrap justify-center gap-3">
+            <div className="flex gap-2 overflow-x-auto pb-1">
               <button
                 type="button"
                 onClick={() => setSelectedCategory("all")}
-                className={`gt-soft-ring flex items-center gap-2 px-5 py-3 rounded-2xl font-medium transition-all duration-300 ${
+                className={`inline-flex h-10 shrink-0 items-center rounded-full border px-4 text-sm font-semibold ${
                   selectedCategory === "all"
-                    ? "bg-slate-900 dark:bg-green-600 text-white shadow-lg"
-                    : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-green-500 dark:hover:border-green-400"
+                    ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900"
+                    : "border-slate-300 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 }`}
               >
-                <FaGlobe />
-                All Categories
+                All
               </button>
-
-              {faqCategories.map((category) => (
+              {categories.map(({ id, label, icon: Icon }) => (
                 <button
-                  key={category.id}
+                  key={id}
                   type="button"
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`gt-soft-ring flex items-center gap-2 px-5 py-3 rounded-2xl font-medium transition-all duration-300 ${
-                    selectedCategory === category.id
-                      ? "bg-slate-900 dark:bg-green-600 text-white shadow-lg"
-                      : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-green-500 dark:hover:border-green-400"
+                  onClick={() => setSelectedCategory(id)}
+                  className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-semibold ${
+                    selectedCategory === id
+                      ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900"
+                      : "border-slate-300 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                   }`}
                 >
-                  {category.icon}
-                  {category.title}
+                  {React.createElement(Icon, { size: 14, "aria-hidden": true })}
+                  {label}
                 </button>
               ))}
             </div>
 
-            <div className="text-center text-slate-600 dark:text-slate-400">
-              {filteredFaqs.length === faqs.length
-                ? `Showing all ${faqs.length} questions`
-                : `Found ${filteredFaqs.length} question${
-                    filteredFaqs.length !== 1 ? "s" : ""
-                  } ${
-                    searchTerm
-                      ? `for "${searchTerm}"`
-                      : `in "${faqCategories.find((c) => c.id === selectedCategory)?.title}"`
-                  }`}
-            </div>
-          </div>
-        </section>
-
-        {/* FAQ LIST */}
-        <section className="py-16 px-6 bg-white dark:bg-[#020f1e] border-t border-slate-100 dark:border-slate-900">
-          <div className="max-w-6xl mx-auto">
-            {filteredFaqs.length === 0 ? (
-              <div className="text-center py-16">
-                <FaQuestionCircle className="text-6xl text-slate-400 mx-auto mb-4" />
-                <h3 className="text-2xl font-semibold text-slate-600 dark:text-slate-400 mb-2">
-                  No questions found
-                </h3>
-                <p className="text-slate-500 dark:text-slate-500 mb-6">
-                  Try adjusting your search terms or browse different categories.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setSelectedCategory("all");
-                  }}
-                  className="gt-soft-ring px-6 py-3 bg-slate-900 dark:bg-green-600 text-white rounded-full font-semibold transition-all duration-300 hover:translate-y-[-2px]"
-                >
-                  Show All Questions
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-5">
-                {filteredFaqs.map((faq, index) => {
-                  const categoryInfo = getCategoryInfo(faq.category);
-                  const isExpanded = expandedFaqs.has(index);
+            <div className="space-y-3">
+              {filteredFaqs.length === 0 ? (
+                <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
+                  <p className="font-semibold text-slate-900 dark:text-white">No matching questions.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setSelectedCategory("all");
+                    }}
+                    className="mt-4 inline-flex h-10 items-center rounded-full bg-slate-900 px-4 text-sm font-semibold text-white dark:bg-slate-100 dark:text-slate-900"
+                  >
+                    Reset filters
+                  </button>
+                </div>
+              ) : (
+                filteredFaqs.map((faq, index) => {
+                  const isExpanded = expandedFaqs.has(faq.question);
                   const panelId = `faq-panel-${index}`;
-
+                  const category = categories.find((item) => item.id === faq.category);
+                  const Icon = category?.icon || Activity;
                   return (
-                    <article
-                      key={index}
-                      className={`gt-faq-card gt-panel rounded-2xl border ${categoryInfo.borderColor || "border-slate-200 dark:border-slate-700"} overflow-hidden`}
-                    >
+                    <article key={`${faq.category}-${faq.question}`} className="overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
                       <button
                         type="button"
-                        onClick={() => toggleFaq(index)}
+                        onClick={() => toggleFaq(faq.question)}
                         aria-expanded={isExpanded}
                         aria-controls={panelId}
-                        className="gt-soft-ring w-full p-6 md:p-8 text-left flex items-center justify-between gap-6 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors duration-200"
+                        className="flex w-full items-start justify-between gap-4 p-5 text-left sm:p-6"
                       >
-                        <div className="flex items-start gap-4 flex-1 min-w-0">
-                          <div className="flex items-center gap-3 shrink-0">
-                            <div
-                              className={`w-12 h-12 bg-gradient-to-r ${categoryInfo.color || "from-slate-500 to-slate-600"} rounded-xl flex items-center justify-center text-white shadow-sm`}
-                            >
-                              <span className="text-2xl" aria-hidden="true">
-                                {faq.emoji}
-                              </span>
-                            </div>
-
-                            <div
-                              className={`hidden sm:flex w-8 h-8 ${categoryInfo.bgColor || "bg-slate-100 dark:bg-slate-700"} rounded-lg items-center justify-center ${categoryInfo.borderColor || "border border-slate-200 dark:border-slate-600"}`}
-                              aria-hidden="true"
-                            >
-                              {categoryInfo.icon}
-                            </div>
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white leading-tight">
-                              {faq.question}
-                            </h3>
-
-                            <div className="flex flex-wrap gap-2 mt-3">
+                        <span className="flex min-w-0 gap-4">
+                          <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-emerald-700 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-300">
+                            <Icon size={16} aria-hidden="true" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-base font-semibold text-slate-950 dark:text-white sm:text-lg">{faq.question}</span>
+                            <span className="mt-2 flex flex-wrap gap-2">
                               {faq.tags.slice(0, 3).map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-md text-xs font-medium"
-                                >
+                                <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                                   {tag}
                                 </span>
                               ))}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div
-                          className={`transform transition-transform duration-200 shrink-0 ${
-                            isExpanded ? "rotate-180" : ""
-                          }`}
-                          aria-hidden="true"
-                        >
-                          <FaChevronDown className="text-slate-400 text-xl" />
-                        </div>
+                            </span>
+                          </span>
+                        </span>
+                        <ChevronDown className={`mt-2 h-4 w-4 shrink-0 text-slate-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} aria-hidden="true" />
                       </button>
 
-                      <div
-                        id={panelId}
-                        className={`overflow-hidden transition-all duration-300 ${
-                          isExpanded ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
-                        }`}
-                      >
-                        <div
-                          className={`p-6 md:p-8 pt-0 ${categoryInfo.bgColor || "bg-slate-50 dark:bg-slate-700/30"} border-t ${categoryInfo.borderColor || "border-slate-200 dark:border-slate-600"}`}
-                        >
-                          <div className="flex items-start gap-4">
-                            <FaLightbulb
-                              className="text-2xl mt-1 text-yellow-500 shrink-0"
-                              aria-hidden="true"
-                            />
-                            <div className="flex-1">
-                              <div className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed space-y-4">
-                                {faq.answer}
-                              </div>
-
-                              <div className="flex flex-wrap gap-2 mt-5">
-                                {faq.tags.map((tag) => (
-                                  <button
-                                    key={tag}
-                                    type="button"
-                                    onClick={() => setSearchTerm(tag)}
-                                    className="gt-soft-ring px-3 py-1 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-full text-sm font-medium hover:border-green-500 hover:text-green-600 dark:hover:text-green-400 transition-colors duration-200"
-                                  >
-                                    #{tag}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
+                      {isExpanded && (
+                        <div id={panelId} className="border-t border-slate-200 px-5 pb-5 pt-4 dark:border-slate-700 sm:px-6 sm:pb-6">
+                          <p className="max-w-4xl text-sm leading-7 text-slate-600 dark:text-slate-300">{faq.answer}</p>
                         </div>
-                      </div>
+                      )}
                     </article>
                   );
-                })}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* SUPPORT CTA */}
-        <section className="relative py-20 px-6 bg-slate-50 dark:bg-[#020f1e] border-t border-slate-100 dark:border-slate-900 overflow-hidden">
-          <div className="absolute inset-0 gt-grid-faint pointer-events-none opacity-50" />
-
-          <div className="relative z-10 max-w-4xl mx-auto text-center">
-            <div className="gt-panel rounded-2xl p-8 sm:p-10 border border-slate-200 dark:border-slate-800">
-              <FaShieldAlt className="text-4xl text-green-600 dark:text-green-400 mx-auto mb-4" />
-              <h2 className="gt-display text-3xl font-bold mb-4 text-slate-900 dark:text-white">
-                Still need help?
-              </h2>
-              <p className="text-lg text-slate-600 dark:text-slate-300 mb-8 max-w-2xl mx-auto">
-                Can&apos;t find the answer you&apos;re looking for? We&apos;re here to help
-                you improve performance, trust signals, and sustainability reporting.
-              </p>
-
-              <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Link
-                  to="/badge"
-                  className="gt-soft-ring inline-flex items-center justify-center px-8 py-4 bg-slate-900 dark:bg-green-600 text-white font-semibold rounded-full transition-all duration-300 hover:translate-y-[-2px] shadow-lg"
-                >
-                  <FaCertificate className="mr-2" />
-                  Get Your Badge
-                </Link>
-
-                <a
-                  href="mailto:support@greentracer.org"
-                  className="gt-soft-ring inline-flex items-center justify-center px-8 py-4 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-full font-semibold transition-all duration-300"
-                >
-                  <FaQuestionCircle className="mr-2" />
-                  Contact Support
-                </a>
-              </div>
+                })
+              )}
             </div>
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900 sm:p-8">
+              <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-950 dark:text-white">Still need a specific answer?</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                    Start with a public scan, then use the result page for report-backed badges or the dashboard for GreenTracer Verified.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Link to="/" className="inline-flex h-10 items-center justify-center rounded-full bg-slate-900 px-4 text-sm font-semibold text-white dark:bg-slate-100 dark:text-slate-900">
+                    Run scan
+                  </Link>
+                  <Link to="/badge" className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-slate-300 px-4 text-sm font-semibold text-slate-700 dark:border-slate-600 dark:text-slate-200">
+                    Badge builder
+                    <ArrowRight size={14} aria-hidden="true" />
+                  </Link>
+                </div>
+              </div>
+            </section>
           </div>
         </section>
-
-        {/* BACK LINK */}
-        <div className="text-center py-10 border-t border-slate-100 dark:border-slate-900 bg-white dark:bg-[#020f1e]">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition-colors gt-mono text-xs font-bold uppercase tracking-wider"
-          >
-            <ArrowRight className="w-4 h-4 rotate-180" />
-            Back to Homepage
-          </Link>
-        </div>
       </div>
     </>
   );

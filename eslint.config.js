@@ -31,4 +31,12 @@ export default [
       ],
     },
   },
+  {
+    files: ['backend/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'commonjs',
+      globals: globals.node,
+    },
+  },
 ]

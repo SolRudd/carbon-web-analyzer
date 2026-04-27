@@ -7,7 +7,28 @@ const {
   normalizePublicStatus,
 } = require('./formatters');
 
-const ACTIVE_LICENSE_STATUSES = new Set(['active', 'trial', 'charity', 'partner', 'internal']);
+const ACTIVE_LICENSE_STATUSES = new Set([
+  'active',
+  'trial',
+  'charity',
+  'partner',
+  'internal',
+  'non_profit',
+  'nonprofit',
+  'community',
+  'manual_lifetime',
+]);
+const ACTIVE_MANUAL_LICENSE_TYPES = new Set([
+  'paid',
+  'trial',
+  'charity',
+  'partner',
+  'internal',
+  'non_profit',
+  'nonprofit',
+  'community',
+  'manual_lifetime',
+]);
 const VERIFIED_STATUSES = new Set(['verified', 'active', 'approved']);
 const PENDING_STATUSES = new Set(['pending', 'needs_review', 'review', 'unverified', 'not_verified', 'none', '']);
 const INACTIVE_VERIFICATION_STATUSES = new Set(['inactive', 'disabled', 'rejected', 'failed', 'expired']);
@@ -24,7 +45,8 @@ function hasExpired(endDate) {
 
 function isLicenseActive(raw) {
   const status = normalizeRawStatus(raw.licenseStatus);
-  if (!ACTIVE_LICENSE_STATUSES.has(status)) return false;
+  const licenseType = normalizeRawStatus(raw.licenseType || raw.licenceType);
+  if (!ACTIVE_LICENSE_STATUSES.has(status) && !(status === 'active' && ACTIVE_MANUAL_LICENSE_TYPES.has(licenseType))) return false;
   return !hasExpired(raw.licenseEndDate);
 }
 
@@ -32,7 +54,7 @@ function mapPublicBadgeStatus(raw = {}) {
   if (raw.recordMissing) {
     return {
       publicStatus: 'unavailable',
-      label: getPublicStatusLabel('unavailable'),
+      label: getPublicStatusLabel('unavailable', 'greentracer_verified'),
       shouldShowMetric: false,
       isClickable: false,
       internalReason: 'record_missing',
@@ -41,8 +63,8 @@ function mapPublicBadgeStatus(raw = {}) {
 
   if (raw.publicVerificationEnabled === false) {
     return {
-      publicStatus: 'inactive',
-      label: getPublicStatusLabel('inactive'),
+      publicStatus: 'not_active',
+      label: getPublicStatusLabel('not_active', 'greentracer_verified'),
       shouldShowMetric: false,
       isClickable: false,
       internalReason: 'public_verification_disabled',
@@ -51,8 +73,8 @@ function mapPublicBadgeStatus(raw = {}) {
 
   if (raw.badgeEnabled === false) {
     return {
-      publicStatus: 'inactive',
-      label: getPublicStatusLabel('inactive'),
+      publicStatus: 'not_active',
+      label: getPublicStatusLabel('not_active', 'greentracer_verified'),
       shouldShowMetric: false,
       isClickable: false,
       internalReason: 'badge_disabled',
@@ -61,8 +83,8 @@ function mapPublicBadgeStatus(raw = {}) {
 
   if (!isLicenseActive(raw)) {
     return {
-      publicStatus: 'inactive',
-      label: getPublicStatusLabel('inactive'),
+      publicStatus: 'licence_inactive',
+      label: getPublicStatusLabel('licence_inactive', 'greentracer_verified'),
       shouldShowMetric: false,
       isClickable: false,
       internalReason: 'license_inactive',
@@ -73,8 +95,8 @@ function mapPublicBadgeStatus(raw = {}) {
   if (VERIFIED_STATUSES.has(verificationStatus)) {
     const metric = normalizeMetricValue(raw.metric);
     return {
-      publicStatus: 'verified',
-      label: getPublicStatusLabel('verified'),
+      publicStatus: 'active',
+      label: getPublicStatusLabel('active', 'greentracer_verified'),
       shouldShowMetric: metric !== null,
       isClickable: true,
       internalReason: 'verified',
@@ -83,8 +105,8 @@ function mapPublicBadgeStatus(raw = {}) {
 
   if (INACTIVE_VERIFICATION_STATUSES.has(verificationStatus)) {
     return {
-      publicStatus: 'inactive',
-      label: getPublicStatusLabel('inactive'),
+      publicStatus: 'not_active',
+      label: getPublicStatusLabel('not_active', 'greentracer_verified'),
       shouldShowMetric: false,
       isClickable: true,
       internalReason: 'verification_inactive',
@@ -94,7 +116,7 @@ function mapPublicBadgeStatus(raw = {}) {
   if (PENDING_STATUSES.has(verificationStatus)) {
     return {
       publicStatus: 'pending',
-      label: getPublicStatusLabel('pending'),
+      label: getPublicStatusLabel('pending', 'greentracer_verified'),
       shouldShowMetric: false,
       isClickable: true,
       internalReason: 'verification_pending',
@@ -103,7 +125,7 @@ function mapPublicBadgeStatus(raw = {}) {
 
   return {
     publicStatus: 'pending',
-    label: getPublicStatusLabel('pending'),
+    label: getPublicStatusLabel('pending', 'greentracer_verified'),
     shouldShowMetric: false,
     isClickable: true,
     internalReason: 'verification_unknown',
@@ -113,11 +135,12 @@ function mapPublicBadgeStatus(raw = {}) {
 function toPublicBadgeData(input = {}) {
   const metric = normalizeMetricValue(input.metric);
   const publicStatus = normalizePublicStatus(input.publicStatus);
-  const showMetric = Boolean(input.showMetric && metric !== null && publicStatus === 'verified');
+  const showMetric = Boolean(input.showMetric && metric !== null && publicStatus === 'active');
 
   return {
     publicStatus,
-    label: input.label || getPublicStatusLabel(publicStatus),
+    badgeType: input.badgeType || 'greentracer_verified',
+    label: input.label || getPublicStatusLabel(publicStatus, input.badgeType || 'greentracer_verified'),
     domain: input.domain || null,
     metric: showMetric ? metric : null,
     metricText: showMetric ? formatCo2PerPage(metric) : null,
@@ -125,6 +148,9 @@ function toPublicBadgeData(input = {}) {
     latestScanAt: input.latestScanAt || null,
     verifiedAt: input.verifiedAt || null,
     verificationUrl: input.verificationUrl || null,
+    directoryUrl: input.directoryUrl || null,
+    reportUrl: input.reportUrl || null,
+    valueText: input.valueText || input.gradeText || null,
     isClickable: input.isClickable !== false,
   };
 }

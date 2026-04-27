@@ -92,7 +92,7 @@ export default function Post() {
         The most reliable independent source is the <strong>Green Web Foundation</strong>, a Dutch non-profit that maintains a database of hosting providers verified to use renewable energy. GreenTracer checks every site against this database automatically as part of every scan.
       </p>
       <p className="text-lg leading-relaxed">
-        When you run a scan on GreenTracer, the result clearly shows whether your hosting provider is green-verified. If it is, your result page shows "Green Hosting Verified" and you're eligible to display the hosting badge. If it isn't, the report will flag this as an area for improvement.
+        When you run a scan on GreenTracer, the result clearly shows whether your hosting provider is green-checked. If renewable hosting is detected, your result page can show "Green Hosting Detected" and you're eligible to display the hosting badge. If it isn't, the report will flag this as an area for improvement.
       </p>
 
       <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 rounded-xl p-6">

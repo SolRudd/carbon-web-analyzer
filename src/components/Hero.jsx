@@ -196,16 +196,24 @@ export default function Hero() {
       });
 
       if (!res.ok) {
-        throw new Error(data.error || `Server returned ${res.status} status.`);
+        const requestError = new Error(data.error || `Server returned ${res.status} status.`);
+        requestError.code = data.code || "";
+        requestError.status = res.status;
+        throw requestError;
       }
 
       navigate(`/result/${data.slug}`);
     } catch (err) {
       console.error("❌ Error fetching carbon data:", err);
-      if (/email|contact permission/i.test(err.message || "")) {
+      const code = String(err.code || "");
+      if (code === "VALIDATION_ERROR" || /email|contact permission/i.test(err.message || "")) {
         setFormError(err.message);
+      } else if (code === "CONTACT_SAVE_FAILED") {
+        setFormError("We could not save your contact details for this scan. Please try again.");
+      } else if (code === "RESULT_SAVE_FAILED" || code === "SCAN_FAILED") {
+        setFormError("We could not save this scan result. Please try again.");
       } else {
-        alert(`Oops! Something went wrong: ${err.message}. Please try again.`);
+        setFormError("The scan service is unavailable right now. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -307,7 +315,7 @@ export default function Hero() {
                     Step 2
                   </p>
                   <h3 className="mt-1 text-base font-semibold text-slate-900 dark:text-white">
-                    Add your email so we can send your report and follow up
+                    Add your email so we can send your report
                   </h3>
                 </div>
 
