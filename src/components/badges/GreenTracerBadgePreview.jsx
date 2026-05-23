@@ -19,7 +19,7 @@ export default function GreenTracerBadgePreview({
       valueText={valueText}
       customColors={customColors}
       className={className}
-      ariaLabel="GreenTracer verification badge preview"
+      ariaLabel="GreenTracer badge preview"
     />
   );
 }

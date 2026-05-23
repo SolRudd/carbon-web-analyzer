@@ -49,6 +49,9 @@ export default function GreenTracerBadge({
           backgroundColor: colors.accent,
           color: colors.markText,
           fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
+          boxShadow: colors.markText === "#f8fafc"
+            ? "inset 0 0 0 1px rgba(248, 250, 252, 0.22)"
+            : "inset 0 0 0 1px rgba(7, 17, 31, 0.18)",
         }}
         aria-hidden="true"
       >

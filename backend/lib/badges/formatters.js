@@ -32,7 +32,7 @@ const PUBLIC_STATUSES = Object.freeze([
 const STATUS_LABELS = Object.freeze({
   pending: 'Verification pending',
   not_active: 'Badge not active',
-  green_hosting_not_detected: 'Green hosting not detected',
+  green_hosting_not_detected: 'Green Hosting',
   licence_inactive: 'Licence inactive',
   domain_mismatch: 'Domain mismatch',
   unavailable: 'Badge not active',
@@ -89,6 +89,9 @@ function getPublicStatusLabel(status, type = 'greentracer_verified') {
   if (publicStatus === 'active') {
     return BADGE_TYPE_LABELS[badgeType]?.fullActive || BADGE_TYPE_LABELS.greentracer_verified.fullActive;
   }
+  if (badgeType === 'green_hosting' && publicStatus === 'green_hosting_not_detected') {
+    return 'Green hosting checked by GreenTracer';
+  }
   return STATUS_LABELS[publicStatus] || STATUS_LABELS.unavailable;
 }
 
@@ -103,7 +106,9 @@ function getBadgeDisplay({ status = 'active', type = 'greentracer_verified', val
   const activeLabel = typeLabels.active;
   const label = publicStatus === 'active'
     ? activeLabel
-    : STATUS_LABELS[publicStatus] || STATUS_LABELS.unavailable;
+    : badgeType === 'green_hosting' && publicStatus === 'green_hosting_not_detected'
+      ? 'Green Hosting'
+      : STATUS_LABELS[publicStatus] || STATUS_LABELS.unavailable;
   const value = publicStatus === 'active' ? String(valueText || '').trim() : '';
 
   return {
@@ -195,7 +200,7 @@ function applyBadgeColorOverrides(baseColors, overrides = {}) {
     }
   }
 
-  if (accent && contrastRatio(accent, next.background) >= 1.8) {
+  if (accent) {
     next.accent = accent;
     next.markText = getReadableTextColor(accent);
   }

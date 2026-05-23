@@ -11,13 +11,20 @@ const getBlogRoutes = async () => {
   return files.map(file => `/blog/${file.replace(/\.jsx$/, '')}`);
 };
 
-export default defineConfig(async ({ command, mode }) => {
+export default defineConfig(async ({ command }) => {
   const blogRoutes = await getBlogRoutes();
   const plugins = [react()];
 
   // ✅ Only run prerendering if NOT on Vercel
   const isVercel = process.env.VERCEL === '1';
   if (command === 'build' && !isVercel) {
+    if (typeof process.stdout.clearLine !== 'function') {
+      process.stdout.clearLine = () => {};
+    }
+    if (typeof process.stdout.cursorTo !== 'function') {
+      process.stdout.cursorTo = () => {};
+    }
+
     const Prerenderer = (await import('vite-plugin-prerenderer')).default;
     plugins.push(
       new Prerenderer({
@@ -29,11 +36,10 @@ export default defineConfig(async ({ command, mode }) => {
         routes: [
           '/',
           '/how-it-works',
-          '/rating-system',
+          '/rating',
           '/blog',
           '/badge',
           '/faq',
-          '/api',
           '/privacy-policy',
           ...blogRoutes,
         ],

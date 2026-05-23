@@ -79,6 +79,24 @@ test('badge SVG renders small verified results badge without raw internals', () 
   assert.doesNotMatch(svg, /LICENSE_UNAVAILABLE|TOKEN_INVALID|SITE_NOT_FOUND|API_KEY_INVALID|SUBSCRIPTION_EXPIRED|DOMAIN_MISMATCH/);
 });
 
+test('green hosting fallback badge stays neutral and styled when hosting is unknown', () => {
+  const svg = renderBadgeSvg({
+    publicStatus: 'green_hosting_not_detected',
+    badgeType: 'green_hosting',
+    domain: 'example.com',
+  }, {
+    colors: {
+      backgroundColor: '#ffffff',
+      accentColor: '#111827',
+    },
+  });
+
+  assert.match(svg, /Green Hosting/);
+  assert.match(svg, /fill="#ffffff"/);
+  assert.match(svg, /fill="#111827"/);
+  assert.doesNotMatch(svg, /Badge not active|Domain mismatch|not detected/i);
+});
+
 test('badge token validation accepts public tokens and rejects unsafe input', () => {
   assert.equal(normalizeBadgeToken('gtb_abc123_PUBLIC-token'), 'gtb_abc123_PUBLIC-token');
   assert.equal(normalizeBadgeToken('abc123_PUBLIC-token'), 'abc123_PUBLIC-token');
@@ -87,6 +105,9 @@ test('badge token validation accepts public tokens and rejects unsafe input', ()
 });
 
 test('legacy green-hosting badge type aliases normalize to the public hosting badge', () => {
+  assert.equal(normalizeBadgeType('carbon'), 'carbon_tested');
   assert.equal(normalizeBadgeType('hosting'), 'green_hosting');
   assert.equal(normalizeBadgeType('green-hosting'), 'green_hosting');
+  assert.equal(normalizeBadgeType('verified'), 'greentracer_verified');
+  assert.equal(normalizeBadgeType('member'), 'greentracer_verified');
 });

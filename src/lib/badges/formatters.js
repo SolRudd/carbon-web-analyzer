@@ -30,7 +30,7 @@ export const PUBLIC_BADGE_STATUSES = [
 export const BADGE_LABELS = {
   pending: "Verification pending",
   not_active: "Badge not active",
-  green_hosting_not_detected: "Green hosting not detected",
+  green_hosting_not_detected: "Green Hosting",
   licence_inactive: "Licence inactive",
   domain_mismatch: "Domain mismatch",
   unavailable: "Badge not active",
@@ -76,6 +76,9 @@ export function getBadgeLabel(status, type = "greentracer_verified") {
   if (publicStatus === "active") {
     return BADGE_TYPE_LABELS[badgeType]?.fullActive || BADGE_TYPE_LABELS.greentracer_verified.fullActive;
   }
+  if (badgeType === "green_hosting" && publicStatus === "green_hosting_not_detected") {
+    return "Green hosting checked by GreenTracer";
+  }
   return BADGE_LABELS[publicStatus] || BADGE_LABELS.unavailable;
 }
 
@@ -84,6 +87,9 @@ export function getBadgeVisibleLabel(status, type = "greentracer_verified") {
   const badgeType = normalizeBadgeType(type);
   if (publicStatus === "active") {
     return BADGE_TYPE_LABELS[badgeType]?.active || BADGE_TYPE_LABELS.greentracer_verified.active;
+  }
+  if (badgeType === "green_hosting" && publicStatus === "green_hosting_not_detected") {
+    return "Green Hosting";
   }
   return BADGE_LABELS[publicStatus] || BADGE_LABELS.unavailable;
 }
@@ -173,7 +179,7 @@ function applyColorOverrides(baseColors, overrides = {}) {
     }
   }
 
-  if (accent && contrastRatio(accent, next.background) >= 1.8) {
+  if (accent) {
     next.accent = accent;
     next.markText = getReadableTextColor(accent);
   }

@@ -209,7 +209,7 @@ export default function InputForm() {
           </p>
         </form>
 
-        {loading && <LoadingOverlay />}
+        {loading && <LoadingOverlay siteUrl={url} />}
       </div>
     </section>
   );

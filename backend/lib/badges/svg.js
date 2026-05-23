@@ -18,6 +18,7 @@ function renderLogoMark(config, colors) {
 
   return `
     <rect x="${x}" y="${y}" width="${size}" height="${size}" rx="7" fill="${colors.accent}"/>
+    <rect x="${x + 0.5}" y="${y + 0.5}" width="${size - 1}" height="${size - 1}" rx="6.5" fill="none" stroke="${colors.markText}" opacity="0.2"/>
     <path d="M${cx} ${y + 5.2}l6 2.4v4.5c0 4-2.4 6.7-6 8.1-3.6-1.4-6-4.1-6-8.1V${y + 7.6}l6-2.4z" fill="${colors.markText}" opacity="0.18"/>
     <text x="${cx}" y="${cy + 3.5}" text-anchor="middle" fill="${colors.markText}"
       font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"

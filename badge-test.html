@@ -88,7 +88,18 @@
         </div>
 
         <div class="card">
-          <p><strong>Old verified/member snippet</strong></p>
+          <p><strong>Old verified snippet</strong></p>
+          <code>data-token + data-type="verified"</code>
+          <div
+            class="greentrace-badge"
+            data-token="gtb_local_test_token"
+            data-domain="greentracer.org"
+            data-type="verified"
+          ></div>
+        </div>
+
+        <div class="card">
+          <p><strong>Old member snippet</strong></p>
           <code>data-token + data-type="member"</code>
           <div
             class="greentrace-badge"
@@ -144,6 +155,15 @@
         </div>
 
         <div class="card">
+          <p><strong>Only data-domain default</strong></p>
+          <code>no data-type, defaults to carbon_tested</code>
+          <div
+            class="greentrace-badge"
+            data-domain="example.com"
+          ></div>
+        </div>
+
+        <div class="card">
           <p><strong>Domain-only Green Hosting</strong></p>
           <code>data-domain only, no result slug</code>
           <div
@@ -176,7 +196,7 @@
         </div>
 
         <div class="card">
-          <p><strong>Backend lookup fails open</strong></p>
+          <p><strong>Backend lookup fails open: Carbon Tested</strong></p>
           <code>unknown domain, carbon still renders</code>
           <div
             class="greentrace-badge"
@@ -184,6 +204,29 @@
             data-domain="missing-result.example.invalid"
             data-bg-color="#172554"
             data-accent-color="#93c5fd"
+          ></div>
+        </div>
+
+        <div class="card">
+          <p><strong>Backend lookup fails open: Green Hosting</strong></p>
+          <code>unknown domain, neutral hosting badge still renders</code>
+          <div
+            class="greentrace-badge"
+            data-type="green-hosting"
+            data-domain="missing-result.example.invalid"
+            data-bg-color="#ffffff"
+            data-accent-color="#111827"
+          ></div>
+        </div>
+
+        <div class="card">
+          <p><strong>Missing result slug fails open</strong></p>
+          <code>missing slug, carbon fallback still renders</code>
+          <div
+            class="greentrace-badge"
+            data-badge-type="carbon_tested"
+            data-result-slug="missing-result-slug-000"
+            data-domain="example.com"
           ></div>
         </div>
 

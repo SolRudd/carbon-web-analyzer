@@ -20,8 +20,6 @@ import {
 import { blogPosts } from "../blog/posts";
 
 const pageStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap');
-
   /* ── Dark mode (default) ── */
   .gt-page {
     --gt-bg: #04111f;
@@ -37,7 +35,7 @@ const pageStyles = `
     --gt-green-3: #4ade80;
     --gt-white-btn: #f8fafc;
     --gt-dark-btn: #0f172a;
-    font-family: 'Inter', sans-serif;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background:
       radial-gradient(circle at top center, rgba(34,197,94,0.06), transparent 24%),
       linear-gradient(180deg, #03101d 0%, #04111f 35%, #04111f 100%);
@@ -138,12 +136,12 @@ const pageStyles = `
   }
 
   .gt-display {
-    font-family: 'Fraunces', serif;
+    font-family: Georgia, Cambria, "Times New Roman", serif;
     letter-spacing: -0.03em;
   }
 
   .gt-mono {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   }
 
   .gt-hero-grid {
@@ -607,6 +605,9 @@ export default function Blog() {
                       src={featuredPost.meta.image}
                       alt={featuredPost.meta.title}
                       className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      loading="eager"
+                      decoding="async"
+                      fetchPriority="high"
                       style={{ objectPosition: featuredPost.meta.heroImagePosition }}
                     />
                     <div className="gt-overlay absolute inset-0" />
@@ -709,6 +710,8 @@ export default function Blog() {
                           src={post.meta.image}
                           alt={post.meta.title}
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
+                          decoding="async"
                           style={{ objectPosition: post.meta.cardImagePosition }}
                         />
                         <div className="gt-overlay absolute inset-0 opacity-80" />

@@ -24,8 +24,6 @@ import { blogPosts } from "../blog/posts";
 const posts = blogPosts;
 
 const pageStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap');
-
   .gt-article-page {
     --gt-bg: #04111f;
     --gt-panel: rgba(7, 24, 39, 0.92);
@@ -45,7 +43,7 @@ const pageStyles = `
     --gt-quote-bg: rgba(34,197,94,0.10);
     --gt-inline-code-bg: rgba(15,23,42,0.65);
     --gt-code-bg: rgba(2,8,23,0.88);
-    font-family: 'Inter', sans-serif;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background:
       radial-gradient(circle at top center, rgba(34,197,94,0.06), transparent 24%),
       linear-gradient(180deg, #03101d 0%, #04111f 38%, #04111f 100%);
@@ -77,12 +75,12 @@ const pageStyles = `
   }
 
   .gt-article-page .gt-display {
-    font-family: 'Fraunces', serif;
+    font-family: Georgia, Cambria, "Times New Roman", serif;
     letter-spacing: -0.03em;
   }
 
   .gt-article-page .gt-mono {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   }
 
   .gt-article-grid {
@@ -570,6 +568,9 @@ export default function BlogPostPage() {
             src={meta.image}
             alt={meta.title}
             className="h-full w-full object-cover"
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
             style={{ objectPosition: meta.heroImagePosition }}
           />
           <div className="gt-hero-overlay absolute inset-0" />
@@ -657,6 +658,8 @@ export default function BlogPostPage() {
                       src={relatedPost.meta.image}
                       alt={relatedPost.meta.title}
                       className="gt-related-image h-48 w-full object-cover"
+                      loading="lazy"
+                      decoding="async"
                       style={{ objectPosition: relatedPost.meta.relatedImagePosition }}
                     />
                     <div className="p-6">

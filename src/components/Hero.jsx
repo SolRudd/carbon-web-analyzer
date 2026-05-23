@@ -411,7 +411,7 @@ export default function Hero() {
           </div>
         </div>
 
-        {loading && <LoadingOverlay />}
+        {loading && <LoadingOverlay siteUrl={url} />}
       </section>
     </>
   );

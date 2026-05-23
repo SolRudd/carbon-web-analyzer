@@ -94,8 +94,20 @@ app.get('/greentrace-badge.js', badgeCors, limiterBadge, (req,res) => {
   res.sendFile(path.join(__dirname,'public','greentrace-badge.js'));
 });
 
+function getRequestedBadgeDomain(req) {
+  return normalizeDomain(
+    req.query.domain ||
+    req.query.url ||
+    req.query.site ||
+    req.query.declared_domain ||
+    req.query.declaredDomain ||
+    req.query.detected_host ||
+    req.query.detectedHost
+  );
+}
+
 app.get('/api/badge/result/latest/data', badgeCors, limiterBadge, async (req, res) => {
-  const requestedDomain = normalizeDomain(req.query.domain || req.query.url || req.query.site || req.query.declared_domain);
+  const requestedDomain = getRequestedBadgeDomain(req);
   const row = requestedDomain ? await getLatestResultRowByDomain(requestedDomain) : null;
   const data = applyBadgeRequestDomainState(toResultBadgeData(row, {
     badgeType: req.query.type,
@@ -112,7 +124,7 @@ app.get('/api/badge/result/latest/data', badgeCors, limiterBadge, async (req, re
 });
 
 app.get('/api/badge/result/latest', badgeCors, limiterBadge, async (req, res) => {
-  const requestedDomain = normalizeDomain(req.query.domain || req.query.url || req.query.site || req.query.declared_domain);
+  const requestedDomain = getRequestedBadgeDomain(req);
   const row = requestedDomain ? await getLatestResultRowByDomain(requestedDomain) : null;
   const data = applyBadgeRequestDomainState(toResultBadgeData(row, {
     badgeType: req.query.type,
@@ -199,7 +211,7 @@ app.get('/api/badge/:token', badgeCors, limiterBadge, async (req, res) => {
 
 app.get('/api/badge.svg', badgeCors, limiterBadge, async (req, res) => {
   const token = req.query.token || req.query.publicToken || req.query.public_token;
-  const requestedDomain = normalizeDomain(req.query.domain || req.query.url || req.query.site || req.query.declared_domain);
+  const requestedDomain = getRequestedBadgeDomain(req);
   let data;
 
   if (token) {
@@ -668,6 +680,7 @@ app.get('/api/account/me/badge', limiterLicenseRead, requireAccountAuth, async (
 app.post('/api/account/check-carbon', limiterCheck, requireAccountAuth, async (req, res) => {
   const site = normalizeScanUrl(req.body?.url || req.body?.domain);
   if (!site) return res.status(400).json({ error: 'Valid domain or URL is required.', code: 'VALIDATION_ERROR' });
+  const siteBase = resolveSiteBase(req);
 
   let host;
   try {
@@ -683,6 +696,18 @@ app.post('/api/account/check-carbon', limiterCheck, requireAccountAuth, async (r
       result: data,
       requestedUrl: site,
     });
+    if (req.accountUser.email) {
+      sendResultReportEmail({
+        to: req.accountUser.email,
+        result: data,
+        domain: accountLink.domain,
+        siteBase,
+      }).catch(() => {
+        if (process.env.NODE_ENV !== 'production') {
+          console.debug('[account/check-carbon] report email failed for', req.accountUser.email);
+        }
+      });
+    }
 
     return res.json({
       ...data,
@@ -1002,20 +1027,29 @@ app.post('/api/check-carbon', limiterCheck, async (req,res) => {
       requireEmail: true,
       requireConsent: true
     });
-    const data = await performCarbonCheck(site, host);
-    if (lead.shouldCapture) {
-      try {
-        await captureContactLead({
-          lead,
-          siteUrl: data.url || site,
+      const data = await performCarbonCheck(site, host);
+      if (lead.shouldCapture) {
+        try {
+          await captureContactLead({
+            lead,
+            siteUrl: data.url || site,
+            domain: normalizeDomain(data.url || site),
+            resultSlug: data.slug
+          });
+        } catch (leadError) {
+          console.error('[/api/check-carbon POST] lead capture failed:', leadError.message);
+          // The scan result remains useful even if lead storage is temporarily unavailable.
+        }
+
+        sendResultReportEmail({
+          to: lead.email,
+          result: data,
           domain: normalizeDomain(data.url || site),
-          resultSlug: data.slug
+          siteBase: resolveSiteBase(req),
+        }).catch((leadError) => {
+          console.error('[/api/check-carbon POST] report email failed:', leadError.message);
         });
-      } catch (leadError) {
-        console.error('[/api/check-carbon POST] lead capture failed:', leadError.message);
-        // The scan result remains useful even if lead storage is temporarily unavailable.
       }
-    }
     res.json(data);
   } catch (err) {
     console.error('[/api/check-carbon POST] failed:', err.message);
@@ -1218,13 +1252,15 @@ function toResultBadgeData(row, { badgeType, siteBase, requestedDomain } = {}) {
     return {
       publicStatus: type === 'green_hosting' ? 'green_hosting_not_detected' : 'not_active',
       badgeType: type,
-      label: type === 'green_hosting' ? 'Green hosting not detected' : 'Badge not active',
+      label: type === 'green_hosting' ? 'Green Hosting' : 'Badge not active',
       domain: domain || null,
       showMetric: false,
+      valueText: '',
       reportUrl: null,
       verificationUrl: null,
       isClickable: false,
       resultSlug: null,
+      internalReason: type === 'green_hosting' ? 'result_missing_fail_open' : 'result_missing',
     };
   }
 
@@ -1232,10 +1268,11 @@ function toResultBadgeData(row, { badgeType, siteBase, requestedDomain } = {}) {
     return {
       publicStatus: 'green_hosting_not_detected',
       badgeType: type,
-      label: 'Green hosting not detected',
+      label: 'Green Hosting',
       domain,
       latestScanAt: result.created_at || null,
       showMetric: false,
+      valueText: '',
       reportUrl,
       verificationUrl: reportUrl,
       isClickable: Boolean(reportUrl),
@@ -1324,6 +1361,9 @@ function getBadgeRenderOptions(req) {
 }
 
 function applyBadgeRequestDomainState(data, req) {
+  const type = normalizeBadgeType(data?.badgeType || req.query.type || req.query.badge_type || req.query.badgeType);
+  if (type !== 'greentracer_verified') return data;
+
   const domain = normalizeBadgeHost(data?.domain);
   if (!domain) return data;
 
@@ -1385,6 +1425,80 @@ async function captureContactLead({ lead, siteUrl, domain, resultSlug }) {
     wrappedError.statusText = statusText || null;
     wrappedError.cause = error;
     throw wrappedError;
+  }
+}
+
+async function sendResultReportEmail({ to, result, domain, siteBase }) {
+  const reportEmailEnabled = String(process.env.REPORT_EMAIL_ENABLED || 'true').trim().toLowerCase();
+  if (reportEmailEnabled === 'false' || reportEmailEnabled === '0' || reportEmailEnabled === 'off') return;
+
+  const apiKey = String(process.env.SENDGRID_API_KEY || '').trim();
+  if (!apiKey) return;
+
+  const fromEmail = String(process.env.REPORT_FROM_EMAIL || '').trim();
+  if (!fromEmail) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[report-email] REPORT_FROM_EMAIL is not configured.');
+    }
+    return;
+  }
+
+  if (!to || !result?.slug || !domain) return;
+  const normalizedTo = String(to).trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedTo)) return;
+
+  const base = trimPublicBaseUrl(siteBase, 'https://www.greentracer.org');
+  const reportUrl = `${base}/result/${encodeURIComponent(result.slug)}`;
+  const safeDomain = String(domain || '').trim().toLowerCase();
+  const title = `${safeDomain || 'your domain'} Carbon Report`;
+  const gradeText = result?.grade ? `Grade ${result.grade}` : 'Scan completed';
+  const hostingText = result?.greenHost || result?.green_host ? 'Green hosting detected' : 'Green hosting not detected';
+  const carbonText = result?.carbonEstimate || result?.carbon_estimate
+    ? `Estimated carbon: ${Number(result.carbonEstimate ?? result.carbon_estimate).toFixed(1)}g CO₂/page`
+    : '';
+
+  const emailPayload = {
+    personalizations: [
+      {
+        to: [{ email: normalizedTo }],
+      },
+    ],
+    subject: `${title} — GreenTracer`,
+    from: { email: fromEmail, name: 'GreenTracer' },
+    content: [
+      {
+        type: 'text/plain',
+        value: [
+          `Hi,`,
+          '',
+          `${title} is ready.`,
+          `Result: ${reportUrl}`,
+          `Domain: ${safeDomain}`,
+          `Grade: ${gradeText}`,
+          `Carbon: ${carbonText}`,
+          `Hosting: ${hostingText}`,
+          '',
+          'You can view your full report here: ' + reportUrl,
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      },
+    ],
+  };
+
+  try {
+    await axios.post('https://api.sendgrid.com/v3/mail/send', emailPayload, {
+      timeout: 10000,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch (err) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[report-email] send failed:', err?.response?.status, err?.response?.data || err.message);
+    }
+    return;
   }
 }
 
