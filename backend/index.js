@@ -600,7 +600,7 @@ app.get('/api/account/me/dashboard', limiterLicenseRead, requireAccountAuth, asy
           carbon_tested: {
             badgeType: 'carbon_tested',
             status: 'active',
-            label: 'Carbon Tested',
+            label: 'Carbon Result',
             reportUrl,
             embedCode: buildLoaderBadgeEmbedCode({
               badgeType: 'carbon_tested',
@@ -615,7 +615,7 @@ app.get('/api/account/me/dashboard', limiterLicenseRead, requireAccountAuth, asy
             badgeType: 'green_hosting',
             status: latestResult?.green_host === true ? 'active' : 'green_hosting_not_detected',
             label: latestResult?.green_host === true ? 'Green Hosting Detected' : 'Green Hosting Checked',
-            reportUrl,
+            reportUrl: reportUrl ? `${reportUrl}#result-breakdown` : null,
             embedCode: buildLoaderBadgeEmbedCode({
               badgeType: 'green_hosting',
               domain: row.domain,
@@ -642,6 +642,12 @@ app.get('/api/account/me/dashboard', limiterLicenseRead, requireAccountAuth, asy
       };
     })
   );
+  const recentReportRows = await getRecentResultRowsForDomains((data || []).map((row) => row.domain), 60);
+  const reports = recentReportRows.map((row) => ({
+    ...toPublicResult(row),
+    domain: normalizeDomain(row?.url),
+    reportUrl: buildReportUrl({ slug: row?.slug, siteBase })
+  }));
   let badge;
   try {
     badge = await getUserBadgeEntitlement(supabase, userId, {
@@ -658,6 +664,7 @@ app.get('/api/account/me/dashboard', limiterLicenseRead, requireAccountAuth, asy
   return res.json({
     user: req.accountUser,
     domains,
+    reports,
     badge
   });
 });
@@ -1165,6 +1172,40 @@ async function getLatestResultRowByDomain(domain) {
   return (data || []).find((row) => normalizeDomain(row.url) === normalized) || null;
 }
 
+async function getRecentResultRowsForDomains(domains = [], limit = 50) {
+  const normalizedDomains = [...new Set((domains || []).map(normalizeDomain).filter(Boolean))];
+  if (normalizedDomains.length === 0) return [];
+
+  const perDomainLimit = Math.max(5, Math.ceil((Math.min(Number(limit) || 50, 100)) / normalizedDomains.length));
+  const rowsByDomain = await Promise.all(normalizedDomains.map(async (domain) => {
+    const { data, error, status, statusText } = await supabase
+      .from('results')
+      .select('slug,url,green_host,carbon_estimate,percentile,reduction_pct,grade,created_at')
+      .ilike('url', `%${domain}%`)
+      .order('created_at', { ascending: false })
+      .limit(Math.min(perDomainLimit + 8, 25));
+
+    if (error) {
+      logSupabaseError({
+        route: 'internal getRecentResultRowsForDomains',
+        table: 'results',
+        operation: 'select',
+        error,
+        status,
+        statusText,
+      });
+      return [];
+    }
+
+    return (Array.isArray(data) ? data : []).filter((row) => normalizeDomain(row?.url) === domain);
+  }));
+
+  return rowsByDomain
+    .flat()
+    .sort((a, b) => new Date(b?.created_at || 0).getTime() - new Date(a?.created_at || 0).getTime())
+    .slice(0, Math.max(1, Math.min(Number(limit) || 50, 100)));
+}
+
 function buildReportUrl({ slug, siteBase }) {
   const base = trimPublicBaseUrl(siteBase, 'https://www.greentracer.org');
   return slug ? `${base}/result/${encodeURIComponent(slug)}` : null;
@@ -1215,13 +1256,13 @@ function resolveVerifiedBadgeState({ row, license }) {
 
 function getDashboardBadgeStatusLabel(status) {
   const labels = {
-    active: 'Verified Supporter',
-    pending: 'Verification pending',
-    not_active: 'Badge not active',
-    licence_inactive: 'Licence inactive',
-    domain_mismatch: 'Domain mismatch',
-    green_hosting_not_detected: 'Green hosting not detected',
-    unavailable: 'Unavailable'
+    active: 'GreenTracer Verified',
+    pending: 'Verification Pending',
+    not_active: 'Verified Not Active',
+    licence_inactive: 'Verified Not Active',
+    domain_mismatch: 'Domain Mismatch',
+    green_hosting_not_detected: 'Hosting Not Confirmed',
+    unavailable: 'Verification Unavailable'
   };
   return labels[status] || labels.unavailable;
 }
@@ -1230,14 +1271,15 @@ function toResultBadgeData(row, { badgeType, siteBase, requestedDomain } = {}) {
   const type = normalizeBadgeType(badgeType || 'carbon_tested');
   const result = row || null;
   const domain = normalizeDomain(result?.url) || normalizeDomain(requestedDomain);
-  const reportUrl = buildReportUrl({ slug: result?.slug, siteBase });
+  const baseReportUrl = buildReportUrl({ slug: result?.slug, siteBase });
+  const reportUrl = type === 'green_hosting' && baseReportUrl ? `${baseReportUrl}#result-breakdown` : baseReportUrl;
 
   if (!result || !domain) {
     if (type === 'carbon_tested') {
       return {
-        publicStatus: 'active',
+        publicStatus: 'unavailable',
         badgeType: type,
-        label: 'Carbon Tested',
+        label: 'Carbon Result Unavailable',
         domain: domain || null,
         showMetric: false,
         valueText: '',
@@ -1252,7 +1294,7 @@ function toResultBadgeData(row, { badgeType, siteBase, requestedDomain } = {}) {
     return {
       publicStatus: type === 'green_hosting' ? 'green_hosting_not_detected' : 'not_active',
       badgeType: type,
-      label: type === 'green_hosting' ? 'Green Hosting' : 'Badge not active',
+      label: type === 'green_hosting' ? 'Green Hosting Checked' : 'Verification Unavailable',
       domain: domain || null,
       showMetric: false,
       valueText: '',
@@ -1268,7 +1310,7 @@ function toResultBadgeData(row, { badgeType, siteBase, requestedDomain } = {}) {
     return {
       publicStatus: 'green_hosting_not_detected',
       badgeType: type,
-      label: 'Green Hosting',
+      label: 'Green Hosting Checked',
       domain,
       latestScanAt: result.created_at || null,
       showMetric: false,
@@ -1284,7 +1326,7 @@ function toResultBadgeData(row, { badgeType, siteBase, requestedDomain } = {}) {
   return {
     publicStatus: 'active',
     badgeType: type,
-    label: type === 'green_hosting' ? 'Green Hosting Detected' : 'Carbon Tested',
+    label: type === 'green_hosting' ? 'Green Hosting Detected' : 'Carbon Result',
     domain,
     metric: result.carbon_estimate ?? null,
     metricText: null,
@@ -1376,7 +1418,7 @@ function applyBadgeRequestDomainState(data, req) {
   return {
     ...data,
     publicStatus: 'domain_mismatch',
-    label: 'Domain mismatch',
+    label: 'Domain Mismatch',
     metric: null,
     metricText: null,
     showMetric: false,
@@ -1581,6 +1623,9 @@ function mapLicensePublic(row) {
     licenseType: row.license_type,
     startDate: row.start_date,
     endDate: row.end_date,
+    subscriptionStatus: row.stripe_subscription_status || null,
+    renewalDate: row.stripe_current_period_end || row.end_date || null,
+    cancelAtPeriodEnd: Boolean(row.stripe_cancel_at_period_end),
     licensed: activeStatuses.has(String(row.status || '').toLowerCase()) && !isExpired,
     expired: isExpired
   };

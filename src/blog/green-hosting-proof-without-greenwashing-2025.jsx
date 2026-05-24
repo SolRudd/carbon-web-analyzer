@@ -8,8 +8,8 @@ export const meta = {
   readingMinutes: 4,
   tags: ["Hosting", "Verification", "GreenTracer", "Trust"],
   slug: "green-hosting-proof-without-greenwashing-2025",
-  image: "/assets/blog/hosting-proof-2025.png",
-  imageAvif: "/assets/blog/hosting-proof-2025.png",
+  image: "/assets/blog/hosting-proof-2025.webp",
+  imageAvif: "/assets/blog/hosting-proof-2025.webp",
   excerpt:
     "A green hosting claim only helps if someone can verify it. Here is the difference between marketing language, real proof, and a signal buyers will actually trust.",
 };

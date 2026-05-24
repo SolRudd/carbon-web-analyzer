@@ -21,7 +21,7 @@ function unavailableBadgeData(siteBase, reason = 'unavailable') {
     ...toPublicBadgeData({
       publicStatus: 'unavailable',
       badgeType: 'greentracer_verified',
-      label: 'Badge not active',
+      label: 'Verification Unavailable',
       showMetric: false,
       verificationUrl: siteBase ? `${siteBase}/verify/unavailable` : null,
       isClickable: false,
@@ -215,7 +215,7 @@ function toPublicBadgeJson(data = {}) {
   return {
     publicStatus: data.publicStatus || 'unavailable',
     badgeType: data.badgeType || 'greentracer_verified',
-    label: data.label || 'Badge not active',
+    label: data.label || 'Verification Unavailable',
     domain: data.domain || null,
     metric: data.metric ?? null,
     metricText: data.metricText || null,

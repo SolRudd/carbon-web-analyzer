@@ -8,8 +8,8 @@ export const meta = {
   readingMinutes: 4,
   tags: ["Reporting", "Sales", "GreenTracer", "Sustainability"],
   slug: "website-carbon-reports-for-sales-teams-2026",
-  image: "/assets/blog/reports-for-sales-2026.png",
-  imageAvif: "/assets/blog/reports-for-sales-2026.png",
+  image: "/assets/blog/reports-for-sales-2026.webp",
+  imageAvif: "/assets/blog/reports-for-sales-2026.webp",
   excerpt:
     "A carbon scan becomes commercially useful when it gives a team something concrete to talk about. That means clearer reports, clearer outreach, and a visible next step.",
 };

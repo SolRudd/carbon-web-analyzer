@@ -381,8 +381,9 @@ function summarizeBadgeInstall(rows = []) {
     return {
       state: 'badge_missing',
       status: 'badge_missing',
-      label: 'Badge not installed',
+      label: 'Not Seen Yet',
       lastSeenAt: null,
+      firstSeenAt: null,
       loadCount: 0,
       detectedHost: null,
       declaredDomain: null,
@@ -399,13 +400,13 @@ function summarizeBadgeInstall(rows = []) {
       : String(latest.status || 'unknown_domain').toLowerCase();
 
   const labels = {
-    active: 'Active badge',
-    pending: 'Verification pending',
-    badge_missing: 'Badge not installed',
-    domain_mismatch: 'Domain mismatch',
-    licence_inactive: 'Licence inactive',
-    unknown_domain: 'Unknown domain',
-    unavailable: 'Unavailable',
+    active: 'Installed',
+    pending: 'Pending',
+    badge_missing: 'Not Seen Yet',
+    domain_mismatch: 'Domain Mismatch',
+    licence_inactive: 'Verified Not Active',
+    unknown_domain: 'Unknown Domain',
+    unavailable: 'Status Unavailable',
   };
 
   return {
@@ -413,6 +414,12 @@ function summarizeBadgeInstall(rows = []) {
     status: BADGE_PING_STATUSES.includes(state) ? state : 'unavailable',
     label: labels[state] || labels.unavailable,
     lastSeenAt: latest.last_seen_at || latest.first_seen_at || null,
+    firstSeenAt: rows.reduce((earliest, row) => {
+      const value = row.first_seen_at || row.last_seen_at || null;
+      if (!value) return earliest;
+      if (!earliest) return value;
+      return new Date(value).getTime() < new Date(earliest).getTime() ? value : earliest;
+    }, null),
     loadCount: rows.reduce((total, row) => total + Number(row.load_count || row.ping_count || 0), 0),
     detectedHost: latest.detected_host || latest.host_domain || null,
     declaredDomain: latest.declared_domain || latest.site_url || null,

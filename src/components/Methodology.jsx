@@ -81,7 +81,7 @@ const steps = [
     icon: <BarChart3 className="w-5 h-5" />,
     title: "Review the report",
     description:
-      "Get a raw data grade, percentile context against the global web, and hosting verification status in one view.",
+      "Get a modelled carbon grade, percentile context, and hosting evidence status in one view.",
   },
   {
     id: "03",
@@ -89,7 +89,7 @@ const steps = [
     icon: <Shield className="w-5 h-5" />,
     title: "Publish trust badges",
     description:
-      "Don't just say it. Prove it. Embed our live API badges to surface verified sustainability signals to your users.",
+      "Use Carbon Result, Green Hosting, and GreenTracer Verified badge families to surface the right public signal without mixing claims.",
   },
   {
     id: "04",
@@ -141,6 +141,21 @@ export default function Methodology() {
           <div className="max-w-md pb-1">
             <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed">
               Measurement, verification, and trust outputs combined into a single engineering loop.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950/40 md:grid-cols-[auto_1fr] md:items-start">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-green-200 bg-green-50 text-green-700 dark:border-green-500/20 dark:bg-green-500/10 dark:text-green-300">
+            <Shield className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div>
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+              Open methodology. Protected infrastructure.
+            </h3>
+            <p className="mt-2 max-w-4xl text-sm leading-7 text-slate-600 dark:text-slate-400">
+              GreenTracer publishes selected methodology and scoring assumptions so results can be understood and questioned.
+              Operational infrastructure, API keys, rate limits, and private systems remain protected. GreenTracer is operated by BuzzBoost Ltd and may offer paid hosted tools, verification, partnerships, or enterprise services in future.
             </p>
           </div>
         </div>

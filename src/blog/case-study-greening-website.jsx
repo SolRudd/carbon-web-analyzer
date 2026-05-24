@@ -17,10 +17,10 @@ export const meta = {
   author: "Sol Rudd",
   date: "2025-07-20",
   readingMinutes: 10,
-  tags: ["Case Study", "Eco Web", "Carbon Badge", "Web Performance"],
+  tags: ["Case Study", "Eco Web", "Carbon Result", "Web Performance"],
   slug: "case-study-greening-website",
    image: "/assets/blog/case-study-greentrace.webp",
-     imageAvif: "/assets/blog/case-study-greentrace.avif",
+     imageAvif: "/assets/blog/case-study-greentrace.webp",
   excerpt: "A complete breakdown of how BuzzBoost Digital transformed their website from a carbon-heavy 1.2MB monster to a lean 0.4MB powerhouse—and why this matters for every business."
 };
 
@@ -608,7 +608,7 @@ export default function Post() {
           <h3 className="text-xl font-semibold mb-3 text-blue-800 dark:text-blue-300">Carbon Tracking Tools Used</h3>
           <ul className="space-y-2 text-sm">
             <li>• <strong>Website Carbon Calculator:</strong> Real-time emission monitoring</li>
-            <li>• <strong>Carbon Badge System:</strong> Public accountability and progress display</li>
+            <li>• <strong>Carbon Result badge system:</strong> Public accountability and progress display</li>
             <li>• <strong>Performance Analytics:</strong> Load time and resource usage tracking</li>
             <li>• <strong>User Behavior Analysis:</strong> Session efficiency measurements</li>
             <li>• <strong>Energy Usage Monitoring:</strong> Server and CDN consumption data</li>
@@ -722,7 +722,7 @@ export default function Post() {
                 <li><strong>Architecture review:</strong> Plan framework optimization</li>
                 <li><strong>UX audit:</strong> Identify inefficient user journeys</li>
                 <li><strong>Performance testing:</strong> Measure improvements systematically</li>
-                <li><strong>Carbon badge:</strong> Display your environmental commitment</li>
+                <li><strong>Carbon Result badge:</strong> Display the public carbon result from your latest scan</li>
               </ol>
             </div>
           </div>
@@ -774,7 +774,7 @@ export default function Post() {
             Calculate Your Website's Carbon Footprint
           </a>
           <a href="/badge" className="border-2 border-greenbuzz text-greenbuzz dark:text-green-400 hover:bg-greenbuzz hover:text-white font-semibold py-3 px-6 rounded-lg text-center transition-colors">
-            Get Your Carbon Badge
+            Get Your Carbon Result Badge
           </a>
         </div>
         <p className="text-sm text-slate-600 dark:text-slate-400 text-center mt-4">

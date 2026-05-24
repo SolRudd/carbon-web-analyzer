@@ -78,6 +78,7 @@
     'https://www.greentracer.org'
   );
   var SIZE = { width: 240, height: 44 };
+  var GREEN_TRACER_MARK_PATH = 'M 251.546875 177.761719 C 231.953125 152.234375 216.277344 142.207031 187.519531 140.015625 C 142.855469 136.558594 104.1875 173.613281 104.1875 225.308594 C 104.1875 270.257812 136.285156 305.011719 170.171875 304.550781 C 202.273438 304.089844 219.273438 287.546875 227.800781 260.40625 L 228.378906 248.707031 L 207.285156 248.707031 C 192.648438 248.707031 187.75 265.476562 177.605469 287.546875 C 164.929688 261.328125 164.582031 250.839844 141.933594 231.359375 C 131.789062 222.425781 132.078125 196.894531 148.792969 196.894531 C 160.894531 196.894531 172.652344 216.664062 176.683594 234.703125 L 176.683594 251.875 L 178.527344 251.875 C 183.773438 230.726562 184.347656 225.597656 178.816406 208.191406 C 174.550781 193.898438 172.074219 179.894531 182.792969 179.605469 C 194.894531 179.320312 203.597656 190.097656 199.621094 202.542969 C 196.222656 213.898438 187.460938 223.695312 185.328125 233.492188 L 184.347656 241.15625 L 185.90625 240.234375 C 195.472656 228.304688 196.105469 226.863281 207.632812 216.03125 C 216.910156 207.386719 218.753906 188.539062 218.753906 188.539062 C 229.992188 188.539062 218.464844 219.082031 201.464844 231.648438 C 191.898438 238.734375 188.152344 245.476562 184.117188 255.96875 L 183.484375 258.789062 L 184.753906 258.789062 C 192.648438 246.804688 200.542969 236.832031 216.277344 236.832031 L 256.273438 236.832031 L 256.273438 325.007812 L 229.359375 325.007812 L 229.359375 304.894531 C 212.933594 323.453125 194.609375 331.175781 164.292969 330.253906 C 107.875 328.40625 69.203125 280.804688 69.203125 227.84375 C 69.203125 167.679688 119.34375 120.710938 167.695312 120.996094 L 173.574219 120.996094 C 212.933594 120.710938 237.425781 135.636719 255.0625 166.46875 Z M 251.546875 177.761719';
   var TOKEN_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{5,159}$/;
   var BADGE_TYPE_ALIASES = {
     carbon: 'carbon_tested',
@@ -109,6 +110,21 @@
 
   function cleanText(value, fallback) {
     return String(value || fallback || '').replace(/[<>&"]/g, '');
+  }
+
+  function appendGreenTracerMark(container) {
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+
+    svg.setAttribute('viewBox', '60 112 205 226');
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    svg.style.cssText = 'display:block;width:18px;height:18px';
+    path.setAttribute('d', GREEN_TRACER_MARK_PATH);
+    path.setAttribute('fill', 'currentColor');
+    svg.appendChild(path);
+    container.appendChild(svg);
   }
 
   function ignoreError(error) {
@@ -233,6 +249,11 @@
     return SITE_BASE + '/result';
   }
 
+  function withResultAnchor(href, badgeType) {
+    if (badgeType !== 'green_hosting' || !href || href.indexOf('#') !== -1) return href;
+    return href + '#result-breakdown';
+  }
+
   function luminance(hex) {
     var normal = normalizeHex(hex);
     if (!normal) return null;
@@ -308,25 +329,35 @@
       status === 'unavailable' ||
       status === 'not_active'
     )) {
-      return 'Green Hosting';
+      return status === 'green_hosting_not_detected' ? 'Green Hosting Checked' : 'Hosting Not Confirmed';
+    }
+    if (status === 'licence_inactive' || status === 'not_active') {
+      if (badgeType === 'greentracer_verified') return 'Verified Not Active';
+      return badgeType === 'carbon_tested' ? 'Carbon Result Unavailable' : 'Hosting Not Confirmed';
+    }
+    if (badgeType === 'carbon_tested' && (
+      status === 'badge_missing' ||
+      status === 'unknown_domain' ||
+      status === 'unavailable'
+    )) {
+      return 'Carbon Result Unavailable';
     }
     return {
-      pending: 'Verification pending',
-      green_hosting_not_detected: 'Green Hosting',
-      licence_inactive: 'Licence inactive',
-      domain_mismatch: 'Domain mismatch',
-      badge_missing: 'Badge not installed',
-      unknown_domain: 'No report detected',
-      not_active: 'Badge not active',
-    }[status || 'not_active'] || 'Badge not active';
+      pending: 'Verification Pending',
+      green_hosting_not_detected: 'Green Hosting Checked',
+      domain_mismatch: 'Domain Mismatch',
+      badge_missing: 'Not Seen Yet',
+      unknown_domain: 'Unknown Domain',
+      unavailable: badgeType === 'carbon_tested' ? 'Carbon Result Unavailable' : 'Verification Unavailable',
+    }[status || 'unavailable'] || 'Verification Unavailable';
   }
 
   function resolveInlineLabel(status, badgeType) {
     var fallback = buildFallbackLabel(status, badgeType);
     if (status === 'active') {
-      if (badgeType === 'carbon_tested') return 'Carbon Tested';
+      if (badgeType === 'carbon_tested') return 'Carbon Result';
       if (badgeType === 'green_hosting') return 'Green Hosting Detected';
-      return 'Verified Supporter';
+      return 'GreenTracer Verified';
     }
     if (badgeType === 'green_hosting' && (
       status === 'green_hosting_not_detected' ||
@@ -334,7 +365,7 @@
       status === 'unknown_domain' ||
       status === 'unavailable'
     )) {
-      return 'Green Hosting';
+      return status === 'green_hosting_not_detected' ? 'Green Hosting Checked' : 'Hosting Not Confirmed';
     }
     return fallback;
   }
@@ -380,7 +411,6 @@
     ].join(';');
 
     var mark = document.createElement('span');
-    mark.textContent = 'GT';
     mark.style.cssText = [
       'display:inline-flex',
       'align-items:center',
@@ -396,6 +426,7 @@
       'line-height:1',
       'box-shadow:inset 0 0 0 1px ' + (colors.markText === '#f8fafc' ? 'rgba(248,250,252,.22)' : 'rgba(7,17,31,.18)')
     ].join(';');
+    appendGreenTracerMark(mark);
 
     var copy = document.createElement('span');
     copy.style.cssText = 'display:flex;min-width:0;flex-direction:column;justify-content:center;line-height:1';
@@ -499,7 +530,7 @@
       return;
     }
 
-    var fallbackHref = buildResultFallbackHref(lookupDomain, resultSlug);
+    var fallbackHref = withResultAnchor(buildResultFallbackHref(lookupDomain, resultSlug), badgeType);
     var href;
     var defaultStatus = badgeType === 'green_hosting' ? 'green_hosting_not_detected' : 'active';
     var src;
@@ -516,11 +547,11 @@
     } else {
       var hasDomainForRender = Boolean(lookupDomain);
       if (resultSlug) {
-        href = SITE_BASE + '/result/' + encodeURIComponent(resultSlug);
+        href = withResultAnchor(SITE_BASE + '/result/' + encodeURIComponent(resultSlug), badgeType);
         src = appendBadgeParams(API_BASE + '/api/badge/result/' + encodeURIComponent(resultSlug) + '?type=' + encodeURIComponent(badgeType), theme, el);
         latestDataUrl = appendBadgeParams(API_BASE + '/api/badge/result/' + encodeURIComponent(resultSlug) + '/data?type=' + encodeURIComponent(badgeType), theme, el);
       } else if (hasDomainForRender) {
-        href = SITE_BASE + '/result?domain=' + encodeURIComponent(lookupDomain);
+        href = withResultAnchor(SITE_BASE + '/result?domain=' + encodeURIComponent(lookupDomain), badgeType);
         src = appendBadgeParams(API_BASE + '/api/badge/result/latest?type=' + encodeURIComponent(badgeType) + '&domain=' + encodeURIComponent(lookupDomain), theme, el);
         latestDataUrl = appendBadgeParams(API_BASE + '/api/badge/result/latest/data?type=' + encodeURIComponent(badgeType) + '&domain=' + encodeURIComponent(lookupDomain), theme, el);
       } else {
@@ -548,7 +579,7 @@
     image.className = 'greentrace-badge-image';
     image.src = src;
     image.alt = cleanText(el.getAttribute('data-alt'), badgeType === 'carbon_tested'
-      ? 'GreenTracer Carbon Tested badge'
+      ? 'GreenTracer Carbon Result badge'
       : badgeType === 'green_hosting'
         ? 'GreenTracer Green Hosting badge'
         : 'GreenTracer Verified badge');
@@ -588,15 +619,15 @@
               return;
             }
             if (data.reportUrl) {
-              anchor.href = data.reportUrl;
+              anchor.href = withResultAnchor(data.reportUrl, badgeType);
               return;
             }
             if (data.resultSlug) {
-              anchor.href = SITE_BASE + '/result/' + encodeURIComponent(data.resultSlug);
+              anchor.href = withResultAnchor(SITE_BASE + '/result/' + encodeURIComponent(data.resultSlug), badgeType);
               return;
             }
             if (data.domain) {
-              anchor.href = SITE_BASE + '/result?domain=' + encodeURIComponent(data.domain);
+              anchor.href = withResultAnchor(SITE_BASE + '/result?domain=' + encodeURIComponent(data.domain), badgeType);
               return;
             }
             anchor.href = fallbackHref;

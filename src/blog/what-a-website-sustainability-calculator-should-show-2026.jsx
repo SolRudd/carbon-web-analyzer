@@ -8,8 +8,8 @@ export const meta = {
   readingMinutes: 5,
   tags: ["Calculator", "Reporting", "GreenTracer", "Product"],
   slug: "what-a-website-sustainability-calculator-should-show-2026",
-  image: "/assets/blog/calculator-signals-2026.png",
-  imageAvif: "/assets/blog/calculator-signals-2026.png",
+  image: "/assets/blog/calculator-signals-2026.webp",
+  imageAvif: "/assets/blog/calculator-signals-2026.webp",
   excerpt:
     "A calculator is only useful if the result is actionable. In 2026, teams expect a website sustainability tool to show more than a single carbon number.",
 };

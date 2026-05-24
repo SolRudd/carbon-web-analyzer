@@ -9,7 +9,7 @@ export const meta = {
   tags: ["Carbon Grading", "Web Performance", "Metrics", "GreenTracer"],
   slug: "improve-air-quality",
   image: "/assets/blog/air-quality.webp",
-  imageAvif: "/assets/blog/air-quality.avif",
+  imageAvif: "/assets/blog/air-quality.webp",
   excerpt: "GreenTracer assigns every website a carbon grade from A+ to F. Here's exactly what each grade means, how the score is calculated, and what the most effective steps are to move up the table.",
 };
 

@@ -9,7 +9,7 @@ export const meta = {
   tags: ["GreenTracer", "Badges", "Web Sustainability", "Digital Ethics"],
   slug: "save-energy-in-summer",
   image: "/assets/blog/summer-energy.webp",
-  imageAvif: "/assets/blog/summer-energy.avif",
+  imageAvif: "/assets/blog/summer-energy.webp",
   excerpt: "Your visitors can't see the emissions your website produces. The GreenTracer badge changes that — turning your carbon data into a live, credible trust signal that updates automatically.",
 };
 
@@ -45,7 +45,7 @@ export default function Post() {
         </h3>
         <div className="grid md:grid-cols-3 gap-4">
           <div className="bg-white dark:bg-slate-800 p-5 rounded-lg border border-green-100 dark:border-slate-700">
-            <p className="font-bold text-slate-900 dark:text-white mb-1">Carbon Tested</p>
+            <p className="font-bold text-slate-900 dark:text-white mb-1">Carbon Result</p>
             <p className="text-sm text-slate-600 dark:text-slate-400">A free report badge that can show the latest scan grade.</p>
           </div>
           <div className="bg-white dark:bg-slate-800 p-5 rounded-lg border border-green-100 dark:border-slate-700">
@@ -63,7 +63,7 @@ export default function Post() {
         Three Badge Families
       </h2>
       <p className="text-lg leading-relaxed">
-        GreenTracer now separates report-based badges from the paid supporter badge. Carbon Tested and Green Hosting come from scan data; GreenTracer Verified comes from licence and domain state.
+        GreenTracer now separates report-based badges from the paid supporter badge. Carbon Result and Green Hosting come from scan data; GreenTracer Verified comes from licence and domain state.
       </p>
 
       <div className="flex gap-4 p-5 bg-white dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">

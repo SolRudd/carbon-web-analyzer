@@ -8,8 +8,8 @@ export const meta = {
   readingMinutes: 5,
   tags: ["GreenTracer", "Badges", "Trust", "Conversion"],
   slug: "verified-sustainability-badges-2026",
-  image: "/assets/blog/verified-badges-2026.png",
-  imageAvif: "/assets/blog/verified-badges-2026.png",
+  image: "/assets/blog/verified-badges-2026.webp",
+  imageAvif: "/assets/blog/verified-badges-2026.webp",
   excerpt:
     "Trust badges only work when the proof behind them is obvious. In 2026, buyers are looking for live verification, clear scope, and a report they can inspect.",
 };
@@ -100,7 +100,7 @@ export default function Post() {
 
       <div className="space-y-4">
         <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800/60">
-          <p className="font-bold text-slate-900 dark:text-white">1. Carbon badge</p>
+          <p className="font-bold text-slate-900 dark:text-white">1. Carbon Result badge</p>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
             Best for showing the actual measured carbon score and comparison percentile.
           </p>

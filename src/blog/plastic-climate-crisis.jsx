@@ -9,7 +9,7 @@ export const meta = {
   tags: ["Green Hosting", "Data Centres", "Carbon Reduction", "Web Sustainability"],
   slug: "plastic-climate-crisis",
   image: "/assets/blog/plastic-climate.webp",
-  imageAvif: "/assets/blog/plastic-climate.avif",
+  imageAvif: "/assets/blog/plastic-climate.webp",
   excerpt: "Data centres consume roughly 1–2% of global electricity. Whether that power is renewable or fossil-fuelled determines whether your website is part of the problem or part of the solution.",
 };
 

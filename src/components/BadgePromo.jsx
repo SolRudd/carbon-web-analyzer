@@ -108,6 +108,7 @@ export default function BadgePromo({ siteUrl, greenHost = false, resultSlug = ""
   const [copied, setCopied] = useState("");
   const domain = useMemo(() => normalizeDomain(siteUrl), [siteUrl]);
   const reportHref = resultSlug ? `/result/${encodeURIComponent(resultSlug)}` : "";
+  const hostingReportHref = reportHref ? `${reportHref}#result-breakdown` : "";
   const gradeText = grade && grade !== "N/A" ? `Grade ${grade}` : "";
   const verified = getVerifiedDisplayStatus(verifiedStatus);
   const builderParams = new URLSearchParams({
@@ -156,7 +157,7 @@ export default function BadgePromo({ siteUrl, greenHost = false, resultSlug = ""
           </p>
           <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-3xl">Badges & trust signals</h2>
           <p className="mt-2 text-sm leading-6 text-[#8fa6b8]">
-            Carbon Tested and Green Hosting badges are backed by this report. GreenTracer Verified is a separate supporter/member signal.
+            Carbon Result and Green Hosting badges are backed by this report. GreenTracer Verified is a separate supporter/member signal.
           </p>
           {domain && <p className="mt-2 text-xs text-[#5f7285]">Badge domain: {domain}</p>}
         </div>
@@ -169,8 +170,8 @@ export default function BadgePromo({ siteUrl, greenHost = false, resultSlug = ""
       <div className="grid gap-4 lg:grid-cols-3">
         <BadgeCard
           icon={Globe2}
-          title="Carbon Tested"
-          description="Proves this page has a recent GreenTracer carbon result."
+          title="Carbon Result"
+          description="Shows this page has a recent GreenTracer carbon result and public grade."
           status={carbonStatus}
           tone="cyan"
           preview={
@@ -185,11 +186,11 @@ export default function BadgePromo({ siteUrl, greenHost = false, resultSlug = ""
         >
           <div className="grid gap-2">
             <BadgeActionButton onClick={() => copySnippet(carbonSnippet, "carbon")} disabled={!resultSlug}>
-              {copied === "carbon" ? "Copied Carbon badge" : "Copy Carbon badge"}
+              {copied === "carbon" ? "Copied Carbon Result badge" : "Copy Carbon Result badge"}
               <ClipboardCopy size={15} aria-hidden="true" />
             </BadgeActionButton>
             <Link to={carbonBuilderHref} className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.035] px-4 py-2 text-sm font-semibold text-white hover:border-emerald-300/40">
-              Customize Carbon badge
+              Customize Carbon Result badge
               <ExternalLink size={15} aria-hidden="true" />
             </Link>
           </div>
@@ -207,7 +208,7 @@ export default function BadgePromo({ siteUrl, greenHost = false, resultSlug = ""
                 status="active"
                 badgeType="green_hosting"
                 domain={domain}
-                href={reportHref}
+                href={hostingReportHref}
               />
             ) : (
               <Leaf size={36} aria-hidden="true" />

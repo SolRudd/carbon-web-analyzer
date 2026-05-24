@@ -28,14 +28,14 @@ const faqs = [
   {
     category: "badges",
     question: "Which badges are free?",
-    answer: "Carbon Tested and Green Hosting are free public badges. They come from saved public report data and do not require login, payment, or a verified membership.",
-    tags: ["carbon tested", "green hosting", "free"],
+    answer: "Carbon Result and Green Hosting are free public badges. They come from saved public report data and do not require login, payment, or a verified membership.",
+    tags: ["carbon result", "green hosting", "free"],
   },
   {
     category: "badges",
-    question: "Where do I get the Carbon Tested badge code?",
+    question: "Where do I get the Carbon Result badge code?",
     answer: "Run a scan, open the saved result page, and use the badge actions section. The snippet is generated from the saved result so you do not manually enter grades, scores, or report slugs.",
-    tags: ["carbon tested", "embed", "result"],
+    tags: ["carbon result", "embed", "result"],
   },
   {
     category: "badges",
@@ -70,8 +70,14 @@ const faqs = [
   {
     category: "data",
     question: "How accurate is the carbon estimate?",
-    answer: "The result is an estimate based on measured page data and published energy/carbon assumptions. It is useful for comparison and prioritization, not a full lifecycle assessment or regulatory audit.",
+    answer: "Carbon results are modelled estimates based on measurable inputs and published assumptions. They are useful for comparison and prioritization, not a full lifecycle assessment, exact footprint, or regulatory audit.",
     tags: ["accuracy", "methodology", "estimate"],
+  },
+  {
+    category: "data",
+    question: "Is GreenTracer open source?",
+    answer: "GreenTracer follows an open methodology and protected infrastructure model. We publish selected methodology and scoring assumptions so results can be understood and questioned, while operational infrastructure, API keys, rate limits, and private systems remain protected.",
+    tags: ["open methodology", "infrastructure", "trust"],
   },
   {
     category: "data",
@@ -160,7 +166,7 @@ export default function Faq() {
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900">
                 <p className="text-sm font-semibold text-slate-900 dark:text-white">Core product model</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  Free badges are report-backed. GreenTracer Verified is the paid supporter/member badge.
+                  Carbon Result and Green Hosting are report-backed. GreenTracer Verified is the paid supporter/member badge.
                 </p>
               </div>
             </div>

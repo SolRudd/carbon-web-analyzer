@@ -16,8 +16,16 @@ const termsSections = [
     title: "Badge Claims",
     icon: BadgeCheck,
     body: [
-      "Carbon Tested and Green Hosting badges are free public badges backed by saved report data. They must not be used to imply paid verification, membership, or broader environmental claims.",
+      "Carbon Result and Green Hosting badges are free public badges backed by saved report data. They must not be used to imply paid verification, membership, or broader environmental claims.",
       "GreenTracer Verified is a paid or manually approved supporter/member badge controlled by account, licence, and domain state. It does not represent a perfect carbon score.",
+    ],
+  },
+  {
+    title: "Open Methodology",
+    icon: ShieldCheck,
+    body: [
+      "GreenTracer publishes selected methodology and scoring assumptions so results can be understood and questioned.",
+      "Operational infrastructure, API keys, rate limits, and private systems remain protected. GreenTracer is operated by BuzzBoost Ltd and may offer paid hosted tools, verification, partnerships, or enterprise services in future.",
     ],
   },
   {
@@ -32,7 +40,7 @@ const termsSections = [
     title: "Accuracy and Availability",
     icon: ShieldCheck,
     body: [
-      "Carbon results are estimates based on available measurement data and published assumptions. They are useful for comparison and prioritization but are not a regulatory audit or full lifecycle assessment.",
+      "Carbon results are modelled estimates based on measurable inputs and published assumptions. They are useful for comparison and prioritization but are not an exact footprint, regulatory audit, or full lifecycle assessment.",
       "GreenTracer may change, suspend, or limit parts of the service to protect reliability, security, or product integrity.",
     ],
   },

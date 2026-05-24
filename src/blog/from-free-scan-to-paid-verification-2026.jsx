@@ -8,8 +8,8 @@ export const meta = {
   readingMinutes: 6,
   tags: ["Pricing", "Verification", "Digital Carbon", "Product"],
   slug: "from-free-scan-to-paid-verification-2026",
-  image: "/assets/blog/free-to-paid-verification-2026.png",
-  imageAvif: "/assets/blog/free-to-paid-verification-2026.png",
+  image: "/assets/blog/free-to-paid-verification-2026.webp",
+  imageAvif: "/assets/blog/free-to-paid-verification-2026.webp",
   excerpt:
     "A free scan gets attention, but paid verification gets commitment. The jump from free utility to paid sustainability product depends on proof, workflow, and repeat value.",
 };

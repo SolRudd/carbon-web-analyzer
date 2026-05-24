@@ -8,8 +8,8 @@ export const meta = {
   readingMinutes: 5,
   tags: ["Agency", "Reporting", "GreenTracer", "Commercial"],
   slug: "turn-carbon-reports-into-retainers-2025",
-  image: "/assets/blog/report-retainer-2025.png",
-  imageAvif: "/assets/blog/report-retainer-2025.png",
+  image: "/assets/blog/report-retainer-2025.webp",
+  imageAvif: "/assets/blog/report-retainer-2025.webp",
   excerpt:
     "A one-off sustainability report is useful. A recurring reporting rhythm is a product. This is how agencies can turn carbon reporting into a retained service clients keep renewing.",
 };

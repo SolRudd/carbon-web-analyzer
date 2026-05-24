@@ -17,7 +17,7 @@ const sections = [
     title: "How We Use This Data",
     icon: ShieldCheck,
     body: [
-      "We use scan and report data to show public result pages, generate free Carbon Tested and Green Hosting badges, and support repeat dashboard scans.",
+      "We use scan and report data to show public result pages, generate free Carbon Result and Green Hosting badges, and support repeat dashboard scans.",
       "We use account and licence data to control GreenTracer Verified badge eligibility and to show domain, install, and licence status in the dashboard.",
       "We do not use public badge pings to build heavy analytics profiles. Badge install tracking is limited to operational fields such as declared domain, detected host, badge type, first seen, last seen, load count, and status.",
     ],

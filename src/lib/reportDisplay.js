@@ -283,8 +283,8 @@ export function getVerifiedDisplayStatus(input = {}) {
   ) {
     return {
       key: "verified",
-      label: "Verified active",
-      badgeLabel: "Verified active",
+      label: "Verified Active",
+      badgeLabel: "Verified Active",
       tone: "green",
       actionLabel: "Manage verified badge",
       actionTo: "/dashboard",
@@ -294,8 +294,8 @@ export function getVerifiedDisplayStatus(input = {}) {
   if (["pending", "needs_review", "review", "unverified"].includes(rawStatus)) {
     return {
       key: "pending",
-      label: "Verification pending",
-      badgeLabel: "Verification pending",
+      label: "Verification Pending",
+      badgeLabel: "Verification Pending",
       tone: "amber",
       actionLabel: "Manage verified badge",
       actionTo: "/dashboard",
@@ -315,8 +315,8 @@ export function getVerifiedDisplayStatus(input = {}) {
   ) {
     return {
       key: "unavailable",
-      label: "Not available",
-      badgeLabel: "Not available",
+      label: "Verification Unavailable",
+      badgeLabel: "Verification Unavailable",
       tone: "neutral",
       actionLabel: "View verified plans",
       actionTo: "/pricing",
@@ -326,8 +326,8 @@ export function getVerifiedDisplayStatus(input = {}) {
   if (input.licensed || ACTIVE_LICENSE_STATUSES.has(rawStatus)) {
     return {
       key: "pending",
-      label: "Verification pending",
-      badgeLabel: "Verification pending",
+      label: "Verification Pending",
+      badgeLabel: "Verification Pending",
       tone: "amber",
       actionLabel: "Manage verified badge",
       actionTo: "/dashboard",
@@ -336,8 +336,8 @@ export function getVerifiedDisplayStatus(input = {}) {
 
   return {
     key: "inactive",
-    label: "Verified not active",
-    badgeLabel: "Verified not active",
+    label: "Verified Not Active",
+    badgeLabel: "Verified Not Active",
     tone: "neutral",
     actionLabel: "Upgrade to Verified",
     actionTo: "/pricing",

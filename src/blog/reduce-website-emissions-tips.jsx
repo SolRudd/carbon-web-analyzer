@@ -30,7 +30,7 @@ export const meta = {
   tags: ["Green Web", "Performance", "Sustainability", "Carbon Reduction"],
   slug: "reduce-website-emissions-tips",
   image: "/assets/blog/reduce-website-emissions.webp",
-    imageAvif: "/assets/blog/reduce-website-emissions.avif",
+    imageAvif: "/assets/blog/reduce-website-emissions.webp",
   excerpt: "Cut CO₂, boost SEO, and win more users: your essential guide to building a blazing-fast, low-carbon website—with GreenTracer as your secret weapon."
 };
 

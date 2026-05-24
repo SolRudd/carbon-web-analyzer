@@ -17,12 +17,12 @@ function formatDate(value) {
 }
 
 function getStatusCopy(status) {
-  if (status === "active") return "This site has an active GreenTracer badge record.";
-  if (status === "pending") return "This GreenTracer verification is pending final review.";
-  if (status === "licence_inactive") return "This GreenTracer badge is paused because the licence is inactive.";
-  if (status === "domain_mismatch") return "This GreenTracer badge was loaded from a different domain than the verified record.";
-  if (status === "not_active") return "This GreenTracer badge record is not active.";
-  return "This GreenTracer badge record could not be verified.";
+  if (status === "active") return "This site has an active GreenTracer Verified record.";
+  if (status === "pending") return "This GreenTracer verification is pending review.";
+  if (status === "licence_inactive") return "GreenTracer Verified is not active for this domain.";
+  if (status === "domain_mismatch") return "This badge was loaded from a domain that does not match the verified record.";
+  if (status === "not_active") return "GreenTracer Verified is not active for this domain.";
+  return "This GreenTracer verification is currently unavailable.";
 }
 
 export default function Verify() {
@@ -43,7 +43,7 @@ export default function Verify() {
       .catch(() => {
         setData({
           publicStatus: "unavailable",
-          label: "Badge not active",
+          label: "Verification Unavailable",
           showMetric: false,
         });
       })
@@ -54,7 +54,7 @@ export default function Verify() {
 
   const badgeData = useMemo(() => data || {
     publicStatus: loading ? "pending" : "unavailable",
-    label: loading ? "Verification pending" : "Badge not active",
+    label: loading ? "Verification Pending" : "Verification Unavailable",
     showMetric: false,
   }, [data, loading]);
 
@@ -83,7 +83,7 @@ export default function Verify() {
                   GreenTracer Verification
                 </p>
                 <h1 className="mt-5 text-3xl font-semibold leading-tight sm:text-4xl">
-                  {badgeData.domain || "Verification pending"}
+                  {badgeData.domain || "Verification Pending"}
                 </h1>
                 <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
                   {getStatusCopy(badgeData.publicStatus)}
@@ -101,7 +101,7 @@ export default function Verify() {
             <div className="mt-9 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
                 <p className="text-xs text-slate-400">Public status</p>
-                <p className="mt-2 text-sm font-semibold text-white">{badgeData.label || "Badge not active"}</p>
+                <p className="mt-2 text-sm font-semibold text-white">{badgeData.label || "Verification Unavailable"}</p>
               </div>
               <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
                 <p className="text-xs text-slate-400">Carbon metric</p>
@@ -120,7 +120,7 @@ export default function Verify() {
 
             <div className="mt-8 border-t border-slate-800 pt-6">
               <p className="max-w-2xl text-sm leading-6 text-slate-300">
-                GreenTracer verification means the badge is tied to a backend domain verification record and active badge entitlement.
+                GreenTracer Verified is a supporter/member signal, not a claim of perfect carbon performance.
                 Public verification output is limited to safe status, domain, metric, and timestamp information.
               </p>
               <Link

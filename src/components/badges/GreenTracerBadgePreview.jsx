@@ -9,6 +9,9 @@ export default function GreenTracerBadgePreview({
   valueText = "",
   customColors = null,
   className = "",
+  cornerRadius,
+  borderStyle,
+  showIcon,
 }) {
   return (
     <GreenTracerBadge
@@ -19,6 +22,9 @@ export default function GreenTracerBadgePreview({
       valueText={valueText}
       customColors={customColors}
       className={className}
+      cornerRadius={cornerRadius}
+      borderStyle={borderStyle}
+      showIcon={showIcon}
       ariaLabel="GreenTracer badge preview"
     />
   );

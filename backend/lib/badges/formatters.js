@@ -30,26 +30,29 @@ const PUBLIC_STATUSES = Object.freeze([
 ]);
 
 const STATUS_LABELS = Object.freeze({
-  pending: 'Verification pending',
-  not_active: 'Badge not active',
+  pending: 'Verification Pending',
+  not_active: 'Verified Not Active',
   green_hosting_not_detected: 'Green Hosting',
-  licence_inactive: 'Licence inactive',
-  domain_mismatch: 'Domain mismatch',
-  unavailable: 'Badge not active',
+  licence_inactive: 'Verified Not Active',
+  domain_mismatch: 'Domain Mismatch',
+  unavailable: 'Verification Unavailable',
 });
 
 const BADGE_TYPE_LABELS = Object.freeze({
   carbon_tested: {
-    active: 'Carbon Tested',
-    fullActive: 'Carbon tested by GreenTracer',
+    active: 'Carbon Result',
+    unavailable: 'Carbon Result Unavailable',
+    fullActive: 'Carbon result by GreenTracer',
   },
   green_hosting: {
     active: 'Green Hosting Detected',
-    fullActive: 'Green hosting detected by GreenTracer',
+    unavailable: 'Hosting Not Confirmed',
+    fullActive: 'Green hosting evidence detected by GreenTracer',
   },
   greentracer_verified: {
-    active: 'Verified Supporter',
-    fullActive: 'GreenTracer Verified supporter',
+    active: 'GreenTracer Verified',
+    unavailable: 'Verification Unavailable',
+    fullActive: 'GreenTracer Verified',
   },
 });
 
@@ -90,7 +93,13 @@ function getPublicStatusLabel(status, type = 'greentracer_verified') {
     return BADGE_TYPE_LABELS[badgeType]?.fullActive || BADGE_TYPE_LABELS.greentracer_verified.fullActive;
   }
   if (badgeType === 'green_hosting' && publicStatus === 'green_hosting_not_detected') {
-    return 'Green hosting checked by GreenTracer';
+    return 'Green hosting checked by GreenTracer; evidence not confirmed';
+  }
+  if (badgeType === 'carbon_tested') {
+    return 'Carbon result unavailable';
+  }
+  if (badgeType === 'green_hosting') {
+    return 'Green hosting evidence not confirmed';
   }
   return STATUS_LABELS[publicStatus] || STATUS_LABELS.unavailable;
 }
@@ -107,8 +116,12 @@ function getBadgeDisplay({ status = 'active', type = 'greentracer_verified', val
   const label = publicStatus === 'active'
     ? activeLabel
     : badgeType === 'green_hosting' && publicStatus === 'green_hosting_not_detected'
-      ? 'Green Hosting'
-      : STATUS_LABELS[publicStatus] || STATUS_LABELS.unavailable;
+      ? 'Green Hosting Checked'
+      : badgeType === 'carbon_tested'
+        ? BADGE_TYPE_LABELS.carbon_tested.unavailable
+        : badgeType === 'green_hosting'
+          ? BADGE_TYPE_LABELS.green_hosting.unavailable
+          : STATUS_LABELS[publicStatus] || STATUS_LABELS.unavailable;
   const value = publicStatus === 'active' ? String(valueText || '').trim() : '';
 
   return {

@@ -25,7 +25,7 @@ export const meta = {
   tags: ["Web Sustainability", "Digital Carbon", "Green Hosting", "Web Performance"],
   slug: "why-website-carbon-matters-2025",
   image: "/assets/blog/web-carbon-2025.webp",
-  imageAvif: "/assets/blog/web-carbon-2025.avif",
+  imageAvif: "/assets/blog/web-carbon-2025.webp",
   excerpt: "In 2025, a green website is no longer optional. This guide breaks down why digital emissions are critical for every business and provides a complete action plan for reduction."
 };
 

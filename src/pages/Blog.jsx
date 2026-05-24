@@ -2,17 +2,19 @@ import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import {
-  FaArrowRight,
-  FaBookmark,
-  FaChartLine,
-  FaClock,
-  FaNewspaper,
-  FaSearch,
-  FaStar,
-  FaTag,
-  FaTerminal,
-  FaUser,
-} from "react-icons/fa";
+  ArrowRight,
+  BarChart3,
+  BookOpen,
+  CalendarDays,
+  Clock,
+  Filter,
+  Mail,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Tag,
+  Terminal,
+} from "lucide-react";
 import {
   getPostReadingMinutes,
   estimatePostReadingMinutes,
@@ -20,350 +22,249 @@ import {
 import { blogPosts } from "../blog/posts";
 
 const pageStyles = `
-  /* ── Dark mode (default) ── */
-  .gt-page {
-    --gt-bg: #04111f;
-    --gt-panel: rgba(7, 24, 39, 0.9);
-    --gt-panel-2: rgba(9, 29, 46, 0.96);
-    --gt-border: rgba(255,255,255,0.08);
-    --gt-border-strong: rgba(74, 222, 128, 0.24);
-    --gt-text: #f8fafc;
-    --gt-muted: #94a3b8;
-    --gt-muted-2: #64748b;
-    --gt-green: #22c55e;
-    --gt-green-2: #16a34a;
-    --gt-green-3: #4ade80;
-    --gt-white-btn: #f8fafc;
-    --gt-dark-btn: #0f172a;
-    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap');
+
+  .gt-blog {
+    --gt-bg: #020b13;
+    --gt-bg-deep: #01070d;
+    --gt-panel: rgba(7, 20, 35, 0.82);
+    --gt-panel-soft: rgba(11, 27, 44, 0.76);
+    --gt-panel-raised: rgba(13, 32, 51, 0.9);
+    --gt-border: rgba(132, 204, 200, 0.18);
+    --gt-border-strong: rgba(0, 218, 180, 0.36);
+    --gt-text: #f5fbff;
+    --gt-muted: #8fa6b8;
+    --gt-dim: #5f7285;
+    --gt-green: #00d084;
+    --gt-teal: #00a19d;
+    --gt-cyan: #4dd8ff;
+    font-family: 'Inter', sans-serif;
     background:
-      radial-gradient(circle at top center, rgba(34,197,94,0.06), transparent 24%),
-      linear-gradient(180deg, #03101d 0%, #04111f 35%, #04111f 100%);
+      radial-gradient(circle at 50% 0%, rgba(0, 208, 132, 0.09), transparent 28rem),
+      radial-gradient(circle at 10% 28%, rgba(0, 161, 157, 0.08), transparent 24rem),
+      linear-gradient(180deg, var(--gt-bg-deep) 0%, var(--gt-bg) 42%, #01070d 100%);
     color: var(--gt-text);
   }
 
-  /* ── Light mode override ── */
-  html:not(.dark) .gt-page {
-    --gt-bg: #ffffff;
-    --gt-panel: rgba(255, 255, 255, 0.85);
-    --gt-panel-2: rgba(248, 250, 252, 0.95);
-    --gt-border: rgba(0,0,0,0.07);
-    --gt-border-strong: rgba(22, 163, 74, 0.22);
-    --gt-text: #0f172a;
-    --gt-muted: #475569;
-    --gt-muted-2: #64748b;
-    --gt-green: #16a34a;
-    --gt-green-2: #15803d;
-    --gt-green-3: #16a34a;
-    --gt-white-btn: #0f172a;
-    --gt-dark-btn: #f8fafc;
-    background:
-      radial-gradient(circle at top center, rgba(34,197,94,0.04), transparent 24%),
-      linear-gradient(180deg, #f8fafc 0%, #ffffff 35%, #ffffff 100%);
-    color: var(--gt-text);
-  }
-
-  html:not(.dark) .gt-hero-grid {
-    background-image:
-      linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px);
-  }
-
-  html:not(.dark) .gt-panel {
-    background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.98) 100%);
-    border-color: rgba(0,0,0,0.07);
-    box-shadow: 0 4px 24px -8px rgba(0,0,0,0.08);
-  }
-
-  html:not(.dark) .gt-chip {
-    background: rgba(255,255,255,0.9);
-    border-color: rgba(0,0,0,0.08);
-  }
-
-  html:not(.dark) .gt-icon-box {
-    background: rgba(0,0,0,0.03);
-    border-color: rgba(0,0,0,0.08);
-    color: var(--gt-green);
-  }
-
-  html:not(.dark) .gt-search {
-    background: rgba(255,255,255,0.95);
-    border-color: rgba(0,0,0,0.10);
-  }
-
-  html:not(.dark) .gt-input {
-    color: #0f172a;
-  }
-
-  html:not(.dark) .gt-input::placeholder {
-    color: #94a3b8;
-  }
-
-  html:not(.dark) .gt-tag-btn {
-    background: rgba(0,0,0,0.03);
-    border-color: rgba(0,0,0,0.08);
-    color: #475569;
-  }
-
-  html:not(.dark) .gt-tag-btn:hover {
-    background: rgba(0,0,0,0.05);
-    border-color: rgba(22,163,74,0.25);
-    color: #0f172a;
-  }
-
-  html:not(.dark) .gt-btn--ghost {
-    background: rgba(0,0,0,0.04);
-    color: #0f172a;
-    border-color: rgba(0,0,0,0.10);
-  }
-
-  html:not(.dark) .gt-trust-pill {
-    background: rgba(0,0,0,0.03);
-    border-color: rgba(0,0,0,0.08);
-    color: #475569;
-  }
-
-  html:not(.dark) .gt-overlay {
-    background: linear-gradient(to top, rgba(248,250,252,0.72), rgba(248,250,252,0.12), transparent);
-  }
-
-  html:not(.dark) .gt-divider {
-    border-top-color: rgba(0,0,0,0.07);
-  }
-
-  html:not(.dark) .gt-stat__value {
-    color: var(--gt-green);
-  }
-
-  .gt-display {
-    font-family: Georgia, Cambria, "Times New Roman", serif;
+  .gt-blog-display {
+    font-family: 'Fraunces', serif;
     letter-spacing: -0.03em;
   }
 
-  .gt-mono {
-    font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  .gt-blog-mono {
+    font-family: 'JetBrains Mono', monospace;
   }
 
-  .gt-hero-grid {
-    background-image:
-      linear-gradient(to right, rgba(255,255,255,0.035) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,0.035) 1px, transparent 1px);
-    background-size: 42px 42px;
-    mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.10));
-    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.10));
-  }
-
-  .gt-panel {
-    background: linear-gradient(180deg, var(--gt-panel) 0%, var(--gt-panel-2) 100%);
-    border: 1px solid var(--gt-border);
-    border-radius: 28px;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 18px 60px -32px rgba(0,0,0,0.6);
-  }
-
-  .gt-card {
+  .gt-blog-shell {
     position: relative;
     overflow: hidden;
-    transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
   }
 
-  .gt-card:hover {
+  .gt-blog-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to right, rgba(132, 204, 200, 0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(132, 204, 200, 0.028) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,0.76), transparent 46rem);
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.76), transparent 46rem);
+  }
+
+  .gt-blog-panel {
+    position: relative;
+    border: 1px solid var(--gt-border);
+    background:
+      linear-gradient(145deg, rgba(7, 20, 35, 0.94), rgba(5, 18, 31, 0.74)),
+      radial-gradient(circle at top right, rgba(0, 208, 132, 0.08), transparent 18rem);
+    box-shadow: 0 24px 80px -48px rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(16px);
+  }
+
+  .gt-blog-card {
+    position: relative;
+    overflow: hidden;
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  }
+
+  .gt-blog-card:hover {
     transform: translateY(-3px);
-    border-color: rgba(255,255,255,0.12);
+    border-color: rgba(0, 218, 180, 0.32);
+    box-shadow: 0 26px 76px -52px rgba(0, 208, 132, 0.58);
   }
 
-  .gt-chip {
+  .gt-blog-pill,
+  .gt-blog-tag {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border-radius: 999px;
+    gap: 0.45rem;
     border: 1px solid var(--gt-border);
-    background: rgba(5, 19, 31, 0.7);
+    background: rgba(11, 27, 44, 0.78);
+    color: var(--gt-muted);
   }
 
-  .gt-icon-box {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
-    border: 1px solid var(--gt-border);
-    background: rgba(255,255,255,0.04);
-    color: var(--gt-green-3);
-    flex: 0 0 auto;
+  .gt-blog-tag {
+    transition: color 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
   }
 
-  .gt-btn,
-  .gt-link-btn {
-    min-height: 54px;
-    border-radius: 999px;
-    font-weight: 800;
-    transition: transform .18s ease, filter .18s ease, background .18s ease, border-color .18s ease;
+  .gt-blog-tag:hover {
+    color: var(--gt-text);
+    border-color: rgba(0, 218, 180, 0.34);
+    background: rgba(13, 32, 51, 0.92);
   }
 
-  .gt-btn:hover,
-  .gt-link-btn:hover {
+  .gt-blog-tag.is-active {
+    color: #001a12;
+    border-color: transparent;
+    background: linear-gradient(135deg, #00d084, #4dd8ff);
+    box-shadow: 0 16px 38px -24px rgba(0, 208, 132, 0.85);
+  }
+
+  .gt-blog-input {
+    width: 100%;
+    min-height: 52px;
+    border: 1px solid rgba(132, 204, 200, 0.16);
+    border-radius: 16px;
+    background: rgba(1, 7, 13, 0.72);
+    color: var(--gt-text);
+    transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  }
+
+  .gt-blog-input::placeholder {
+    color: rgba(143, 166, 184, 0.72);
+  }
+
+  .gt-blog-input:focus,
+  .gt-blog-tag:focus-visible,
+  .gt-blog-link:focus-visible,
+  .gt-blog-button:focus-visible {
+    outline: 2px solid rgba(77, 216, 255, 0.86);
+    outline-offset: 3px;
+  }
+
+  .gt-blog-input:focus {
+    border-color: rgba(0, 218, 180, 0.45);
+    background: rgba(1, 7, 13, 0.9);
+    box-shadow: 0 0 0 4px rgba(0, 208, 132, 0.09);
+  }
+
+  .gt-blog-link,
+  .gt-blog-button {
+    transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease;
+  }
+
+  .gt-blog-link:hover,
+  .gt-blog-button:hover {
     transform: translateY(-1px);
   }
 
-  .gt-btn--light {
-    background: var(--gt-white-btn);
-    color: var(--gt-dark-btn);
-  }
-
-  .gt-btn--green {
-    background: linear-gradient(135deg, var(--gt-green-2) 0%, var(--gt-green) 100%);
-    color: white;
-  }
-
-  .gt-btn--ghost {
-    background: rgba(255,255,255,0.06);
-    color: white;
-    border: 1px solid var(--gt-border);
-  }
-
-  .gt-btn--light:hover,
-  .gt-btn--green:hover,
-  .gt-btn--ghost:hover {
-    filter: brightness(1.03);
-  }
-
-  .gt-btn:focus-visible,
-  .gt-link-btn:focus-visible,
-  .gt-input:focus-visible,
-  .gt-tag-btn:focus-visible {
-    outline: 2px solid var(--gt-green-3);
-    outline-offset: 2px;
-  }
-
-  .gt-search {
-    border: 1px solid var(--gt-border);
-    background: rgba(6, 22, 35, 0.84);
-    border-radius: 18px;
-    transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
-  }
-
-  .gt-search:focus-within {
-    border-color: rgba(74, 222, 128, 0.4);
-    box-shadow: 0 0 0 3px rgba(34,197,94,0.12);
-  }
-
-  .gt-input {
-    background: transparent;
-    color: white;
-  }
-
-  .gt-input::placeholder {
-    color: var(--gt-muted);
-  }
-
-  .gt-tag-btn {
-    border: 1px solid var(--gt-border);
-    background: rgba(255,255,255,0.04);
-    color: var(--gt-muted);
-    border-radius: 999px;
-    transition: all .18s ease;
-  }
-
-  .gt-tag-btn:hover {
-    color: white;
-    border-color: rgba(74, 222, 128, 0.28);
-    background: rgba(255,255,255,0.06);
-  }
-
-  .gt-tag-btn.is-active {
-    background: linear-gradient(135deg, var(--gt-green-2) 0%, var(--gt-green) 100%);
-    color: white;
-    border-color: transparent;
-    box-shadow: 0 12px 24px -14px rgba(34,197,94,0.65);
-  }
-
-  .gt-stat {
-    min-width: 110px;
-  }
-
-  .gt-stat__value {
-    color: var(--gt-green-3);
-  }
-
-  .gt-overlay {
-    background: linear-gradient(to top, rgba(2,8,23,0.72), rgba(2,8,23,0.12), transparent);
-  }
-
-  .gt-featured-image {
-    min-height: 320px;
-  }
-
-  .gt-divider {
-    border-top: 1px solid var(--gt-border);
-  }
-
-  .gt-post-card__title {
+  .gt-blog-title-clamp {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
 
-  .gt-post-card__excerpt {
+  .gt-blog-excerpt-clamp {
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
 
-  .gt-section-clean {
-    background: transparent;
+  .gt-blog-image {
+    background:
+      radial-gradient(circle at 50% 50%, rgba(0, 208, 132, 0.16), transparent 46%),
+      #061523;
   }
 
-  .gt-trust-pill {
-    border: 1px solid var(--gt-border);
-    background: rgba(255,255,255,0.04);
-    color: var(--gt-muted);
-    padding: 8px 12px;
+  .gt-blog-hero-visual {
+    min-height: 390px;
+    isolation: isolate;
+  }
+
+  .gt-blog-hero-orbit {
+    position: absolute;
+    inset: 8%;
     border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
+    border: 1px solid rgba(0, 208, 132, 0.18);
+    transform: rotate(var(--rotate, 0deg));
   }
 
-  /* Light mode typography */
-  html:not(.dark) .gt-page h1,
-  html:not(.dark) .gt-page h2,
-  html:not(.dark) .gt-page h3 {
-    color: #0f172a;
+  .gt-blog-hero-orbit::after {
+    content: "";
+    position: absolute;
+    top: 8%;
+    right: 16%;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #00d084;
+    box-shadow: 0 0 18px rgba(0, 208, 132, 0.9);
   }
 
-  html:not(.dark) .gt-page .text-slate-300 {
-    color: #475569;
+  .gt-blog-mesh {
+    background-image:
+      radial-gradient(circle, rgba(0, 208, 132, 0.22) 1px, transparent 1.5px),
+      linear-gradient(to right, rgba(132, 204, 200, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(132, 204, 200, 0.04) 1px, transparent 1px);
+    background-size: 22px 22px, 48px 48px, 48px 48px;
+    mask-image: radial-gradient(circle at 50% 48%, black, transparent 68%);
+    -webkit-mask-image: radial-gradient(circle at 50% 48%, black, transparent 68%);
   }
 
-  html:not(.dark) .gt-post-card__title {
-    color: #0f172a;
+  .gt-blog-floating-card {
+    border: 1px solid rgba(132, 204, 200, 0.22);
+    background: linear-gradient(145deg, rgba(7, 20, 35, 0.94), rgba(1, 7, 13, 0.78));
+    box-shadow: 0 22px 56px -36px rgba(0, 208, 132, 0.68);
   }
 
-  html:not(.dark) .gt-page section {
-    border-color: rgba(0,0,0,0.06) !important;
+  .gt-blog-article-image::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(to top, rgba(1, 7, 13, 0.66), rgba(1, 7, 13, 0.05) 48%, transparent),
+      radial-gradient(circle at 78% 24%, rgba(77, 216, 255, 0.14), transparent 12rem);
   }
 
   @media (max-width: 767px) {
-    .gt-featured-image {
-      min-height: 240px;
+    .gt-blog-hero-visual {
+      min-height: 300px;
+    }
+
+    .gt-blog-tag-row {
+      display: flex;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      padding-bottom: 0.35rem;
+      scrollbar-width: none;
+    }
+
+    .gt-blog-tag-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .gt-blog-tag-row .gt-blog-tag {
+      flex: 0 0 auto;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .gt-card,
-    .gt-btn,
-    .gt-link-btn,
-    .gt-tag-btn {
+    .gt-blog-card,
+    .gt-blog-link,
+    .gt-blog-button,
+    .gt-blog-tag {
       transition: none !important;
     }
 
-    .gt-card:hover,
-    .gt-btn:hover,
-    .gt-link-btn:hover {
+    .gt-blog-card:hover,
+    .gt-blog-link:hover,
+    .gt-blog-button:hover {
       transform: none !important;
     }
   }
@@ -371,7 +272,173 @@ const pageStyles = `
 
 const posts = blogPosts;
 
-const allTags = [...new Set(posts.flatMap((p) => p.meta.tags || []))];
+const allTags = [...new Set(posts.flatMap((post) => post.meta.tags || []))].sort((a, b) =>
+  a.localeCompare(b)
+);
+
+function formatDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Date unavailable";
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatMonthYear(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Updated";
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function getReadingTime(post) {
+  return getPostReadingMinutes(post) || estimatePostReadingMinutes(post);
+}
+
+function BlogHeroVisual() {
+  return (
+    <div className="gt-blog-hero-visual relative hidden lg:block" aria-hidden="true">
+      <div className="absolute inset-0 rounded-[40px] bg-[radial-gradient(circle_at_52%_48%,rgba(0,208,132,0.18),transparent_34%),radial-gradient(circle_at_55%_52%,rgba(77,216,255,0.09),transparent_50%)]" />
+      <div className="gt-blog-mesh absolute inset-0 opacity-55" />
+      <div className="gt-blog-hero-orbit [--rotate:-11deg]" />
+      <div className="gt-blog-hero-orbit inset-[17%] [--rotate:22deg]" />
+      <div className="gt-blog-hero-orbit inset-[29%] [--rotate:70deg]" />
+
+      <svg className="absolute inset-0 h-full w-full" viewBox="0 0 620 420" fill="none">
+        <path d="M132 178C216 105 395 96 499 170" stroke="#00d084" strokeOpacity=".18" />
+        <path d="M128 266C236 338 405 332 504 252" stroke="#4dd8ff" strokeOpacity=".12" />
+        <path d="M204 106 310 206 424 103" stroke="#84ccc8" strokeOpacity=".08" />
+        <path d="M180 316 310 206 452 314" stroke="#84ccc8" strokeOpacity=".08" />
+      </svg>
+
+      <div className="absolute left-1/2 top-1/2 grid h-56 w-56 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[42px] border border-[#00d084]/25 bg-[#071423]/75 shadow-[0_0_90px_rgba(0,208,132,0.2)]">
+        <div className="absolute inset-5 rounded-[32px] border border-[#84ccc8]/12" />
+        <div className="absolute inset-10 rounded-full border border-[#00d084]/18" />
+        <svg className="relative h-32 w-32 text-[#00d084]" viewBox="0 0 180 180" fill="none">
+          <path
+            d="M90 18 140 42v40c0 35-20 67-50 83-30-16-50-48-50-83V42l50-24Z"
+            stroke="currentColor"
+            strokeWidth="7"
+            fill="rgba(0,208,132,0.07)"
+          />
+          <path d="M70 96c-14-18-5-43 21-48 7 22 0 39-21 48Z" fill="rgba(0,208,132,0.78)" />
+          <path d="M108 97c18-13 17-38-4-50-14 19-14 37 4 50Z" fill="rgba(132,204,200,0.74)" />
+          <path d="M89 106c4-21 14-35 28-45" stroke="#f5fbff" strokeOpacity=".6" strokeWidth="4" strokeLinecap="round" />
+          <path d="M89 106c-4-18-12-30-26-39" stroke="#f5fbff" strokeOpacity=".48" strokeWidth="4" strokeLinecap="round" />
+        </svg>
+      </div>
+
+      {[
+        { Icon: BookOpen, className: "left-[9%] top-[28%]", tone: "text-[#00d084]" },
+        { Icon: BarChart3, className: "right-[11%] top-[24%]", tone: "text-[#4dd8ff]" },
+        { Icon: Terminal, className: "bottom-[16%] left-[18%]", tone: "text-[#84ccc8]" },
+        { Icon: ShieldCheck, className: "bottom-[18%] right-[18%]", tone: "text-[#00d084]" },
+      ].map(({ Icon: NodeIcon, className, tone }) => (
+        <div
+          key={className}
+          className={`gt-blog-floating-card absolute grid h-20 w-20 place-items-center rounded-3xl ${className}`}
+        >
+          {React.createElement(NodeIcon, {
+            className: `h-7 w-7 ${tone}`,
+            strokeWidth: 1.7,
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MetaLine({ post }) {
+  return (
+    <div className="gt-blog-mono flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5f7285]">
+      {post.meta.tags?.[0] && (
+        <span className="inline-flex items-center gap-1.5 text-[#00d084]">
+          <Tag className="h-3 w-3" />
+          {post.meta.tags[0]}
+        </span>
+      )}
+      <span className="inline-flex items-center gap-1.5">
+        <CalendarDays className="h-3 w-3 text-[#00d084]" />
+        {formatDate(post.meta.date)}
+      </span>
+      <span className="inline-flex items-center gap-1.5">
+        <Clock className="h-3 w-3 text-[#00d084]" />
+        {getReadingTime(post)} min read
+      </span>
+    </div>
+  );
+}
+
+function ArticleImage({ post, featured = false }) {
+  return (
+    <div
+      className={`gt-blog-article-image gt-blog-image relative overflow-hidden ${
+        featured ? "min-h-[300px] lg:min-h-[390px]" : "aspect-[16/9]"
+      }`}
+    >
+      <img
+        src={post.meta.image}
+        alt={post.meta.title}
+        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        style={{
+          objectPosition: featured
+            ? post.meta.heroImagePosition
+            : post.meta.cardImagePosition,
+        }}
+        loading={featured ? "eager" : "lazy"}
+        decoding="async"
+      />
+    </div>
+  );
+}
+
+function TagList({ tags, limit = 3 }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {tags?.slice(0, limit).map((tag) => (
+        <span
+          key={tag}
+          className="gt-blog-mono rounded-full border border-[#84ccc8]/[0.15] bg-white/[0.035] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8fa6b8]"
+        >
+          {tag}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function ArticleCard({ post }) {
+  return (
+    <Link to={`/blog/${post.meta.slug}`} className="gt-blog-link group block h-full">
+      <article className="gt-blog-panel gt-blog-card flex h-full flex-col rounded-[24px]">
+        <ArticleImage post={post} />
+        <div className="flex flex-1 flex-col p-5 sm:p-6">
+          <MetaLine post={post} />
+          <h3 className="gt-blog-title-clamp mt-4 text-xl font-semibold leading-tight text-[#f5fbff] transition-colors group-hover:text-[#00d084]">
+            {post.meta.title}
+          </h3>
+          <p className="gt-blog-excerpt-clamp mt-3 text-sm leading-relaxed text-[#8fa6b8]">
+            {post.meta.excerpt}
+          </p>
+          <div className="mt-5 border-t border-[#84ccc8]/10 pt-4">
+            <div className="flex items-center justify-between gap-4">
+              <TagList tags={post.meta.tags} limit={2} />
+              <span className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-full border border-[#84ccc8]/[0.15] bg-white/[0.035] text-[#00d084] transition-transform group-hover:translate-x-1">
+                <ArrowRight className="h-4 w-4" />
+              </span>
+            </div>
+          </div>
+        </div>
+      </article>
+    </Link>
+  );
+}
 
 export default function Blog() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -382,14 +449,14 @@ export default function Blog() {
   }, []);
 
   const filteredPosts = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+
     return sortedPosts.filter((post) => {
       const matchesSearch =
-        searchTerm === "" ||
-        post.meta.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.meta.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (post.meta.tags || []).some((tag) =>
-          tag.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        query === "" ||
+        post.meta.title.toLowerCase().includes(query) ||
+        post.meta.excerpt.toLowerCase().includes(query) ||
+        (post.meta.tags || []).some((tag) => tag.toLowerCase().includes(query));
 
       const matchesTag =
         selectedTag === "All" || (post.meta.tags || []).includes(selectedTag);
@@ -400,16 +467,9 @@ export default function Blog() {
 
   const featuredPost = sortedPosts[0];
   const regularPosts = sortedPosts.slice(1);
-
-  const visiblePosts =
-    searchTerm === "" && selectedTag === "All" ? regularPosts : filteredPosts;
-
-  const getReadingTime = (post) => getPostReadingMinutes(post) || estimatePostReadingMinutes(post);
-
-  const latestYear =
-    sortedPosts.length > 0
-      ? new Date(sortedPosts[0].meta.date).getFullYear()
-      : new Date().getFullYear();
+  const isDefaultView = searchTerm.trim() === "" && selectedTag === "All";
+  const visiblePosts = isDefaultView ? regularPosts : filteredPosts;
+  const latestPostDate = sortedPosts[0]?.meta.date;
 
   const blogSchema = {
     "@context": "https://schema.org",
@@ -451,10 +511,7 @@ export default function Blog() {
           property="og:description"
           content="Expert insights on web sustainability, carbon reduction strategies, and environmental technology."
         />
-        <meta
-          property="og:image"
-          content="https://www.greentracer.org/GreenFavi.png"
-        />
+        <meta property="og:image" content="https://www.greentracer.org/GreenFavi.png" />
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://www.greentracer.org/blog" />
         <meta
@@ -473,101 +530,119 @@ export default function Blog() {
         <script type="application/ld+json">{JSON.stringify(itemListSchema)}</script>
       </Helmet>
 
-      <div className="gt-page min-h-screen">
+      <div className="gt-blog min-h-screen">
         <style>{pageStyles}</style>
+        <div className="gt-blog-shell">
+          <section className="relative px-5 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-28 lg:pb-10">
+            <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[minmax(0,0.94fr)_minmax(420px,1fr)]">
+              <div>
+                <div className="gt-blog-pill gt-blog-mono mb-6 w-fit rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#00d084]">
+                  <BookOpen className="h-3 w-3" />
+                  Blog archive
+                </div>
 
-        {/* HERO */}
-        <section className="relative overflow-hidden border-b border-white/5 px-6 pb-16 pt-28 sm:pt-32">
-          <div className="gt-hero-grid absolute inset-0 pointer-events-none opacity-60" />
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute left-1/2 top-[-120px] h-[320px] w-[520px] -translate-x-1/2 rounded-full bg-green-500/10 blur-[120px]" />
-          </div>
+                <h1 className="gt-blog-display max-w-4xl text-[clamp(3.25rem,8vw,6.7rem)] font-semibold leading-[0.94] text-[#f5fbff]">
+                  The GreenTracer{" "}
+                  <span className="block bg-gradient-to-r from-[#00d084] via-[#25e7a1] to-[#4dd8ff] bg-clip-text italic font-light text-transparent">
+                    engineering log
+                  </span>
+                </h1>
 
-          <div className="relative z-10 mx-auto max-w-5xl text-center">
-            <div className="mb-8 flex justify-center">
-              <div className="gt-chip">
-                <FaNewspaper className="text-[11px] text-green-400" />
-                <span className="gt-mono text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
-                  Knowledge Hub
-                </span>
+                <p className="mt-6 max-w-2xl text-base leading-relaxed text-[#b8c8d6] sm:text-lg">
+                  Practical guides on web carbon measurement, green hosting,
+                  performance optimisation, and building a lighter digital footprint
+                  - written by the team behind GreenTracer.
+                </p>
+
+                <div className="mt-8 flex flex-wrap gap-3">
+                  {["Carbon grading explained", "Green hosting guides", "GreenTracer badges & API"].map(
+                    (label) => (
+                      <span
+                        key={label}
+                        className="gt-blog-pill rounded-full px-3.5 py-2 text-sm font-semibold"
+                      >
+                        <Sparkles className="h-3.5 w-3.5 text-[#00d084]" />
+                        {label}
+                      </span>
+                    )
+                  )}
+                </div>
+
+                <div className="mt-8 grid max-w-2xl grid-cols-3 gap-3 border-y border-[#84ccc8]/[0.12] py-5">
+                  <div className="flex items-center gap-3">
+                    <span className="hidden h-11 w-11 items-center justify-center rounded-2xl border border-[#84ccc8]/[0.14] bg-white/[0.035] text-[#00d084] sm:inline-flex">
+                      <BookOpen className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <p className="gt-blog-mono text-2xl font-semibold leading-none text-[#00d084]">
+                        {posts.length}
+                      </p>
+                      <p className="gt-blog-mono mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5f7285]">
+                        Articles
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="hidden h-11 w-11 items-center justify-center rounded-2xl border border-[#84ccc8]/[0.14] bg-white/[0.035] text-[#00d084] sm:inline-flex">
+                      <Tag className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <p className="gt-blog-mono text-2xl font-semibold leading-none text-[#00d084]">
+                        {allTags.length}
+                      </p>
+                      <p className="gt-blog-mono mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5f7285]">
+                        Topics
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="hidden h-11 w-11 items-center justify-center rounded-2xl border border-[#84ccc8]/[0.14] bg-white/[0.035] text-[#00d084] sm:inline-flex">
+                      <CalendarDays className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <p className="gt-blog-mono text-lg font-semibold leading-none text-[#00d084] sm:text-2xl">
+                        {formatMonthYear(latestPostDate)}
+                      </p>
+                      <p className="gt-blog-mono mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5f7285]">
+                        Latest
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              <BlogHeroVisual />
             </div>
+          </section>
 
-            <h1 className="gt-display mx-auto max-w-4xl text-5xl font-semibold leading-[1.02] text-white sm:text-6xl md:text-7xl">
-              The GreenTracer
-              <br />
-              <span className="bg-gradient-to-r from-green-400 to-emerald-300 bg-clip-text italic font-light text-transparent">
-                engineering log
-              </span>
-            </h1>
-
-            <p className="mx-auto mt-7 max-w-3xl text-lg leading-relaxed text-slate-400 sm:text-xl">
-              Practical guides on web carbon measurement, green hosting, performance
-              optimisation, and building a lighter digital footprint — written by the
-              team behind GreenTracer.
-            </p>
-
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <span className="gt-trust-pill">Carbon grading explained</span>
-              <span className="gt-trust-pill">Green hosting guides</span>
-              <span className="gt-trust-pill">GreenTracer badges & API</span>
-            </div>
-
-            <div className="mt-10 flex flex-wrap justify-center gap-6 sm:gap-10">
-              <div className="gt-stat text-center">
-                <div className="gt-mono gt-stat__value text-2xl font-bold">
-                  {posts.length}
-                </div>
-                <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
-                  Articles
-                </div>
-              </div>
-              <div className="gt-stat text-center">
-                <div className="gt-mono gt-stat__value text-2xl font-bold">
-                  {allTags.length}
-                </div>
-                <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
-                  Topics
-                </div>
-              </div>
-              <div className="gt-stat text-center">
-                <div className="gt-mono gt-stat__value text-2xl font-bold">
-                  {latestYear}
-                </div>
-                <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
-                  Latest Year
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* SEARCH + FILTERS */}
-        <section className="gt-section-clean border-b border-white/5 px-6 py-12">
-          <div className="mx-auto max-w-5xl">
-            <div className="gt-panel p-5 sm:p-6">
-              <div className="gt-search mx-auto flex max-w-2xl items-center px-4 py-3">
-                <FaSearch className="mr-3 text-slate-500" />
+          <section className="relative z-10 px-5 py-8 sm:px-6">
+            <div className="gt-blog-panel mx-auto max-w-6xl rounded-[28px] p-4 sm:p-5">
+              <label className="sr-only" htmlFor="blog-search">
+                Search blog articles
+              </label>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5f7285]" />
                 <input
-                  type="text"
-                  placeholder="Search articles, topics, or keywords..."
+                  id="blog-search"
+                  type="search"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="gt-input w-full border-none outline-none text-sm sm:text-base"
-                  aria-label="Search blog articles"
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search articles, topics, or keywords..."
+                  className="gt-blog-input pl-11 pr-4 text-sm"
                 />
               </div>
 
-              <div className="mt-5 flex flex-wrap justify-center gap-3">
+              <div className="gt-blog-tag-row mt-4 flex flex-wrap justify-center gap-2.5">
                 <button
                   type="button"
                   onClick={() => setSelectedTag("All")}
-                  className={`gt-tag-btn gt-mono px-4 py-2 text-[11px] font-bold uppercase tracking-[0.16em] ${
+                  aria-pressed={selectedTag === "All"}
+                  className={`gt-blog-tag gt-blog-mono rounded-full px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] ${
                     selectedTag === "All" ? "is-active" : ""
                   }`}
                 >
-                  <FaTag className="mr-2 inline text-[10px]" />
-                  All Posts
+                  <Filter className="h-3 w-3" />
+                  All posts
                 </button>
 
                 {allTags.map((tag) => (
@@ -575,7 +650,8 @@ export default function Blog() {
                     type="button"
                     key={tag}
                     onClick={() => setSelectedTag(tag)}
-                    className={`gt-tag-btn gt-mono px-4 py-2 text-[11px] font-bold uppercase tracking-[0.16em] ${
+                    aria-pressed={selectedTag === tag}
+                    className={`gt-blog-tag gt-blog-mono rounded-full px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] ${
                       selectedTag === tag ? "is-active" : ""
                     }`}
                   >
@@ -584,233 +660,136 @@ export default function Blog() {
                 ))}
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* FEATURED ARTICLE */}
-        {searchTerm === "" && selectedTag === "All" && featuredPost && (
-          <section className="px-6 py-20">
-            <div className="mx-auto max-w-6xl">
-              <div className="mb-8 flex items-center gap-3">
-                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-                <h2 className="gt-mono text-sm font-bold uppercase tracking-[0.22em] text-green-400">
-                  Featured Article
-                </h2>
+          {isDefaultView && featuredPost && (
+            <section className="relative z-10 px-5 py-12 sm:px-6 sm:py-14">
+              <div className="mx-auto max-w-7xl">
+                <div className="mb-4 flex items-center gap-2 text-[#00d084]">
+                  <Sparkles className="h-4 w-4" />
+                  <h2 className="gt-blog-mono text-xs font-semibold uppercase tracking-[0.22em]">
+                    Featured article
+                  </h2>
+                </div>
+
+                <article className="gt-blog-panel gt-blog-card group overflow-hidden rounded-[28px]">
+                  <div className="grid lg:grid-cols-[1.08fr_0.92fr]">
+                    <ArticleImage post={featuredPost} featured />
+                    <div className="flex flex-col justify-between p-6 sm:p-8 lg:p-10">
+                      <div>
+                        <MetaLine post={featuredPost} />
+                        <h2 className="gt-blog-display mt-5 text-3xl font-semibold leading-[1.05] text-[#f5fbff] sm:text-4xl lg:text-5xl">
+                          {featuredPost.meta.title}
+                        </h2>
+                        <p className="mt-5 max-w-2xl text-base leading-relaxed text-[#b8c8d6]">
+                          {featuredPost.meta.excerpt}
+                        </p>
+                        <div className="mt-6">
+                          <TagList tags={featuredPost.meta.tags} limit={4} />
+                        </div>
+                      </div>
+
+                      <div className="mt-8">
+                        <Link
+                          to={`/blog/${featuredPost.meta.slug}`}
+                          className="gt-blog-link inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#f5fbff] px-6 text-sm font-semibold text-[#020b13]"
+                        >
+                          Read full article
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </section>
+          )}
+
+          <section className="relative z-10 px-5 py-12 sm:px-6 sm:py-14">
+            <div className="mx-auto max-w-7xl">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="gt-blog-mono text-xs font-semibold uppercase tracking-[0.22em] text-[#00d084]">
+                    {isDefaultView ? "All articles" : "Filtered articles"}
+                  </p>
+                  {!isDefaultView && (
+                    <h2 className="mt-2 text-2xl font-semibold text-[#f5fbff]">
+                      {visiblePosts.length} result{visiblePosts.length === 1 ? "" : "s"}
+                    </h2>
+                  )}
+                </div>
+
+                {!isDefaultView && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setSelectedTag("All");
+                    }}
+                    className="gt-blog-button w-fit rounded-full border border-[#84ccc8]/[0.18] bg-white/[0.035] px-4 py-2 text-sm font-semibold text-[#b8c8d6]"
+                  >
+                    Clear filters
+                  </button>
+                )}
               </div>
 
-              <article className="gt-panel gt-card overflow-hidden">
-                <div className="grid lg:grid-cols-2">
-                  <div className="gt-featured-image relative overflow-hidden">
-                    <img
-                      src={featuredPost.meta.image}
-                      alt={featuredPost.meta.title}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      loading="eager"
-                      decoding="async"
-                      fetchPriority="high"
-                      style={{ objectPosition: featuredPost.meta.heroImagePosition }}
-                    />
-                    <div className="gt-overlay absolute inset-0" />
-                    <div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur">
-                      <FaStar className="text-yellow-400" />
-                      Editor’s Pick
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col justify-between p-8 lg:p-12">
-                    <div>
-                      <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-                        <span className="gt-mono flex items-center gap-2">
-                          <FaUser className="text-green-400" />
-                          {featuredPost.meta.author}
-                        </span>
-                        <span className="gt-mono flex items-center gap-2">
-                          <FaClock className="text-green-400" />
-                          {new Date(featuredPost.meta.date).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </span>
-                        <span className="gt-mono flex items-center gap-2">
-                          <FaBookmark className="text-green-400" />
-                          {getReadingTime(featuredPost)} min read
-                        </span>
-                      </div>
-
-                      <h2 className="gt-display text-3xl font-bold leading-tight text-white sm:text-4xl">
-                        {featuredPost.meta.title}
-                      </h2>
-
-                      <p className="mt-5 text-base leading-relaxed text-slate-400 sm:text-lg">
-                        {featuredPost.meta.excerpt}
-                      </p>
-
-                      <div className="mt-6 flex flex-wrap gap-2">
-                        {featuredPost.meta.tags?.map((tag) => (
-                          <span
-                            key={tag}
-                            className="gt-mono rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="mt-8">
-                      <Link
-                        to={`/blog/${featuredPost.meta.slug}`}
-                        className="gt-link-btn gt-btn--light inline-flex items-center justify-center gap-2 px-8 py-4 text-sm"
-                      >
-                        Read Article
-                        <FaArrowRight className="text-xs" />
-                      </Link>
-                    </div>
-                  </div>
+              {visiblePosts.length === 0 ? (
+                <div className="gt-blog-panel rounded-[28px] border-dashed p-10 text-center sm:p-14">
+                  <Search className="mx-auto h-10 w-10 text-[#5f7285]" />
+                  <h3 className="mt-5 text-xl font-semibold text-[#f5fbff]">
+                    No matching articles found
+                  </h3>
+                  <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-[#8fa6b8]">
+                    Try a different keyword or topic filter.
+                  </p>
                 </div>
-              </article>
+              ) : (
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  {visiblePosts.map((post) => (
+                    <ArticleCard key={post.meta.slug} post={post} />
+                  ))}
+                </div>
+              )}
             </div>
           </section>
-        )}
 
-        {/* RESULTS / ARTICLE GRID */}
-        <section className="border-t border-white/5 px-6 py-20">
-          <div className="mx-auto max-w-6xl">
-            {(searchTerm !== "" || selectedTag !== "All") && (
-              <div className="mb-8 flex items-center gap-3">
-                <FaTerminal className="text-green-400" />
-                <h2 className="gt-mono text-sm font-bold uppercase tracking-[0.22em] text-green-400">
-                  Results: {searchTerm ? `"${searchTerm}"` : selectedTag}
-                </h2>
-              </div>
-            )}
-
-            {filteredPosts.length === 0 ? (
-              <div className="gt-panel rounded-3xl border border-dashed border-white/10 p-14 text-center">
-                <FaSearch className="mx-auto mb-4 text-4xl text-slate-500" />
-                <h3 className="text-xl font-bold text-white">
-                  No matching articles found
-                </h3>
-                <p className="mt-2 text-slate-400">
-                  Try a different keyword or tag.
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                {visiblePosts.map((post) => (
-                  <Link
-                    to={`/blog/${post.meta.slug}`}
-                    key={post.meta.slug}
-                    className="group block"
-                  >
-                    <article className="gt-panel gt-card flex h-full flex-col overflow-hidden">
-                      <div className="relative h-52 overflow-hidden">
-                        <img
-                          src={post.meta.image}
-                          alt={post.meta.title}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          loading="lazy"
-                          decoding="async"
-                          style={{ objectPosition: post.meta.cardImagePosition }}
-                        />
-                        <div className="gt-overlay absolute inset-0 opacity-80" />
-                        <div className="absolute right-4 top-4 rounded-full border border-white/10 bg-slate-950/70 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white backdrop-blur">
-                          {getReadingTime(post)} min
-                        </div>
-                      </div>
-
-                      <div className="flex flex-1 flex-col p-6">
-                        <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
-                          <span className="gt-mono inline-flex items-center gap-1.5">
-                            <FaUser className="text-green-400" />
-                            {post.meta.author}
-                          </span>
-                          <span className="gt-mono inline-flex items-center gap-1.5">
-                            <FaClock className="text-green-400" />
-                            {new Date(post.meta.date).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </span>
-                        </div>
-
-                        <h3 className="gt-post-card__title text-xl font-bold leading-tight text-white transition-colors group-hover:text-green-300">
-                          {post.meta.title}
-                        </h3>
-
-                        <p className="gt-post-card__excerpt mt-3 text-sm leading-relaxed text-slate-400">
-                          {post.meta.excerpt}
-                        </p>
-
-                        <div className="gt-divider mt-6 pt-4" />
-
-                        <div className="mt-auto flex items-center justify-between gap-4 pt-1">
-                          <div className="flex min-w-0 flex-wrap gap-2">
-                            {post.meta.tags?.slice(0, 2).map((tag) => (
-                              <span
-                                key={tag}
-                                className="gt-mono text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500"
-                              >
-                                #{tag}
-                              </span>
-                            ))}
-                          </div>
-
-                          <FaArrowRight className="flex-shrink-0 text-slate-500 transition-all group-hover:translate-x-1 group-hover:text-green-400" />
-                        </div>
-                      </div>
-                    </article>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* CTA / NEWSLETTER */}
-        <section className="px-6 pb-20">
-          <div className="mx-auto max-w-4xl text-center">
-            <div className="gt-panel relative overflow-hidden border-white/10 px-8 py-12 sm:px-10 sm:py-16">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(74,222,128,0.2),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.16),transparent_34%)]" />
-
-              <div className="relative z-10">
-                <div className="gt-icon-box mx-auto mb-6">
-                  <FaChartLine className="text-lg" />
+          <section className="relative z-10 px-5 pb-20 pt-4 sm:px-6">
+            <div className="gt-blog-panel mx-auto max-w-7xl overflow-hidden rounded-[28px] p-5 sm:p-6">
+              <div className="relative grid gap-5 lg:grid-cols-[1fr_minmax(320px,0.8fr)] lg:items-center">
+                <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_82%_20%,rgba(0,208,132,0.16),transparent_16rem),radial-gradient(circle_at_10%_100%,rgba(77,216,255,0.08),transparent_18rem)]" />
+                <div className="flex items-start gap-4">
+                  <span className="inline-flex h-12 w-12 flex-none items-center justify-center rounded-2xl border border-[#00d084]/[0.24] bg-[#00d084]/10 text-[#00d084]">
+                    <Mail className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <h2 className="text-xl font-semibold text-[#f5fbff]">Stay in the loop</h2>
+                    <p className="mt-1 max-w-xl text-sm leading-relaxed text-[#8fa6b8]">
+                      Get new articles, data insights, and product updates.
+                    </p>
+                  </div>
                 </div>
 
-                <h2 className="gt-display text-3xl font-bold text-white sm:text-4xl">
-                  Stay updated on web sustainability
-                </h2>
-
-                <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-slate-300">
-                  Get the latest engineering insights, carbon reduction strategies,
-                  and GreenTracer updates delivered to your inbox.
-                </p>
-
-                <div className="mx-auto mt-8 flex max-w-xl flex-col gap-3 sm:flex-row">
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <label className="sr-only" htmlFor="blog-newsletter-email">
+                    Email address
+                  </label>
                   <input
+                    id="blog-newsletter-email"
                     type="email"
-                    placeholder="name@company.com"
-                    className="gt-input gt-search min-h-[54px] flex-1 px-5 py-4 text-sm"
-                    aria-label="Email address"
+                    placeholder="you@company.com"
+                    className="gt-blog-input min-w-0 flex-1 px-4 text-sm"
                   />
                   <button
                     type="button"
-                    className="gt-btn gt-btn--green inline-flex items-center justify-center px-6 py-4 text-xs uppercase tracking-[0.16em]"
+                    className="gt-blog-button inline-flex min-h-[52px] items-center justify-center rounded-2xl bg-[#00d084] px-6 text-sm font-semibold text-[#001a12]"
                   >
                     Subscribe
                   </button>
                 </div>
-
-                <p className="gt-mono mt-4 text-[10px] uppercase tracking-[0.18em] text-slate-500">
-                  No spam. Opt-out anytime.
-                </p>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
     </>
   );

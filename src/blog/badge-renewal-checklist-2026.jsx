@@ -8,8 +8,8 @@ export const meta = {
   readingMinutes: 4,
   tags: ["Badges", "Verification", "Renewal", "GreenTracer"],
   slug: "badge-renewal-checklist-2026",
-  image: "/assets/blog/badge-renewal-2026.png",
-  imageAvif: "/assets/blog/badge-renewal-2026.png",
+  image: "/assets/blog/badge-renewal-2026.webp",
+  imageAvif: "/assets/blog/badge-renewal-2026.webp",
   excerpt:
     "A sustainability badge only works while the underlying claim is still current. This checklist covers what teams need to review before they renew a public verification signal.",
 };

@@ -125,7 +125,7 @@ const apiFeatures = [
   {
     icon: <FaShieldAlt className="text-xl" />,
     title: "Controlled access",
-    description: "API access is reviewed manually so we can protect infrastructure and quality.",
+    description: "API access is reviewed manually so infrastructure, API keys, and rate limits remain protected.",
   },
   {
     icon: <FaChartLine className="text-xl" />,
@@ -343,8 +343,8 @@ export default function ApiAccess() {
 
             <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto leading-relaxed font-light">
               Integrate GreenTracer carbon analysis into your own systems.
-              Access is currently reviewed manually so we can protect infrastructure,
-              maintain quality, and support the right use cases first.
+              Access is currently reviewed manually so methodology can be understood,
+              while operational infrastructure, API keys, and rate limits remain protected.
             </p>
 
             <div className="flex flex-wrap justify-center gap-8 mt-10">

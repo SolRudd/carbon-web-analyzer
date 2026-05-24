@@ -17,7 +17,7 @@ test('public badge status maps verified backend facts to safe public output', ()
     metric: 0.214,
   });
   assert.equal(mapped.publicStatus, 'active');
-  assert.equal(mapped.label, 'GreenTracer Verified supporter');
+  assert.equal(mapped.label, 'GreenTracer Verified');
   assert.equal(mapped.shouldShowMetric, true);
 });
 
@@ -37,7 +37,7 @@ test('public badge status never exposes raw license states', () => {
   });
 
   assert.equal(data.publicStatus, 'licence_inactive');
-  assert.equal(data.label, 'Licence inactive');
+  assert.equal(data.label, 'Verified Not Active');
   assert.equal(data.metricText, null);
   assert.doesNotMatch(JSON.stringify(toPublicBadgeJson(data)), /suspended|LICENSE|SUBSCRIPTION|API_KEY/i);
 });
@@ -65,7 +65,7 @@ test('badge SVG renders small verified results badge without raw internals', () 
   const svg = renderBadgeSvg({
     publicStatus: 'active',
     badgeType: 'greentracer_verified',
-    label: 'GreenTracer Verified supporter',
+    label: 'GreenTracer Verified',
     domain: 'example.com',
     metricText: '0.21g CO₂/page',
     showMetric: true,
@@ -73,9 +73,9 @@ test('badge SVG renders small verified results badge without raw internals', () 
 
   assert.match(svg, /width="240"/);
   assert.match(svg, /height="44"/);
-  assert.match(svg, /Verified Supporter/);
+  assert.match(svg, /GreenTracer Verified/);
   assert.doesNotMatch(svg, /0\.21g CO₂\/page/);
-  assert.match(svg, />GT</);
+  assert.match(svg, /viewBox="60 112 205 226"/);
   assert.doesNotMatch(svg, /LICENSE_UNAVAILABLE|TOKEN_INVALID|SITE_NOT_FOUND|API_KEY_INVALID|SUBSCRIPTION_EXPIRED|DOMAIN_MISMATCH/);
 });
 

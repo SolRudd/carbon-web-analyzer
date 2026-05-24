@@ -289,7 +289,7 @@ export function VerifiedDirectoryCta() {
               Turn this report into a public trust signal.
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[#8fa6b8]">
-              Verified supporters can publish a managed profile, display a verified badge, and show sustainability signals publicly. Verified is a supporter/member signal, not a perfect carbon score.
+              Verified supporters can publish a managed profile, display a GreenTracer Verified badge, and show sustainability signals publicly. Verified is a supporter/member signal, not a perfect carbon score.
             </p>
           </div>
         </div>

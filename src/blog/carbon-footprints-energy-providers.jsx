@@ -13,7 +13,7 @@ export const meta = {
   tags: ["Eco-friendly", "Energy", "Web Sustainability", "Carbon Tracking"],
   slug: "carbon-footprints-energy-providers",
     image: "/assets/blog/energy-carbon.webp",
-  imageAvif: "/assets/blog/energy-carbon.avif",
+  imageAvif: "/assets/blog/energy-carbon.webp",
   excerpt: "An in-depth investigation reveals that leading renewable energy companies are failing at digital sustainability. We break down why and provide a complete action plan for change."
 };
 
@@ -285,7 +285,7 @@ export default function Post() {
                 <li><strong>Code Cleanup:</strong> Implement CSS purging and defer non-critical JavaScript.</li>
                 <li><strong>Asset Conversion:</strong> Systematically convert all PNG/JPG assets to AVIF/WebP.</li>
                 <li><strong>UX Audit:</strong> Analyze user journeys to identify and remove unnecessary steps.</li>
-                <li><strong>Display Your Badge:</strong> Add a Carbon Badge to your footer to show your commitment.</li>
+                <li><strong>Display Your Badge:</strong> Add a Carbon Result badge to your footer to show the latest scan result.</li>
               </ol>
             </div>
           </div>

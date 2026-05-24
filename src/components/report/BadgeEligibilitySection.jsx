@@ -140,6 +140,7 @@ export default function BadgeEligibilitySection({
     green: greenHost ? "1" : "0",
   });
   const reportHref = resultSlug ? `/result/${encodeURIComponent(resultSlug)}` : "";
+  const hostingReportHref = reportHref ? `${reportHref}#result-breakdown` : "";
   const carbonBuilderHref = `/badge?type=carbon_tested&${builderParams.toString()}`;
   const greenBuilderHref = `/badge?type=green_hosting&${builderParams.toString()}`;
   const carbonSnippet = buildBadgeEmbedCode({
@@ -190,7 +191,7 @@ export default function BadgeEligibilitySection({
                 Badges & trust signals
               </h2>
               <p className="mt-1 max-w-3xl text-sm leading-6 text-[#8fa6b8]">
-                Carbon Tested and Green Hosting badges are backed by this report. GreenTracer Verified is a separate supporter/member signal.
+                Carbon Result and Green Hosting badges are backed by this report. GreenTracer Verified is a separate supporter/member signal.
               </p>
             </div>
           </div>
@@ -206,8 +207,8 @@ export default function BadgeEligibilitySection({
       <div className="relative z-10 mt-6 grid items-stretch gap-4 lg:grid-cols-3">
         <BadgeCard
           icon={BadgeCheck}
-          title="Carbon Tested"
-          description="Proves this page has a recent GreenTracer carbon result."
+          title="Carbon Result"
+          description="Shows this page has a recent GreenTracer carbon result and public grade."
           statusLabel={resultSlug ? "Available" : "Unavailable"}
           tone={resultSlug ? "green" : "neutral"}
           eyebrow="Report-backed"
@@ -215,9 +216,9 @@ export default function BadgeEligibilitySection({
             <>
               <ActionButton onClick={() => copySnippet(carbonSnippet, "carbon")} disabled={!resultSlug}>
                 <Copy size={15} aria-hidden="true" />
-                {copied === "carbon" ? "Carbon badge copied" : "Copy Carbon badge"}
+                {copied === "carbon" ? "Carbon Result badge copied" : "Copy Carbon Result badge"}
               </ActionButton>
-              <SecondaryLink to={carbonBuilderHref}>Customize Carbon badge</SecondaryLink>
+              <SecondaryLink to={carbonBuilderHref}>Customize Carbon Result badge</SecondaryLink>
             </>
           }
         >
@@ -228,7 +229,7 @@ export default function BadgeEligibilitySection({
             href={reportHref}
             label={resultSlug ? "" : "Not available"}
             valueText={grade ? `Grade ${grade}` : ""}
-            ariaLabel={`Carbon Tested badge for ${domain || "this site"}`}
+            ariaLabel={`Carbon Result badge for ${domain || "this site"}`}
           />
         </BadgeCard>
 
@@ -261,7 +262,7 @@ export default function BadgeEligibilitySection({
               status="active"
               badgeType="green_hosting"
               domain={domain}
-              href={reportHref}
+              href={hostingReportHref}
               ariaLabel={`Green Hosting badge for ${domain || "this site"}`}
             />
           ) : (
@@ -297,7 +298,7 @@ export default function BadgeEligibilitySection({
       </div>
 
       <p className="relative z-10 mt-4 text-xs leading-5 text-[#8fa6b8]">
-        Badges reflect this report and hosting evidence. Verified is a separate paid supporter/member signal and does not require a perfect carbon score.
+        Carbon Result and Green Hosting reflect this report and hosting evidence. Verified is a separate paid supporter/member signal and does not require a perfect carbon score.
       </p>
     </section>
   );

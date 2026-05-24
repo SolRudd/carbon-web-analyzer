@@ -28,26 +28,29 @@ export const PUBLIC_BADGE_STATUSES = [
 ];
 
 export const BADGE_LABELS = {
-  pending: "Verification pending",
-  not_active: "Badge not active",
+  pending: "Verification Pending",
+  not_active: "Verified Not Active",
   green_hosting_not_detected: "Green Hosting",
-  licence_inactive: "Licence inactive",
-  domain_mismatch: "Domain mismatch",
-  unavailable: "Badge not active",
+  licence_inactive: "Verified Not Active",
+  domain_mismatch: "Domain Mismatch",
+  unavailable: "Verification Unavailable",
 };
 
 export const BADGE_TYPE_LABELS = {
   carbon_tested: {
-    active: "Carbon Tested",
-    fullActive: "Carbon tested by GreenTracer",
+    active: "Carbon Result",
+    unavailable: "Carbon Result Unavailable",
+    fullActive: "Carbon result by GreenTracer",
   },
   green_hosting: {
     active: "Green Hosting Detected",
-    fullActive: "Green hosting detected by GreenTracer",
+    unavailable: "Hosting Not Confirmed",
+    fullActive: "Green hosting evidence detected by GreenTracer",
   },
   greentracer_verified: {
-    active: "Verified Supporter",
-    fullActive: "GreenTracer Verified supporter",
+    active: "GreenTracer Verified",
+    unavailable: "Verification Unavailable",
+    fullActive: "GreenTracer Verified",
   },
 };
 
@@ -77,7 +80,13 @@ export function getBadgeLabel(status, type = "greentracer_verified") {
     return BADGE_TYPE_LABELS[badgeType]?.fullActive || BADGE_TYPE_LABELS.greentracer_verified.fullActive;
   }
   if (badgeType === "green_hosting" && publicStatus === "green_hosting_not_detected") {
-    return "Green hosting checked by GreenTracer";
+    return "Green hosting checked by GreenTracer; evidence not confirmed";
+  }
+  if (badgeType === "carbon_tested") {
+    return "Carbon result unavailable";
+  }
+  if (badgeType === "green_hosting") {
+    return "Green hosting evidence not confirmed";
   }
   return BADGE_LABELS[publicStatus] || BADGE_LABELS.unavailable;
 }
@@ -89,7 +98,13 @@ export function getBadgeVisibleLabel(status, type = "greentracer_verified") {
     return BADGE_TYPE_LABELS[badgeType]?.active || BADGE_TYPE_LABELS.greentracer_verified.active;
   }
   if (badgeType === "green_hosting" && publicStatus === "green_hosting_not_detected") {
-    return "Green Hosting";
+    return "Green Hosting Checked";
+  }
+  if (badgeType === "carbon_tested") {
+    return BADGE_TYPE_LABELS.carbon_tested.unavailable;
+  }
+  if (badgeType === "green_hosting") {
+    return BADGE_TYPE_LABELS.green_hosting.unavailable;
   }
   return BADGE_LABELS[publicStatus] || BADGE_LABELS.unavailable;
 }
